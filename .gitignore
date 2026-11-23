@@ -1,5 +1,6 @@
 # Gradivo predmeta
 *.pdf
+!demo/*.pdf
 
 # Odvisnosti in gradnja
 node_modules/

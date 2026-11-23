@@ -1,39 +1,50 @@
-// Ponastavitev gesla: node dist/server/cli.js geslo <e-pošta>
-// Novo geslo se prebere s standardnega vhoda, da ne ostane v zgodovini ukazov.
+// Ukazi za skrbnika:
+//   node dist/server/cli.js geslo <e-pošta>   novo geslo (prebere se s standardnega vhoda)
+//   node dist/server/cli.js demo <e-pošta>    doda vzorčne pogodbe uporabniku brez pogodb
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
+import { contractInput } from '../shared/contracts.js';
 import { createAuth } from './auth.js';
 import { loadConfig } from './config.js';
+import { ContractStore } from './contracts.js';
 import { openDb } from './db.js';
 
-const [command, email] = process.argv.slice(2);
-if (command !== 'geslo' || !email) {
-  console.error('Uporaba: node dist/server/cli.js geslo <e-pošta>');
-  process.exit(2);
+function fail(message: string, code = 1): never {
+  console.error(message);
+  process.exit(code);
 }
+
+const [command, email] = process.argv.slice(2);
+if (!['geslo', 'demo'].includes(command ?? '') || !email) fail('Uporaba: node dist/server/cli.js geslo|demo <e-pošta>', 2);
 
 const config = loadConfig();
 const db = openDb(config.dataDir);
 const ctx = await createAuth(config, db, null).$context;
 const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), { includeAccounts: true });
-if (!found) {
-  console.error('Uporabnik s to e-pošto ne obstaja.');
-  process.exit(1);
-}
+if (!found) fail('Uporabnik s to e-pošto ne obstaja.');
+const userId = found.user.id;
 
-const rl = createInterface({ input: process.stdin, output: process.stderr });
-const password = await rl.question('Novo geslo: ');
-rl.close();
-if (password.length < 8) {
-  console.error('Geslo je prekratko. Vnesite najmanj 8 znakov.');
-  process.exit(1);
-}
-
-const hash = await ctx.password.hash(password);
-if (found.accounts.some((a) => a.providerId === 'credential')) {
-  await ctx.internalAdapter.updatePassword(found.user.id, hash);
+if (command === 'geslo') {
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  const password = await rl.question('Novo geslo: ');
+  rl.close();
+  if (password.length < 8) fail('Geslo je prekratko. Vnesite najmanj 8 znakov.');
+  const hash = await ctx.password.hash(password);
+  if (found.accounts.some((a) => a.providerId === 'credential')) await ctx.internalAdapter.updatePassword(userId, hash);
+  else await ctx.internalAdapter.linkAccount({ userId, providerId: 'credential', accountId: userId, password: hash });
+  db.prepare('DELETE FROM session WHERE userId = ?').run(userId);
+  console.log('Geslo je spremenjeno, vse seje so odjavljene.');
 } else {
-  await ctx.internalAdapter.linkAccount({ userId: found.user.id, providerId: 'credential', accountId: found.user.id, password: hash });
+  const store = new ContractStore(db, config.dataDir);
+  if (store.list(userId).length > 0) fail('Uporabnik že ima pogodbe. Vzorčne pogodbe se dodajo samo v prazen arhiv.');
+  const dir = join(process.cwd(), 'demo');
+  const samples = JSON.parse(readFileSync(join(dir, 'pogodbe.json'), 'utf8')) as { file: string; terminated?: boolean }[];
+  for (const sample of samples) {
+    const bytes = new Uint8Array(readFileSync(join(dir, sample.file)));
+    const contract = await store.create(userId, contractInput.parse(sample), { name: sample.file, bytes });
+    if (sample.terminated) store.terminate(userId, contract.id);
+  }
+  console.log(`Dodanih pogodb: ${samples.length}`);
 }
-db.prepare('DELETE FROM session WHERE userId = ?').run(found.user.id);
-console.log('Geslo je spremenjeno, vse seje so odjavljene.');
 db.close();

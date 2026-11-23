@@ -26,16 +26,75 @@ V manjših podjetjih so pogodbe pogosto razpršene po e-pošti, mapah in predali
 |---|---|
 | Oblikovanje | Claude Design |
 | Razvoj | Claude Code |
-| Uporabniški vmesnik (načrtovano) | React, TypeScript, Vite |
-| Strežnik (načrtovano) | Node.js |
-| Podatkovna baza (načrtovano) | SQLite |
-| Prijava (načrtovano) | e-pošta in geslo, neobvezno OpenID Connect (npr. Zitadel) |
-| Pošta (načrtovano) | SMTP (npr. Mailjet) |
-| Objava (načrtovano) | vsebnik (Docker ali Podman) za povratnim posrednikom Caddy |
+| Uporabniški vmesnik | React, TypeScript, Vite |
+| Strežnik | Node.js |
+| Podatkovna baza | SQLite |
+| Prijava | e-pošta in geslo, neobvezno OpenID Connect (npr. Zitadel) |
+| Pošta | SMTP (npr. Mailjet) |
+| Objava | vsebnik (Docker ali Podman) za povratnim posrednikom Caddy |
 
 ## Navodila za zagon
 
-Projekt je v fazi analize in oblikovanja. Navodila za zagon bodo dodana v drugem sprintu, skupaj s programsko kodo.
+Aplikacija je en vsebnik. Baza in datoteke PDF so v eni mapi (`/data`). Potrebujete Docker s Compose.
+
+```sh
+git clone https://github.com/winston113/digitalni-arhiv.git
+cd digitalni-arhiv
+cp .env.example .env      # nastavite BASE_URL in po želji ostalo
+docker compose up -d --build
+```
+
+`BASE_URL` mora biti natanko naslov, ki ga uporabniki odprejo v brskalniku. Za preizkus na svojem računalniku nastavite `BASE_URL=http://localhost:3000` in `TRUST_PROXY=false`.
+
+Vse nastavitve so opisane v [.env.example](.env.example).
+
+### Caddy
+
+```
+arhiv.primer.si {
+    reverse_proxy 127.0.0.1:3000
+}
+```
+
+Pri tem nastavite `TRUST_PROXY=true`. Če Caddy teče na drugem strežniku, vpišite naslov gostitelja in v `.env` ustrezno nastavite `BIND`.
+
+### Zitadel ali drug ponudnik OpenID Connect
+
+1. V Zitadelu ustvarite aplikacijo vrste Web z načinom PKCE (brez skrivnosti) ali Code (s skrivnostjo).
+2. Redirect URI: `https://arhiv.primer.si/api/auth/callback/oidc`
+3. V `.env` nastavite `OIDC_ISSUER` (naslov Zitadela), `OIDC_CLIENT_ID` in pri načinu Code še `OIDC_CLIENT_SECRET`.
+
+Če želite prijavo samo prek ponudnika, nastavite `LOCAL_LOGIN=false`. Račun z geslom in račun ponudnika z istim e-poštnim naslovom se zaradi varnosti ne združita samodejno.
+
+### Mailjet ali drug strežnik SMTP
+
+Nastavite `SMTP_HOST=in-v3.mailjet.com`, `SMTP_PORT=587`, ključ API kot `SMTP_USER`, skrivni ključ kot `SMTP_PASSWORD` in potrjen naslov pošiljatelja kot `SMTP_FROM`. Brez teh nastavitev ponastavitev gesla po pošti ni na voljo.
+
+### Skrbniški ukazi
+
+```sh
+docker compose exec arhiv node dist/server/cli.js geslo uporabnik@primer.si   # novo geslo
+docker compose exec arhiv node dist/server/cli.js demo uporabnik@primer.si    # vzorčne pogodbe v prazen arhiv
+```
+
+### Varnostna kopija
+
+Ustavite vsebnik (`docker compose stop`), kopirajte celoten nosilec `podatki` in ga znova zaženite. Kopija vsebuje bazo, datoteke PDF in skrivnost za seje.
+
+Če namesto nosilca uporabite mapo na gostitelju, mora vanjo lahko pisati uporabnik 1000 oziroma uporabnik, ki ga nastavite z `user:` v `compose.yaml` (na Unraidu običajno `99:100`).
+
+## Razvoj
+
+Potrebujete Node.js 24.
+
+```sh
+npm ci --ignore-scripts
+npm run dev:server        # strežnik na vratih 3000
+npm run dev:web           # vmesnik na vratih 5173
+npm test
+```
+
+Pri razvoju strežnik zaženite z `BASE_URL=http://localhost:5173`.
 
 ## Časovnica
 
