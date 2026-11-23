@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Urejanje uporabnika</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="uporabniki" skrbnik="{{ da }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="Uporabniki.dc.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na uporabnike</a>
+<div class="page-head"><div class="head-title"><h1>Nina Novak</h1><span class="badge badge-active"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg>Dejaven</span></div></div>
+<p class="muted">nina.novak@primer.si, račun ustvarjen 20.&nbsp;11.&nbsp;2026</p>
+<div class="actions"><button class="btn btn-secondary" type="button">Ponastavi geslo</button><button class="btn btn-secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></svg>Blokiraj</button><button class="btn btn-text btn-text-danger" type="button">Izbriši</button></div>
+<form class="form" onSubmit="{{ ustavi }}">
+<div class="field full"><label class="field-label" for="up-ime">Ime in priimek</label><input class="input" id="up-ime" value="{{ ime }}" onChange="{{ vnos }}"></div>
+<div class="field full"><label class="field-label" for="up-vloga">Vloga</label><span class="select"><select class="input" id="up-vloga" value="{{ vloga }}" onChange="{{ izberiVlogo }}"><option value="user">Uporabnik</option><option value="admin">Skrbnik</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span><span class="field-hint">Skrbnik upravlja uporabnike. Tujih pogodb ne vidi.</span></div>
+<fieldset class="fieldset full"><legend class="field-label">Dovoljenja za lastne pogodbe</legend>
+<label class="check" for="up-dod"><input type="checkbox" id="up-dod" checked="{{ dodajanje }}" onChange="{{ preklopiDodajanje }}">Dodajanje pogodb</label>
+<label class="check" for="up-ure"><input type="checkbox" id="up-ure" checked="{{ urejanje }}" onChange="{{ preklopiUrejanje }}">Urejanje, podaljšanje in prekinitev</label>
+<label class="check" for="up-bri"><input type="checkbox" id="up-bri" checked="{{ brisanje }}" onChange="{{ preklopiBrisanje }}">Brisanje pogodb</label>
+<span class="field-hint">Ogled in prenos lastnih pogodb sta vedno mogoča.</span></fieldset>
+<div class="form-actions full"><a class="btn btn-primary" href="Uporabniki.dc.html">Shrani uporabnika</a></div>
+</form>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="uporabniki" skrbnik="{{ da }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  state = { ime: 'Nina Novak', vloga: 'user', dodajanje: true, urejanje: true, brisanje: false };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const { ime, vloga, dodajanje, urejanje, brisanje } = this.state;
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }), da: true,
+      ime, vloga, dodajanje, urejanje, brisanje,
+      vnos: (e) => this.setState({ ime: e.target.value }),
+      izberiVlogo: (e) => this.setState({ vloga: e.target.value }),
+      preklopiDodajanje: () => this.setState({ dodajanje: !dodajanje }),
+      preklopiUrejanje: () => this.setState({ urejanje: !urejanje }),
+      preklopiBrisanje: () => this.setState({ brisanje: !brisanje }),
+      ustavi: (e) => e.preventDefault()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -27,6 +27,8 @@
 <div class="field"><label class="field-label" for="rg-geslo">Geslo</label><input class="input" id="rg-geslo" name="geslo" type="password" autocomplete="new-password" value="{{ f.geslo }}" onChange="{{ vnos }}" aria-invalid="{{ napake }}"><sc-if value="{{ brezNapak }}" hint-placeholder-val="{{ true }}"><span class="field-hint">Najmanj 8 znakov.</span></sc-if><sc-if value="{{ napake }}" hint-placeholder-val="{{ false }}"><span class="field-error"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg>Geslo je prekratko. Vnesite najmanj 8 znakov.</span></sc-if></div>
 <a class="btn btn-primary btn-block" href="{{ pot.plosca }}">Ustvari račun</a>
 </form>
+<div class="separator">ali</div>
+<a class="btn btn-secondary btn-block" href="{{ pot.plosca }}">Registracija z računom Zitadel</a>
 <p>Že imate račun? <a class="link" href="{{ pot.prijava }}">Prijavite se</a></p>
 </div>
 </main>

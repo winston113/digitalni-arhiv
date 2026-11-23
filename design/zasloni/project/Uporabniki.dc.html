@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Uporabniki</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="uporabniki" skrbnik="{{ da }}" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<div class="page-head"><h1>Uporabniki</h1><a class="btn btn-primary" href="Uporabnik.dc.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Nov uporabnik</a></div>
+<div class="list">
+<table class="table" role="table">
+<thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Uporabnik</th><th role="columnheader" scope="col">Vloga</th><th role="columnheader" scope="col">Prijava</th><th role="columnheader" scope="col">Pogodbe</th><th role="columnheader" scope="col">Stanje</th></tr></thead>
+<tbody role="rowgroup">
+<sc-for list="{{ uporabniki }}" as="u" hint-placeholder-count="3">
+<tr role="row">
+<td role="cell" class="main"><a class="title" href="Uporabnik.dc.html">{{ u.ime }}</a><span class="sub">{{ u.eposta }}</span></td>
+<td role="cell" data-label="Vloga">{{ u.vloga }}</td>
+<td role="cell" data-label="Prijava">{{ u.prijava }}</td>
+<td role="cell" class="num" data-label="Pogodbe">{{ u.pogodbe }}</td>
+<td role="cell"><span class="{{ u.razred }}"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="{{ u.crta }}"></path></svg>{{ u.stanje }}</span></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="uporabniki" skrbnik="{{ da }}" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"telefon":{"editor":null},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.state?.tema ?? this.props.tema ?? 'system';
+    const dejaven = { razred: 'badge badge-active', stanje: 'Dejaven', crta: 'm9 12 2 2 4-4' };
+    const blokiran = { razred: 'badge badge-ended', stanje: 'Blokiran', crta: 'm4.9 4.9 14.2 14.2' };
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true,
+      uporabniki: [
+        { ime: 'Luka Zupan', eposta: 'luka.zupan@primer.si', vloga: 'Uporabnik', prijava: 'Geslo', pogodbe: 3, ...blokiran },
+        { ime: 'Maja Kranjc', eposta: 'maja.kranjc@primer.si', vloga: 'Skrbnik', prijava: 'Geslo', pogodbe: 14, ...dejaven },
+        { ime: 'Nina Novak', eposta: 'nina.novak@primer.si', vloga: 'Uporabnik', prijava: 'Zitadel', pogodbe: 6, ...dejaven }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

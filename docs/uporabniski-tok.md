@@ -44,5 +44,8 @@ Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavka
 | Nova pogodba in urejanje | nalaganje PDF, obrazec | Shrani pogodbo | Napake ob posameznih poljih; napačna vrsta ali velikost datoteke |
 | Podrobnosti pogodbe | podatki, status, predogled in prenos PDF | Podaljšaj, Prekini, Uredi, Izbriši | Datoteke ni mogoče prikazati; pogodba ne obstaja |
 | Opozorila | pogodbe, razvrščene po roku za ukrepanje | Odpri pogodbo | Trenutno nobena pogodba ne zahteva ukrepanja. |
+| Uporabniki (skrbnik) | seznam računov, vloga, način prijave, število pogodb, stanje | Nov uporabnik | Račun s to e-pošto že obstaja |
+| Uporabnik (skrbnik) | ime, vloga, dovoljenja | Shrani, Ponastavi geslo, Blokiraj, Izbriši | Vsaj en dejaven skrbnik mora ostati. |
+| Sprememba gesla | sedanje in novo geslo; obvezna ob začasnem geslu | Shrani geslo | Sedanje geslo ni pravilno. |
 
 Vsak zaslon ima stanje nalaganja, vsako uspešno dejanje pa kratko potrditveno sporočilo.

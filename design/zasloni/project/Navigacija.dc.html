@@ -18,10 +18,11 @@
 <a class="nav-item" href="{{ pot.plosca }}" aria-current="{{ tu.plosca }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"></rect><rect width="7" height="5" x="14" y="3" rx="1"></rect><rect width="7" height="9" x="14" y="12" rx="1"></rect><rect width="7" height="5" x="3" y="16" rx="1"></rect></svg>{{ prva }}</a>
 <a class="nav-item" href="{{ pot.pogodbe }}" aria-current="{{ tu.pogodbe }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg>Pogodbe</a>
 <a class="nav-item" href="{{ pot.opozorila }}" aria-current="{{ tu.opozorila }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>Opozorila<sc-if value="{{ imaOpozorila }}" hint-placeholder-val="{{ true }}"><span class="nav-count" aria-label="3 opozorila">3</span></sc-if></a>
+<sc-if value="{{ skrbnik }}" hint-placeholder-val="{{ false }}"><a class="nav-item" href="{{ pot.uporabniki }}" aria-current="{{ tu.uporabniki }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>Uporabniki</a></sc-if>
 </div>
 </nav>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"vrsta":{"editor":"enum","options":["stranska","spodnja"],"default":"stranska"},"aktivna":{"editor":"enum","options":["plosca","pogodbe","opozorila"],"default":"pogodbe"},"prazno":{"editor":null},"telefon":{"editor":null},"$preview":{"width":232,"height":420}}'>
+<script type="text/x-dc" data-dc-script data-props='{"vrsta":{"editor":"enum","options":["stranska","spodnja"],"default":"stranska"},"aktivna":{"editor":"enum","options":["plosca","pogodbe","opozorila","uporabniki"],"default":"pogodbe"},"skrbnik":{"editor":"boolean","default":false},"prazno":{"editor":null},"telefon":{"editor":null},"$preview":{"width":232,"height":420}}'>
 class Component extends DCLogic {
   renderVals() {
     const stranska = (this.props.vrsta ?? 'stranska') === 'stranska';
@@ -29,12 +30,12 @@ class Component extends DCLogic {
     const s = this.props.telefon ? 'Telefon' : '';
     const tu = (k) => (k === aktivna ? 'page' : undefined);
     return {
-      stranska, imaOpozorila: !this.props.prazno,
+      stranska, skrbnik: !!this.props.skrbnik, imaOpozorila: !this.props.prazno,
       razred: stranska ? 'nav nav-side' : 'nav',
-      postavke: stranska ? 'nav-items' : 'nav-bottom',
+      postavke: stranska ? 'nav-items' : this.props.skrbnik ? 'nav-bottom nav-bottom-4' : 'nav-bottom',
       prva: stranska ? 'Nadzorna plošča' : 'Pregled',
-      pot: { plosca: s + 'NadzornaPlosca.dc.html', pogodbe: s + 'Pogodbe.dc.html', opozorila: s + 'Opozorila.dc.html' },
-      tu: { plosca: tu('plosca'), pogodbe: tu('pogodbe'), opozorila: tu('opozorila') }
+      pot: { plosca: s + 'NadzornaPlosca.dc.html', pogodbe: s + 'Pogodbe.dc.html', opozorila: s + 'Opozorila.dc.html', uporabniki: s + 'Uporabniki.dc.html' },
+      tu: { plosca: tu('plosca'), pogodbe: tu('pogodbe'), opozorila: tu('opozorila'), uporabniki: tu('uporabniki') }
     };
   }
 }
