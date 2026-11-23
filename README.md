@@ -27,8 +27,11 @@ V manjših podjetjih so pogodbe pogosto razpršene po e-pošti, mapah in predali
 | Oblikovanje | Claude Design |
 | Razvoj | Claude Code |
 | Uporabniški vmesnik (načrtovano) | React, TypeScript, Vite |
-| Prijava, podatkovna baza in datoteke (načrtovano) | Supabase |
-| Objava (načrtovano) | Vercel |
+| Strežnik (načrtovano) | Node.js |
+| Podatkovna baza (načrtovano) | SQLite |
+| Prijava (načrtovano) | e-pošta in geslo, neobvezno OpenID Connect (npr. Zitadel) |
+| Pošta (načrtovano) | SMTP (npr. Mailjet) |
+| Objava (načrtovano) | vsebnik (Docker ali Podman) za povratnim posrednikom Caddy |
 
 ## Navodila za zagon
 
