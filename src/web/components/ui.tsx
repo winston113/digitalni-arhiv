@@ -1,0 +1,84 @@
+import { Ban, CircleAlert, CircleCheck, CircleX, Clock, FileText, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import type { Status } from '../../shared/contracts.js';
+
+export function Icon({ of: Glyph, size = '' }: { of: LucideIcon; size?: '' | 'sm' | 'lg' }) {
+  return <Glyph className={size ? `icon icon-${size}` : 'icon'} aria-hidden="true" />;
+}
+
+const BADGES: Record<Status, [string, string, LucideIcon]> = {
+  aktivna: ['badge-active', 'Aktivna', CircleCheck],
+  kmalu: ['badge-soon', 'Kmalu poteče', Clock],
+  potekla: ['badge-expired', 'Potekla', CircleX],
+  prekinjena: ['badge-ended', 'Prekinjena', Ban],
+};
+export const STATUS_NAMES = Object.fromEntries(Object.entries(BADGES).map(([k, v]) => [k, v[1]])) as Record<Status, string>;
+
+export function Badge({ status }: { status: Status }) {
+  const [cls, label, icon] = BADGES[status];
+  return <span className={`badge ${cls}`}><Icon of={icon} size="sm" />{label}</span>;
+}
+
+export function Submit({ busy, busyLabel, children, className = 'btn btn-primary', ...rest }:
+  { busy: boolean; busyLabel: string } & ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="submit" className={className} aria-busy={busy} onClick={busy ? (e) => e.preventDefault() : undefined} {...rest}>
+      {busy ? <><Icon of={LoaderCircle} />{busyLabel}</> : children}
+    </button>
+  );
+}
+
+export function Field({ id, label, optional, hint, error, full, children }: {
+  id: string; label: string; optional?: boolean; hint?: string; error?: string; full?: boolean;
+  children: (aria: { id: string; 'aria-invalid': boolean; 'aria-describedby': string | undefined }) => ReactNode;
+}) {
+  const describedBy = error || hint ? `${id}-opis` : undefined;
+  return (
+    <div className={full ? 'field full' : 'field'}>
+      <label className="field-label" htmlFor={id}>{label}{optional && <span className="muted"> (neobvezno)</span>}</label>
+      {children({ id, 'aria-invalid': Boolean(error), 'aria-describedby': describedBy })}
+      {error
+        ? <span className="field-error" id={describedBy}><Icon of={CircleAlert} size="sm" />{error}</span>
+        : hint && <span className="field-hint" id={describedBy}>{hint}</span>}
+    </div>
+  );
+}
+
+export function ErrorNotice({ message, retry }: { message: string; retry?: () => void }) {
+  return (
+    <div className="notice notice-error" role="alert">
+      <Icon of={CircleAlert} />
+      <div>{message}{retry && <> <button type="button" className="btn btn-text" onClick={retry}>Poskusi znova</button></>}</div>
+    </div>
+  );
+}
+
+export function Empty({ icon = FileText, title, text, children }: { icon?: LucideIcon; title: string; text: string; children?: ReactNode }) {
+  return <div className="panel empty"><Icon of={icon} size="lg" /><h2>{title}</h2><p>{text}</p>{children}</div>;
+}
+
+export function Skeleton({ label }: { label: string }) {
+  return (
+    <div className="panel"><div className="panel-body stack" aria-busy="true" role="status">
+      <span className="visually-hidden">{label}</span>
+      {[45, 80, 60, 72, 52].map((w) => <span key={w} className="skeleton" style={{ width: `${w}%` }} />)}
+    </div></div>
+  );
+}
+
+export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current!;
+    const opener = document.activeElement as HTMLElement | null;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    return () => { dialog.close(); opener?.focus(); };
+  }, []);
+  return (
+    <dialog ref={ref} className="dialog" aria-labelledby="dialog-title" onCancel={(e) => { e.preventDefault(); onClose(); }}>
+      <h2 id="dialog-title">{title}</h2>
+      {children}
+    </dialog>
+  );
+}

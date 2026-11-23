@@ -1,0 +1,72 @@
+import type { ContractView } from '../shared/contracts.js';
+
+export interface AppConfig {
+  localLogin: boolean;
+  registration: boolean;
+  passwordReset: boolean;
+  oidc: { name: string } | null;
+}
+export interface User { id: string; name: string; email: string }
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number, readonly fields: Record<string, string> = {}) { super(message); }
+}
+
+const OFFLINE = 'Povezava s strežnikom ni uspela. Preverite povezavo in poskusite znova.';
+
+const AUTH_MESSAGES: Record<string, string> = {
+  INVALID_EMAIL_OR_PASSWORD: 'Napačna e-pošta ali geslo.',
+  INVALID_EMAIL: 'Vnesite veljaven e-poštni naslov.',
+  PASSWORD_TOO_SHORT: 'Geslo je prekratko. Vnesite najmanj 8 znakov.',
+  PASSWORD_TOO_LONG: 'Geslo je predolgo. Vnesite največ 128 znakov.',
+  USER_ALREADY_EXISTS: 'Račun s to e-pošto že obstaja. Prijavite se ali uporabite drug naslov.',
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'Račun s to e-pošto že obstaja. Prijavite se ali uporabite drug naslov.',
+  INVALID_TOKEN: 'Povezava je potekla ali je že bila uporabljena. Zahtevajte novo.',
+};
+
+async function send(path: string, init: RequestInit = {}): Promise<Response> {
+  let response: Response;
+  try {
+    response = await fetch(path, { credentials: 'same-origin', ...init });
+  } catch {
+    throw new ApiError(OFFLINE, 0);
+  }
+  if (response.ok) return response;
+  const body = await response.json().catch(() => ({})) as { error?: string; code?: string; fields?: Record<string, string> };
+  if (response.status === 429) throw new ApiError('Preveč poskusov. Počakajte minuto in poskusite znova.', 429);
+  const message = body.error ?? AUTH_MESSAGES[body.code ?? ''] ?? 'Dejanje ni uspelo. Poskusite znova.';
+  throw new ApiError(message, response.status, body.fields);
+}
+
+const post = (path: string, body: unknown) =>
+  send(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+function formData(data: unknown, file: File | null): FormData {
+  const form = new FormData();
+  form.set('data', JSON.stringify(data));
+  if (file) form.set('file', file);
+  return form;
+}
+
+export const api = {
+  config: async () => (await send('/api/config')).json() as Promise<AppConfig>,
+  session: async () => ((await (await send('/api/auth/get-session')).json()) as { user: User } | null)?.user ?? null,
+  signIn: (email: string, password: string) => post('/api/auth/sign-in/email', { email, password }),
+  signUp: (name: string, email: string, password: string) => post('/api/auth/sign-up/email', { name, email, password }),
+  signOut: () => post('/api/auth/sign-out', {}),
+  requestReset: (email: string) => post('/api/auth/request-password-reset', { email, redirectTo: '/novo-geslo' }),
+  resetPassword: (token: string, newPassword: string) => post('/api/auth/reset-password', { token, newPassword }),
+  signInOidc: async () => {
+    const r = await post('/api/auth/sign-in/social', { provider: 'oidc', callbackURL: '/', errorCallbackURL: '/prijava' });
+    window.location.assign(((await r.json()) as { url: string }).url);
+  },
+  list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
+  get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractView>,
+  create: async (data: unknown, file: File | null) =>
+    (await send('/api/contracts', { method: 'POST', body: formData(data, file) })).json() as Promise<ContractView>,
+  update: async (id: string, data: unknown, file: File | null) =>
+    (await send(`/api/contracts/${id}`, { method: 'PUT', body: formData(data, file) })).json() as Promise<ContractView>,
+  extend: async (id: string, endDate: string) => (await post(`/api/contracts/${id}/extend`, { endDate })).json() as Promise<ContractView>,
+  terminate: async (id: string) => (await post(`/api/contracts/${id}/terminate`, {})).json() as Promise<ContractView>,
+  remove: (id: string) => send(`/api/contracts/${id}`, { method: 'DELETE' }),
+};

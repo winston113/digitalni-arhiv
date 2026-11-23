@@ -37,3 +37,11 @@ export function pluralDays(n: number): string {
   if (r === 2) return `${n} dneva`;
   return `${n} dni`;
 }
+
+// Prebere 15. 1. 2027, 15.1.2027 ali 2027-01-15; sicer vrne null.
+export function parseDate(text: string): string | null {
+  const t = text.replace(/[\s ]/g, '');
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?$/.exec(t);
+  const iso = m ? `${m[3]}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}` : t;
+  return isIsoDate(iso) ? iso : null;
+}

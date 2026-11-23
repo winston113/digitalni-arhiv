@@ -1,0 +1,63 @@
+/* Ustvarjeno iz design/project/tokens.json. */
+:root, [data-theme="light"] {
+  --primary: #1f4d3a;
+  --primary-hover: #163a2b;
+  --primary-tint: #e6efe9;
+  --on-primary: #ffffff;
+  --nav: #1f4d3a;
+  --nav-active: #163a2b;
+  --on-nav: #ffffff;
+  --on-nav-muted: #c9d9cf;
+  --ink: #1a211d;
+  --ink-muted: #56615b;
+  --surface: #ffffff;
+  --canvas: #f5f7f5;
+  --neutral-tint: #eaeeec;
+  --line: #dbe1dd;
+  --line-strong: #7d8982;
+  --warning: #8a5300;
+  --warning-tint: #fbf0dc;
+  --danger: #a3261f;
+  --danger-tint: #fbe9e7;
+  --overlay: rgba(26, 33, 29, 0.5);
+  --shadow-overlay: 0 8px 24px rgba(26, 33, 29, 0.18);
+}
+[data-theme="dark"] {
+  --primary: #8cc9a8;
+  --primary-hover: #a6d8bd;
+  --primary-tint: #1d3529;
+  --on-primary: #0f1a14;
+  --nav: #173a2c;
+  --nav-active: #235640;
+  --on-nav: #ffffff;
+  --on-nav-muted: #c9d9cf;
+  --ink: #e8eeea;
+  --ink-muted: #a3b0a9;
+  --surface: #18201c;
+  --canvas: #111714;
+  --neutral-tint: #26302b;
+  --line: #2e3a34;
+  --line-strong: #74837b;
+  --warning: #e8b765;
+  --warning-tint: #36290f;
+  --danger: #f2a49c;
+  --danger-tint: #3b1d1a;
+  --overlay: rgba(0,0,0,0.6);
+  --shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+:root {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --control-height: 44px;
+  --sidebar-width: 232px;
+  --content-width: 1120px;
+  --form-width: 640px;
+}

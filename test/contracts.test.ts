@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { actionDate, contractInput, fieldErrors, sortByDeadline, status, toView, type Contract } from '../src/shared/contracts.js';
-import { addDays, daysBetween, isIsoDate, pluralDays } from '../src/shared/dates.js';
+import { addDays, daysBetween, isIsoDate, parseDate, pluralDays } from '../src/shared/dates.js';
 
 const base = { endDate: '2027-03-31', noticeDays: 30, warnDays: 30, terminatedAt: null };
 const full: Contract = {
@@ -37,6 +37,9 @@ describe('datumi', () => {
     expect(isIsoDate('2027-02-29')).toBe(false);
     expect(isIsoDate('2027-13-01')).toBe(false);
     expect(isIsoDate('1. 1. 2027')).toBe(false);
+  });
+  it('prebere slovenski zapis datuma', () => {
+    expect(['15. 1. 2027', '15.1.2027', '15.\u00a01.\u00a02027', '2027-01-15', '31. 2. 2027', '1/15/2027', ''].map(parseDate)).toEqual(['2027-01-15', '2027-01-15', '2027-01-15', '2027-01-15', null, null, null]);
   });
   it('sklanja dneve', () => {
     expect([1, 2, 3, 23, 101, 102, 0].map(pluralDays)).toEqual(['1 dan', '2 dneva', '3 dni', '23 dni', '101 dan', '102 dneva', '0 dni']);
