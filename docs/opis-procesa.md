@@ -60,6 +60,6 @@ Podaljšanje pomeni vnos novega datuma poteka. Pogodba se s tem vrne med aktivne
 
 ## Obseg prve različice
 
-Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev.
+Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema.
 
 Ni vključeno: elektronski podpis, potrjevanje pogodb, skupinska raba in vloge, zgodovina različic, obvestila po e-pošti, funkcije umetne inteligence.

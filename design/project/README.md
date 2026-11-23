@@ -12,11 +12,12 @@ Pogodbe na enem mestu, roki pod nadzorom. Digitalni arhiv pogodb je poslovno oro
 
 ## Barve
 
-- Edina primarna barva je `primary`. Uporabite jo za glavno dejanje, navigacijo, povezave in fokus, ne za okras.
+- Edina primarna barva je `primary`. Uporabite jo za glavno dejanje, povezave in fokus, ne za okras. Navigacija ima svoje žetone `nav`, `nav-active`, `on-nav` in `on-nav-muted`.
 - Stran je na `canvas`, vsebina na `surface`, besedilo v `ink`, pomožno besedilo v `ink-muted`.
 - `warning` in `danger` pomenita samo status ali napako. Barva nikoli ni edini nosilec pomena; ob njej sta ikona in beseda.
 - Obrobe plošč so `line`, obrobe vnosnih polj `line-strong`.
-- Prelivov ni. Sistem ima eno, svetlo temo.
+- Prelivov ni.
+- Temi sta dve, svetla in temna, izbira pa ima tri možnosti: Sistemska (privzeto), Svetla, Temna. Uporabljajte žetone, nikoli neposrednih barv.
 
 ## Tipografija
 
@@ -37,7 +38,7 @@ Od 900 px širine je levo `sidebar-width`, desno vsebina do `content-width` z ro
 
 - Vsak zaslon ima oblikovano nalaganje, prazno stanje in napako.
 - Brisanje in prekinitev zahtevata potrditev v pogovornem oknu.
-- Fokus je 2 px obroba v `primary`, na zeleni podlagi v `on-primary`.
+- Fokus je 2 px obroba v `primary`, na zeleni podlagi v `on-nav`.
 - Besedilo ima kontrast najmanj 4,5 : 1, obrobe kontrol in ikone najmanj 3 : 1.
 
 ## Ikone in znak

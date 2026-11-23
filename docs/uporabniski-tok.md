@@ -27,7 +27,7 @@ flowchart TD
     O --> H
 ```
 
-Odjava je na voljo na vseh zaslonih po prijavi.
+Odjava je na voljo na vseh zaslonih po prijavi. Preklop teme (sistemska, svetla, temna; privzeto sistemska) je desno zgoraj na vseh zaslonih, tudi pred prijavo.
 
 ## Navigacija
 
