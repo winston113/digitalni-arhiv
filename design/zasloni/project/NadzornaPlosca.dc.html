@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Nadzorna plošča</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="plosca" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<div class="page-head"><h1>Nadzorna plošča</h1><a class="btn btn-primary" href="{{ pot.nova }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Nova pogodba</a></div>
+<div class="counts">
+<a class="count" href="{{ pot.pogodbe }}"><span class="count-value">9</span><dc-import name="Oznaka" status="aktivna" hint-size="100px,24px"></dc-import></a>
+<a class="count" href="{{ pot.pogodbe }}"><span class="count-value">2</span><dc-import name="Oznaka" status="kmalu" hint-size="130px,24px"></dc-import></a>
+<a class="count" href="{{ pot.pogodbe }}"><span class="count-value">1</span><dc-import name="Oznaka" status="potekla" hint-size="100px,24px"></dc-import></a>
+<a class="count" href="{{ pot.pogodbe }}"><span class="count-value">2</span><dc-import name="Oznaka" status="prekinjena" hint-size="110px,24px"></dc-import></a>
+</div>
+<section class="panel">
+<div class="panel-head"><h2>Najbližji roki</h2><a class="btn btn-text" href="{{ pot.opozorila }}">Vsa opozorila</a></div>
+<dc-import name="Seznam" pogodbe="{{ roki }}" telefon="{{ telefon }}" hint-size="100%,260px"></dc-import>
+</section>
+<section class="panel">
+<div class="panel-head"><h2>Nazadnje dodane</h2></div>
+<ul class="recent">
+<li><a href="{{ pot.podrobnosti }}">Dobava papirne embalaže</a><span class="muted num">20.&nbsp;11.&nbsp;2026</span></li>
+<li><a href="{{ pot.podrobnosti }}">Gostovanje spletne strani</a><span class="muted num">18.&nbsp;11.&nbsp;2026</span></li>
+<li><a href="{{ pot.podrobnosti }}">Zavarovanje poslovnih prostorov</a><span class="muted num">12.&nbsp;11.&nbsp;2026</span></li>
+</ul>
+</section>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="plosca" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"telefon":{"editor":null},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.state?.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true,
+      roki: [
+        ['Zavarovanje odgovornosti', 'Zavarovalnica Breza, d. d.', 'Zavarovanje', '15. 11. 2026', 'rok je minil', 'potekla'],
+        ['Vzdrževanje računalniške opreme', 'Sistemi Koren, d. o. o.', 'Storitve', '16. 12. 2026', 'čez 23 dni', 'kmalu'],
+        ['Licenca za računovodski program', 'Programska hiša Hrast, d. o. o.', 'Licence in naročnine', '21. 12. 2026', 'čez 28 dni', 'kmalu']
+      ],
+      pot: { nova: s + 'NovaPogodba.dc.html', pogodbe: s + 'Pogodbe.dc.html', opozorila: s + 'Opozorila.dc.html', podrobnosti: s + 'PodrobnostiPogodbe.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

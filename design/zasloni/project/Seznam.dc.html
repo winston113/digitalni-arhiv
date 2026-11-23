@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Seznam pogodb</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="list">
+<table class="table" role="table">
+<thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">Pogodba</th><th role="columnheader" scope="col">Kategorija</th><th role="columnheader" scope="col">Rok za ukrepanje</th><th role="columnheader" scope="col">Status</th></tr></thead>
+<tbody role="rowgroup">
+<sc-for list="{{ vrstice }}" as="p" hint-placeholder-count="4">
+<tr role="row">
+<td role="cell" class="main"><a class="title" href="{{ p.pot }}">{{ p.naziv }}</a><span class="sub">{{ p.stranka }}</span></td>
+<td role="cell" data-label="Kategorija">{{ p.kategorija }}</td>
+<td role="cell" class="num" data-label="Rok za ukrepanje">{{ p.rok }}<span class="sub">{{ p.cez }}</span></td>
+<td role="cell"><dc-import name="Oznaka" status="{{ p.status }}" hint-size="130px,24px"></dc-import></td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pogodbe":{"editor":null},"telefon":{"editor":null},"$preview":{"width":900,"height":320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const primer = [
+      ['Vzdrževanje računalniške opreme', 'Sistemi Koren, d. o. o.', 'Storitve', '16. 12. 2026', 'čez 23 dni', 'kmalu'],
+      ['Najem poslovnih prostorov', 'Nepremičnine Javor, d. o. o.', 'Najem', '2. 10. 2027', 'čez 313 dni', 'aktivna']
+    ];
+    const pot = (this.props.telefon ? 'Telefon' : '') + 'PodrobnostiPogodbe.dc.html';
+    const nb = (t) => t.replace(/\. (?=\S)/g, '. ');
+    return {
+      vrstice: (this.props.pogodbe ?? primer).map((v) => ({
+        naziv: v[0], stranka: nb(v[1]), kategorija: v[2], rok: nb(v[3]), cez: v[4], status: v[5], pot
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

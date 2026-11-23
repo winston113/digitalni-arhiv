@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Glava</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<header class="appbar">
+<a class="{{ brand }}" href="{{ domov }}" aria-label="Digitalni arhiv pogodb, na začetno stran"><dc-import name="Znak" hint-size="32px,32px"></dc-import><span class="brand-name">Digitalni arhiv pogodb</span></a>
+<div class="appbar-actions">
+<sc-if value="{{ prijavljen }}" hint-placeholder-val="{{ true }}"><span class="appbar-user">maja.kranjc@primer.si</span></sc-if>
+<div class="menu-wrap">
+<button class="btn btn-secondary btn-icon" type="button" aria-haspopup="menu" aria-expanded="{{ odprt }}" aria-label="{{ oznaka }}" onClick="{{ preklopi }}">
+<sc-if value="{{ jeSistemska }}" hint-placeholder-val="{{ true }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg></sc-if>
+<sc-if value="{{ jeSvetla }}" hint-placeholder-val="{{ false }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg></sc-if>
+<sc-if value="{{ jeTemna }}" hint-placeholder-val="{{ false }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></sc-if>
+</button>
+<sc-if value="{{ odprt }}" hint-placeholder-val="{{ false }}">
+<div class="menu" role="menu" aria-label="Tema">
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="{{ jeSistemska }}" onClick="{{ izberiSistemsko }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>Sistemska<svg class="icon check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="{{ jeSvetla }}" onClick="{{ izberiSvetlo }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>Svetla<svg class="icon check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button>
+<button class="menu-item" type="button" role="menuitemradio" aria-checked="{{ jeTemna }}" onClick="{{ izberiTemno }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>Temna<svg class="icon check-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ prijavljen }}" hint-placeholder-val="{{ true }}"><a class="btn btn-secondary" href="{{ odjava }}" aria-label="Odjava"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5"></path><path d="M21 12H9"></path></svg><span class="only-wide">Odjava</span></a></sc-if>
+</div>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"prijavljen":{"editor":"boolean","default":false},"tema":{"editor":null},"onTema":{"editor":null},"telefon":{"editor":null},"$preview":{"width":900,"height":260}}'>
+class Component extends DCLogic {
+  state = { odprt: false };
+  renderVals() {
+    const tema = this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    const izberi = (t) => () => {
+      this.setState({ odprt: false });
+      if (this.props.onTema) this.props.onTema(t);
+    };
+    const imena = { system: 'sistemska', light: 'svetla', dark: 'temna' };
+    const prijavljen = !!this.props.prijavljen;
+    return {
+      prijavljen, odprt: this.state.odprt,
+      brand: prijavljen ? 'brand brand-app' : 'brand',
+      domov: s + (prijavljen ? 'NadzornaPlosca.dc.html' : 'Main.dc.html'),
+      odjava: s + 'Main.dc.html',
+      oznaka: 'Tema: ' + imena[tema],
+      jeSistemska: tema === 'system', jeSvetla: tema === 'light', jeTemna: tema === 'dark',
+      preklopi: () => this.setState({ odprt: !this.state.odprt }),
+      izberiSistemsko: izberi('system'), izberiSvetlo: izberi('light'), izberiTemno: izberi('dark')
+    };
+  }
+}
+</script>
+</body>
+</html>

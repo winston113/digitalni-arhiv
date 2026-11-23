@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Registracija</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<dc-import name="Glava" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="auth">
+<div class="auth-box">
+<div class="auth-head">
+<dc-import name="Znak" velik="{{ da }}" hint-size="64px,64px"></dc-import>
+<h1>Registracija</h1>
+<p class="muted">Ustvarite račun za svoj arhiv pogodb.</p>
+</div>
+<form onSubmit="{{ ustavi }}">
+<div class="field"><label class="field-label" for="rg-ime">Ime in priimek</label><input class="input" id="rg-ime" name="ime" autocomplete="name" value="{{ f.ime }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="rg-eposta">E-pošta</label><input class="input" id="rg-eposta" name="eposta" type="email" autocomplete="email" value="{{ f.eposta }}" onChange="{{ vnos }}" aria-invalid="{{ napake }}"><sc-if value="{{ napake }}" hint-placeholder-val="{{ false }}"><span class="field-error"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg>Račun s to e-pošto že obstaja. Prijavite se ali uporabite drug naslov.</span></sc-if></div>
+<div class="field"><label class="field-label" for="rg-geslo">Geslo</label><input class="input" id="rg-geslo" name="geslo" type="password" autocomplete="new-password" value="{{ f.geslo }}" onChange="{{ vnos }}" aria-invalid="{{ napake }}"><sc-if value="{{ brezNapak }}" hint-placeholder-val="{{ true }}"><span class="field-hint">Najmanj 8 znakov.</span></sc-if><sc-if value="{{ napake }}" hint-placeholder-val="{{ false }}"><span class="field-error"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg>Geslo je prekratko. Vnesite najmanj 8 znakov.</span></sc-if></div>
+<a class="btn btn-primary btn-block" href="{{ pot.plosca }}">Ustvari račun</a>
+</form>
+<p>Že imate račun? <a class="link" href="{{ pot.prijava }}">Prijavite se</a></p>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"napake":{"editor":"boolean","default":false},"telefon":{"editor":null},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  state = { f: { ime: 'Maja Kranjc', eposta: 'maja.kranjc@primer.si', geslo: 'geslo' } };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    const napake = !!this.props.napake;
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true, napake, brezNapak: !napake, f: this.state.f,
+      vnos: (e) => this.setState({ f: { ...this.state.f, [e.target.name]: e.target.value } }),
+      ustavi: (e) => e.preventDefault(),
+      pot: { plosca: s + 'NadzornaPlosca.dc.html', prijava: s + 'Main.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

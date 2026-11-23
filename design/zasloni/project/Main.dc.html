@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Prijava</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<dc-import name="Glava" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="auth">
+<div class="auth-box">
+<div class="auth-head">
+<dc-import name="Znak" velik="{{ da }}" hint-size="64px,64px"></dc-import>
+<h1>Prijava</h1>
+<p class="muted">Pogodbe na enem mestu, roki pod nadzorom.</p>
+</div>
+<form onSubmit="{{ ustavi }}">
+<div class="field"><label class="field-label" for="pr-eposta">E-pošta</label><input class="input" id="pr-eposta" name="eposta" type="email" autocomplete="username" value="{{ f.eposta }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="pr-geslo">Geslo</label><input class="input" id="pr-geslo" name="geslo" type="password" autocomplete="current-password" value="{{ f.geslo }}" onChange="{{ vnos }}"></div>
+<a class="btn btn-primary btn-block" href="{{ pot.plosca }}">Prijava</a>
+</form>
+<p>Še nimate računa? <a class="link" href="{{ pot.registracija }}">Ustvarite račun</a></p>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"telefon":{"editor":null},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  state = { f: { eposta: 'maja.kranjc@primer.si', geslo: 'geslo-za-prikaz' } };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true, f: this.state.f,
+      vnos: (e) => this.setState({ f: { ...this.state.f, [e.target.name]: e.target.value } }),
+      ustavi: (e) => e.preventDefault(),
+      pot: { plosca: s + 'NadzornaPlosca.dc.html', registracija: s + 'Registracija.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

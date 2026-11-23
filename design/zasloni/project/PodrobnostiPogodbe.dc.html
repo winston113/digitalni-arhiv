@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Podrobnosti pogodbe</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="{{ pot.pogodbe }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na pogodbe</a>
+<div class="page-head"><div class="head-title"><h1>Vzdrževanje računalniške opreme</h1><dc-import name="Oznaka" status="{{ status }}" hint-size="130px,24px"></dc-import></div></div>
+<sc-if value="{{ opozori }}" hint-placeholder-val="{{ true }}"><div class="notice notice-warning"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg><div>Rok za ukrepanje je 16.&nbsp;12.&nbsp;2026, čez 23 dni. Pogodbo podaljšajte ali prekinite.</div></div></sc-if>
+<div class="actions">
+<sc-if value="{{ odprta }}" hint-placeholder-val="{{ true }}"><button class="btn btn-primary" type="button" onClick="{{ odpriPodaljsaj }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4M16 2v4M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8M3 10h18M16 19h6M19 16v6"></path></svg>Podaljšaj</button>
+<button class="btn btn-secondary" type="button" onClick="{{ odpriPrekini }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m4.9 4.9 14.2 14.2"></path></svg>Prekini</button></sc-if>
+<a class="btn btn-secondary" href="{{ pot.uredi }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497zM15 5l4 4"></path></svg>Uredi</a>
+<button class="btn btn-text btn-text-danger" type="button" onClick="{{ odpriIzbrisi }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2M10 11v6M14 11v6"></path></svg>Izbriši</button>
+</div>
+<div class="cols">
+<section class="panel"><div class="panel-head"><h2>Podatki o pogodbi</h2></div><div class="panel-body"><dl class="data">
+<div><dt>Pogodbena stranka</dt><dd>Sistemi Koren, d.&nbsp;o.&nbsp;o.</dd></div>
+<div><dt>Kategorija</dt><dd>Storitve</dd></div>
+<div><dt>Številka pogodbe</dt><dd class="num">S-2026/014</dd></div>
+<div><dt>Datum začetka</dt><dd class="num">15.&nbsp;1.&nbsp;2026</dd></div>
+<div><dt>Datum poteka</dt><dd class="num">{{ potek }}</dd></div>
+<div><dt>Odpovedni rok</dt><dd class="num">30 dni</dd></div>
+<div><dt>Rok za ukrepanje</dt><dd class="num">{{ rok }}</dd></div>
+<div><dt>Opozorilo</dt><dd class="num">30 dni pred rokom</dd></div>
+<div><dt>Vrednost</dt><dd class="num">480,00&nbsp;€ na mesec</dd></div>
+<div><dt>Opombe</dt><dd>Odziv v štirih urah, obisk enkrat mesečno.</dd></div>
+</dl></div></section>
+<section class="panel"><div class="panel-head"><h2>Dokument</h2><button class="btn btn-secondary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>Prenesi PDF</button></div><div class="panel-body stack">
+<div class="sheet"><h3>Pogodba o vzdrževanju računalniške opreme</h3><p class="center num">št. S-2026/014</p><p>sklenjena med naročnikom Kranjc Oprema, d.&nbsp;o.&nbsp;o., in izvajalcem Sistemi Koren, d.&nbsp;o.&nbsp;o.</p><p class="center">1. člen</p><p>Izvajalec se zavezuje, da bo redno vzdrževal računalniško opremo naročnika in napake odpravljal v dogovorjenih rokih.</p><p class="center">2. člen</p><p>Pogodba velja od 15.&nbsp;1.&nbsp;2026 do 15.&nbsp;1.&nbsp;2027. Odpovedni rok je 30 dni.</p><p class="center">3. člen</p><p>Mesečno nadomestilo znaša 480,00&nbsp;€ brez DDV.</p></div>
+<p class="field-hint">pogodba-vzdrzevanje-2026.pdf, 1,8 MB</p>
+</div></section>
+</div>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+<sc-if value="{{ imaSporocilo }}" hint-placeholder-val="{{ false }}"><div class="notice notice-success toast" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div>{{ sporocilo }}</div></div></sc-if>
+<sc-if value="{{ oknoPodaljsaj }}" hint-placeholder-val="{{ false }}"><div class="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="okno-1"><h2 id="okno-1">Podaljšanje pogodbe</h2><p>Vzdrževanje računalniške opreme poteče 15.&nbsp;1.&nbsp;2027.</p><div class="field"><label class="field-label" for="okno-datum">Nov datum poteka</label><input class="input num" id="okno-datum" value="{{ novDatum }}" onChange="{{ vnosDatuma }}"></div><div class="dialog-actions"><button class="btn btn-secondary" type="button" onClick="{{ zapri }}">Prekliči</button><button class="btn btn-primary" type="button" onClick="{{ podaljsaj }}">Podaljšaj pogodbo</button></div></div></div></sc-if>
+<sc-if value="{{ oknoPrekini }}" hint-placeholder-val="{{ false }}"><div class="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="okno-2"><h2 id="okno-2">Prekinitev pogodbe</h2><p>Pogodba Vzdrževanje računalniške opreme bo označena kot prekinjena. Opozoril zanjo ne boste več prejemali.</p><div class="dialog-actions"><button class="btn btn-secondary" type="button" onClick="{{ zapri }}">Prekliči</button><button class="btn btn-danger" type="button" onClick="{{ prekini }}">Prekini pogodbo</button></div></div></div></sc-if>
+<sc-if value="{{ oknoIzbrisi }}" hint-placeholder-val="{{ false }}"><div class="overlay"><div class="dialog" role="dialog" aria-modal="true" aria-labelledby="okno-3"><h2 id="okno-3">Brisanje pogodbe</h2><p>Pogodba Vzdrževanje računalniške opreme in datoteka PDF bosta trajno izbrisani.</p><div class="dialog-actions"><button class="btn btn-secondary" type="button" onClick="{{ zapri }}">Prekliči</button><a class="btn btn-danger" href="{{ pot.pogodbe }}">Izbriši pogodbo</a></div></div></div></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"okno":{"editor":"enum","options":["brez","podaljsaj","prekini","izbrisi"],"default":"brez"},"telefon":{"editor":null},"$preview":{"width":1280,"height":1100}}'>
+class Component extends DCLogic {
+  state = { status: 'kmalu', novDatum: '15. 1. 2028', sporocilo: '' };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    const okno = this.state.okno ?? this.props.okno ?? 'brez';
+    const { status, sporocilo, novDatum } = this.state;
+    const nb = (t) => t.replace(/\. (?=\S)/g, '. ');
+    const odpri = (o) => () => this.setState({ okno: o, sporocilo: '' });
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true, status, novDatum,
+      opozori: status === 'kmalu', odprta: status !== 'prekinjena',
+      potek: nb(status === 'aktivna' ? novDatum : '15. 1. 2027'),
+      rok: nb(status === 'aktivna' ? '16. 12. 2027' : '16. 12. 2026'),
+      oknoPodaljsaj: okno === 'podaljsaj', oknoPrekini: okno === 'prekini', oknoIzbrisi: okno === 'izbrisi',
+      imaSporocilo: !!sporocilo, sporocilo,
+      odpriPodaljsaj: odpri('podaljsaj'), odpriPrekini: odpri('prekini'), odpriIzbrisi: odpri('izbrisi'),
+      zapri: () => this.setState({ okno: 'brez' }),
+      vnosDatuma: (e) => this.setState({ novDatum: e.target.value }),
+      podaljsaj: () => this.setState({ okno: 'brez', status: 'aktivna', sporocilo: 'Pogodba je podaljšana.' }),
+      prekini: () => this.setState({ okno: 'brez', status: 'prekinjena', sporocilo: 'Pogodba je prekinjena.' }),
+      pot: { pogodbe: s + 'Pogodbe.dc.html', uredi: s + 'NovaPogodba.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

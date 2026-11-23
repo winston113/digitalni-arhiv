@@ -1,0 +1,40 @@
+{
+ "v": 3,
+ "createdOnFiles": {"v": 1, "at": "2026-11-23T19:25:00Z"},
+ "title": "Digitalni arhiv pogodb – zasloni",
+ "launch": {"view": "canvas", "page": "zasloni"},
+ "pages": [{"id": "zasloni", "name": "Zasloni"}, {"id": "deli", "name": "Sestavni deli"}],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1280, "h": 820, "title": "1 Prijava", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "Registracija.dc.html": {"x": 1360, "y": 0, "w": 1280, "h": 900, "title": "2 Registracija", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "NadzornaPlosca.dc.html": {"x": 2720, "y": 0, "w": 1280, "h": 900, "title": "3 Nadzorna plošča", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "Pogodbe.dc.html": {"x": 4080, "y": 0, "w": 1280, "h": 1400, "title": "4 Pogodbe", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "NovaPogodba.dc.html": {"x": 5440, "y": 0, "w": 1280, "h": 1300, "title": "5 Nova pogodba", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "PodrobnostiPogodbe.dc.html": {"x": 6800, "y": 0, "w": 1280, "h": 1100, "title": "6 Podrobnosti pogodbe", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "Opozorila.dc.html": {"x": 8160, "y": 0, "w": 1280, "h": 820, "title": "7 Opozorila", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "TelefonMain.dc.html": {"x": 0, "y": 2000, "w": 390, "h": 844, "title": "1 Prijava, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonRegistracija.dc.html": {"x": 470, "y": 2000, "w": 390, "h": 900, "title": "2 Registracija, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonNadzornaPlosca.dc.html": {"x": 940, "y": 2000, "w": 390, "h": 1500, "title": "3 Nadzorna plošča, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonPogodbe.dc.html": {"x": 1410, "y": 2000, "w": 390, "h": 3000, "title": "4 Pogodbe, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonNovaPogodba.dc.html": {"x": 1880, "y": 2000, "w": 390, "h": 1900, "title": "5 Nova pogodba, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonPodrobnostiPogodbe.dc.html": {"x": 2350, "y": 2000, "w": 390, "h": 2000, "title": "6 Podrobnosti pogodbe, telefon", "page": "zasloni", "is_interactive": true},
+  "TelefonOpozorila.dc.html": {"x": 2820, "y": 2000, "w": 390, "h": 1000, "title": "7 Opozorila, telefon", "page": "zasloni", "is_interactive": true},
+  "TemnaNadzornaPlosca.dc.html": {"x": 0, "y": 5500, "w": 1280, "h": 900, "title": "Nadzorna plošča, temna tema", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "PogodbePrazno.dc.html": {"x": 1360, "y": 5500, "w": 1280, "h": 820, "title": "Pogodbe, prazno stanje", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "PogodbeNalaganje.dc.html": {"x": 2720, "y": 5500, "w": 1280, "h": 820, "title": "Pogodbe, nalaganje", "page": "zasloni", "expand": "fill"},
+  "RegistracijaNapake.dc.html": {"x": 4080, "y": 5500, "w": 1280, "h": 960, "title": "Registracija, napake v obrazcu", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "PodrobnostiOkno.dc.html": {"x": 5440, "y": 5500, "w": 1280, "h": 1100, "title": "Podrobnosti, pogovorno okno", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "Glava.dc.html": {"x": 0, "y": 0, "w": 900, "h": 260, "title": "Glava", "page": "deli", "is_interactive": true},
+  "Navigacija.dc.html": {"x": 0, "y": 360, "w": 232, "h": 420, "title": "Navigacija", "page": "deli", "is_interactive": true},
+  "Seznam.dc.html": {"x": 320, "y": 360, "w": 900, "h": 320, "title": "Seznam pogodb", "page": "deli", "is_interactive": true},
+  "Oznaka.dc.html": {"x": 980, "y": 0, "w": 200, "h": 60, "title": "Statusna oznaka", "page": "deli"},
+  "Znak.dc.html": {"x": 1260, "y": 0, "w": 120, "h": 120, "title": "Znak", "page": "deli"}
+ },
+ "order": ["Main.dc.html", "Registracija.dc.html", "NadzornaPlosca.dc.html", "Pogodbe.dc.html", "NovaPogodba.dc.html", "PodrobnostiPogodbe.dc.html", "Opozorila.dc.html", "TelefonMain.dc.html", "TelefonRegistracija.dc.html", "TelefonNadzornaPlosca.dc.html", "TelefonPogodbe.dc.html", "TelefonNovaPogodba.dc.html", "TelefonPodrobnostiPogodbe.dc.html", "TelefonOpozorila.dc.html", "TemnaNadzornaPlosca.dc.html", "PogodbePrazno.dc.html", "PogodbeNalaganje.dc.html", "RegistracijaNapake.dc.html", "PodrobnostiOkno.dc.html", "Glava.dc.html", "Navigacija.dc.html", "Seznam.dc.html", "Oznaka.dc.html", "Znak.dc.html"],
+ "notes": {
+  "n1": {"x": 0, "y": -300, "text": "Računalnik", "kind": "title1", "maxW": 4000, "page": "zasloni"},
+  "n2": {"x": 0, "y": 1700, "text": "Telefon", "kind": "title1", "maxW": 3200, "page": "zasloni"},
+  "n3": {"x": 0, "y": 5200, "text": "Stanja in temna tema", "kind": "title1", "maxW": 4000, "page": "zasloni"}
+ },
+ "designSystems": [{"title": "Digitalni arhiv pogodb", "namespace": "digitalniarhivpogodb", "artifact": "https://claude.ai/artifact/SgJabjB29TE3C93cxu5Wtx", "version": "1795461234-b0f9", "copiedAt": "2026-11-23T19:25:00Z"}]
+}

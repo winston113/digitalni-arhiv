@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Pogodbe</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" prazno="{{ jePrazno }}" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<div class="page-head"><h1>Pogodbe</h1><sc-if value="{{ niPrazno }}" hint-placeholder-val="{{ true }}"><a class="btn btn-primary" href="{{ pot.nova }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Nova pogodba</a></sc-if></div>
+<sc-if value="{{ niPrazno }}" hint-placeholder-val="{{ true }}">
+<div class="filters">
+<div class="field"><label class="field-label" for="pg-isci">Iskanje</label><span class="search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="input" id="pg-isci" name="q" type="search" placeholder="Naziv, stranka ali številka" value="{{ f.q }}" onChange="{{ vnos }}"></span></div>
+<div class="field"><label class="field-label" for="pg-kat">Kategorija</label><span class="select"><select class="input" id="pg-kat" name="kategorija" value="{{ f.kategorija }}" onChange="{{ vnos }}"><option value="">Vse kategorije</option><option value="Najem">Najem</option><option value="Dobava">Dobava</option><option value="Storitve">Storitve</option><option value="Zaposlitev">Zaposlitev</option><option value="Zavarovanje">Zavarovanje</option><option value="Licence in naročnine">Licence in naročnine</option><option value="Drugo">Drugo</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+<div class="field"><label class="field-label" for="pg-status">Status</label><span class="select"><select class="input" id="pg-status" name="status" value="{{ f.status }}" onChange="{{ vnos }}"><option value="">Vsi statusi</option><option value="aktivna">Aktivna</option><option value="kmalu">Kmalu poteče</option><option value="potekla">Potekla</option><option value="prekinjena">Prekinjena</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+</div>
+</sc-if>
+<sc-if value="{{ jeSeznam }}" hint-placeholder-val="{{ true }}">
+<div class="filter-line"><span class="filter-result" role="status">{{ stevec }}</span><sc-if value="{{ filtrirano }}" hint-placeholder-val="{{ false }}"><button class="btn btn-text" type="button" onClick="{{ pocisti }}">Počisti filtre</button></sc-if></div>
+<dc-import name="Seznam" pogodbe="{{ pogodbe }}" telefon="{{ telefon }}" hint-size="100%,960px"></dc-import>
+</sc-if>
+<sc-if value="{{ niZadetkov }}" hint-placeholder-val="{{ false }}">
+<div class="panel empty"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><h2>Ni zadetkov</h2><p>Nobena pogodba ne ustreza iskanju.</p><button class="btn btn-secondary" type="button" onClick="{{ pocisti }}">Počisti filtre</button></div>
+</sc-if>
+<sc-if value="{{ jePrazno }}" hint-placeholder-val="{{ false }}">
+<div class="panel empty"><svg class="icon icon-lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><h2>V arhivu še ni pogodb</h2><p>Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.</p><a class="btn btn-primary" href="{{ pot.nova }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"></path></svg>Nova pogodba</a></div>
+</sc-if>
+<sc-if value="{{ seNalaga }}" hint-placeholder-val="{{ false }}">
+<div class="panel"><div class="panel-body stack" aria-busy="true" aria-label="Nalaganje pogodb"><span class="skeleton" style="width: 45%"></span><span class="skeleton" style="width: 80%"></span><span class="skeleton" style="width: 60%"></span><span class="skeleton" style="width: 72%"></span><span class="skeleton" style="width: 52%"></span><span class="skeleton" style="width: 66%"></span></div></div>
+</sc-if>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" prazno="{{ jePrazno }}" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"stanje":{"editor":"enum","options":["seznam","prazno","nalaganje"],"default":"seznam"},"telefon":{"editor":null},"$preview":{"width":1280,"height":1400}}'>
+class Component extends DCLogic {
+  state = { f: { q: '', kategorija: '', status: '' } };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    const stanje = this.props.stanje ?? 'seznam';
+    const vse = [
+      ['Zavarovanje odgovornosti', 'Zavarovalnica Breza, d. d.', 'Zavarovanje', '15. 11. 2026', 'rok je minil', 'potekla', 'Z-2025/031'],
+      ['Vzdrževanje računalniške opreme', 'Sistemi Koren, d. o. o.', 'Storitve', '16. 12. 2026', 'čez 23 dni', 'kmalu', 'S-2026/014'],
+      ['Licenca za računovodski program', 'Programska hiša Hrast, d. o. o.', 'Licence in naročnine', '21. 12. 2026', 'čez 28 dni', 'kmalu', 'L-2026/003'],
+      ['Čiščenje poslovnih prostorov', 'Čistilni servis Jelka, s. p.', 'Storitve', '28. 2. 2027', 'čez 97 dni', 'aktivna', 'S-2026/009'],
+      ['Najem službenega vozila', 'Avtohiša Smreka, d. o. o.', 'Najem', '31. 3. 2027', 'čez 128 dni', 'aktivna', 'N-2024/002'],
+      ['Dobava papirne embalaže', 'Embalaža Gaber, d. o. o.', 'Dobava', '30. 4. 2027', 'čez 158 dni', 'aktivna', 'D-2026/021'],
+      ['Zavarovanje poslovnih prostorov', 'Zavarovalnica Breza, d. d.', 'Zavarovanje', '1. 6. 2027', 'čez 190 dni', 'aktivna', 'Z-2026/012'],
+      ['Gostovanje spletne strani', 'Omrežje Bor, d. o. o.', 'Licence in naročnine', '15. 8. 2027', 'čez 265 dni', 'aktivna', 'L-2026/007'],
+      ['Najem poslovnih prostorov', 'Nepremičnine Javor, d. o. o.', 'Najem', '2. 10. 2027', 'čez 313 dni', 'aktivna', 'N-2022/001'],
+      ['Zaposlitev za določen čas, skladiščnik', 'Luka Zupan', 'Zaposlitev', '31. 12. 2027', 'čez 403 dni', 'aktivna', 'K-2026/004'],
+      ['Dobava električne energije', 'Energetika Topol, d. o. o.', 'Dobava', 'Nedoločen čas', '', 'aktivna', 'D-2023/005'],
+      ['Računovodske storitve', 'Računovodstvo Vrba, d. o. o.', 'Storitve', 'Nedoločen čas', '', 'aktivna', 'S-2021/001'],
+      ['Dobava pisarniškega materiala', 'Papirnica Lipa, d. o. o.', 'Dobava', 'Nedoločen čas', '', 'prekinjena', 'D-2022/008'],
+      ['Oglaševanje na spletu', 'Agencija Cer, d. o. o.', 'Storitve', '30. 6. 2026', '', 'prekinjena', 'S-2025/019']
+    ];
+    const f = this.state.f;
+    const q = f.q.trim().toLowerCase();
+    const pogodbe = vse.filter((p) =>
+      (!q || [p[0], p[1], p[6]].join(' ').toLowerCase().includes(q)) &&
+      (!f.kategorija || p[2] === f.kategorija) && (!f.status || p[5] === f.status));
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true, f, pogodbe,
+      jePrazno: stanje === 'prazno', niPrazno: stanje !== 'prazno', seNalaga: stanje === 'nalaganje',
+      jeSeznam: stanje === 'seznam' && pogodbe.length > 0,
+      niZadetkov: stanje === 'seznam' && pogodbe.length === 0,
+      filtrirano: !!(f.q || f.kategorija || f.status),
+      stevec: 'Prikazanih ' + pogodbe.length + ' od ' + vse.length + ' pogodb',
+      vnos: (e) => this.setState({ f: { ...f, [e.target.name]: e.target.value } }),
+      pocisti: () => this.setState({ f: { q: '', kategorija: '', status: '' } }),
+      pot: { nova: s + 'NovaPogodba.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

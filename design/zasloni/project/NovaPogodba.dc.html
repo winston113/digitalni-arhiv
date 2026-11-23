@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Nova pogodba</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="{{ pot.pogodbe }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na pogodbe</a>
+<div class="page-head"><h1>Nova pogodba</h1></div>
+<form class="form" onSubmit="{{ ustavi }}">
+<div class="field full"><span class="field-label">Datoteka pogodbe</span>
+<sc-if value="{{ imaDatoteko }}" hint-placeholder-val="{{ true }}"><div class="file"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><div class="file-body"><div class="file-name">pogodba-vzdrzevanje-2026.pdf</div><div class="file-meta num">1,8 MB</div></div><button class="btn btn-icon" type="button" aria-label="Odstrani datoteko" onClick="{{ odstrani }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div></sc-if>
+<sc-if value="{{ brezDatoteke }}" hint-placeholder-val="{{ false }}"><div class="upload"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg><p>Povlecite datoteko sem ali jo izberite iz naprave.</p><button class="btn btn-secondary" type="button" onClick="{{ izberi }}">Izberi datoteko</button><p class="field-hint">Datoteka PDF, največ 10 MB.</p></div></sc-if>
+</div>
+<div class="field full"><label class="field-label" for="np-naziv">Naziv</label><input class="input" id="np-naziv" name="naziv" value="{{ f.naziv }}" onChange="{{ vnos }}"></div>
+<div class="field full"><label class="field-label" for="np-stranka">Pogodbena stranka</label><input class="input" id="np-stranka" name="stranka" value="{{ f.stranka }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="np-kat">Kategorija</label><span class="select"><select class="input" id="np-kat" name="kategorija" value="{{ f.kategorija }}" onChange="{{ vnos }}"><option value="Najem">Najem</option><option value="Dobava">Dobava</option><option value="Storitve">Storitve</option><option value="Zaposlitev">Zaposlitev</option><option value="Zavarovanje">Zavarovanje</option><option value="Licence in naročnine">Licence in naročnine</option><option value="Drugo">Drugo</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+<div class="field"><label class="field-label" for="np-st">Številka pogodbe <span class="muted">(neobvezno)</span></label><input class="input" id="np-st" name="stevilka" value="{{ f.stevilka }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="np-od">Datum začetka</label><input class="input num" id="np-od" name="od" value="{{ f.od }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="np-do">Datum poteka</label><input class="input num" id="np-do" name="do" value="{{ datumPoteka }}" disabled="{{ nedolocen }}" onChange="{{ vnos }}"></div>
+<label class="check full" for="np-ned"><input type="checkbox" id="np-ned" checked="{{ nedolocen }}" onChange="{{ preklopiNedolocen }}">Pogodba za nedoločen čas</label>
+<div class="field"><label class="field-label" for="np-odp">Odpovedni rok <span class="muted">(neobvezno)</span></label><input class="input num" id="np-odp" name="odpoved" inputmode="numeric" value="{{ f.odpoved }}" onChange="{{ vnos }}"><span class="field-hint">Število dni pred potekom.</span></div>
+<div class="field"><label class="field-label" for="np-opo">Opozorilo</label><input class="input num" id="np-opo" name="opozorilo" inputmode="numeric" value="{{ f.opozorilo }}" onChange="{{ vnos }}"><span class="field-hint">Število dni pred rokom za ukrepanje.</span></div>
+<div class="field"><label class="field-label" for="np-vr">Vrednost v evrih <span class="muted">(neobvezno)</span></label><input class="input num" id="np-vr" name="vrednost" inputmode="decimal" value="{{ f.vrednost }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="np-obd">Plačilo</label><span class="select"><select class="input" id="np-obd" name="obdobje" value="{{ f.obdobje }}" onChange="{{ vnos }}"><option value="enkratno">Enkratno</option><option value="mesecno">Mesečno</option><option value="letno">Letno</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+<div class="field full"><label class="field-label" for="np-opombe">Opombe <span class="muted">(neobvezno)</span></label><textarea class="input" id="np-opombe" name="opombe" value="{{ f.opombe }}" onChange="{{ vnos }}"></textarea></div>
+<div class="form-actions full"><a class="btn btn-primary" href="{{ pot.podrobnosti }}">Shrani pogodbo</a><a class="btn btn-secondary" href="{{ pot.pogodbe }}">Prekliči</a></div>
+</form>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"telefon":{"editor":null},"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  state = {
+    datoteka: true, nedolocen: false,
+    f: { naziv: 'Vzdrževanje računalniške opreme', stranka: 'Sistemi Koren, d. o. o.', kategorija: 'Storitve', stevilka: 'S-2026/014', od: '15. 1. 2026', do: '15. 1. 2027', odpoved: '30', opozorilo: '30', vrednost: '480,00', obdobje: 'mesecno', opombe: 'Odziv v štirih urah, obisk enkrat mesečno.' }
+  };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const s = this.props.telefon ? 'Telefon' : '';
+    const { f, datoteka, nedolocen } = this.state;
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true, f, nedolocen,
+      datumPoteka: nedolocen ? '' : f.do,
+      imaDatoteko: datoteka, brezDatoteke: !datoteka,
+      odstrani: () => this.setState({ datoteka: false }), izberi: () => this.setState({ datoteka: true }),
+      preklopiNedolocen: () => this.setState({ nedolocen: !nedolocen }),
+      vnos: (e) => this.setState({ f: { ...f, [e.target.name]: e.target.value } }),
+      ustavi: (e) => e.preventDefault(),
+      pot: { pogodbe: s + 'Pogodbe.dc.html', podrobnosti: s + 'PodrobnostiPogodbe.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

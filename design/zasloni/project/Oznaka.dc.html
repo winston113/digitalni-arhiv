@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Statusna oznaka</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<span class="{{ razred }}">
+<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="{{ crta }}"></path></svg>{{ napis }}</span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"status":{"editor":"enum","options":["aktivna","kmalu","potekla","prekinjena"],"default":"aktivna"},"$preview":{"width":200,"height":60}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const vse = {
+      aktivna: ['badge badge-active', 'Aktivna', 'm9 12 2 2 4-4'],
+      kmalu: ['badge badge-soon', 'Kmalu poteče', 'M12 6v6l4 2'],
+      potekla: ['badge badge-expired', 'Potekla', 'm15 9-6 6m0-6 6 6'],
+      prekinjena: ['badge badge-ended', 'Prekinjena', 'm4.9 4.9 14.2 14.2']
+    };
+    const o = vse[this.props.status] ?? vse.aktivna;
+    return { razred: o[0], napis: o[1], crta: o[2] };
+  }
+}
+</script>
+</body>
+</html>
