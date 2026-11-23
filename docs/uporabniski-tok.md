@@ -1,0 +1,48 @@
+# Uporabniški tok in zasloni
+
+## Glavni tok
+
+```mermaid
+flowchart TD
+    A[Registracija] --> C[Nadzorna plošča]
+    B[Prijava] --> C
+    C --> D[Nova pogodba]
+    D --> E[Nalaganje PDF in vnos podatkov]
+    E --> F{Podatki veljavni?}
+    F -- ne --> G[Prikaz napak ob poljih]
+    G --> E
+    F -- da --> H[Podrobnosti pogodbe]
+    C --> I[Pogodbe: iskanje in filtri]
+    I --> H
+    C --> J[Opozorila]
+    J --> H
+    H --> K[Urejanje]
+    K --> H
+    H --> L[Brisanje s potrditvijo]
+    L --> I
+    H --> M{Pogodba se izteka ali je potekla?}
+    M -- podaljšaj --> N[Vnos novega datuma poteka]
+    M -- prekini --> O[Potrditev prekinitve]
+    N --> H
+    O --> H
+```
+
+Odjava je na voljo na vseh zaslonih po prijavi.
+
+## Navigacija
+
+Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavkami: Nadzorna plošča, Pogodbe, Opozorila. Gumb »Nova pogodba« je na voljo na nadzorni plošči in seznamu pogodb.
+
+## Zasloni
+
+| Zaslon | Vsebina | Glavno dejanje | Prazno stanje in napake |
+|---|---|---|---|
+| Prijava | e-pošta, geslo | Prijava | Napačna e-pošta ali geslo |
+| Registracija | ime, e-pošta, geslo | Ustvari račun | Račun s to e-pošto že obstaja; prekratko geslo |
+| Nadzorna plošča | število pogodb po statusih, najbližji roki, nazadnje dodane | Nova pogodba | V arhivu še ni pogodb. Dodajte prvo pogodbo. |
+| Pogodbe | seznam, iskanje, filtri po kategoriji in statusu | Nova pogodba | Nobena pogodba ne ustreza iskanju. Počistite filtre. |
+| Nova pogodba in urejanje | nalaganje PDF, obrazec | Shrani pogodbo | Napake ob posameznih poljih; napačna vrsta ali velikost datoteke |
+| Podrobnosti pogodbe | podatki, status, predogled in prenos PDF | Podaljšaj, Prekini, Uredi, Izbriši | Datoteke ni mogoče prikazati; pogodba ne obstaja |
+| Opozorila | pogodbe, razvrščene po roku za ukrepanje | Odpri pogodbo | Trenutno nobena pogodba ne zahteva ukrepanja. |
+
+Vsak zaslon ima stanje nalaganja, vsako uspešno dejanje pa kratko potrditveno sporočilo.

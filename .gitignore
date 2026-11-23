@@ -1,0 +1,17 @@
+# Gradivo predmeta
+*.pdf
+
+# Odvisnosti in gradnja
+node_modules/
+dist/
+.vercel/
+
+# Okoljske spremenljivke
+.env
+.env.*
+!.env.example
+
+# Lokalno
+.claude/settings.local.json
+.DS_Store
+*.log
