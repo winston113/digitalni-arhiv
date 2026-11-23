@@ -16,6 +16,7 @@
 <a class="{{ brand }}" href="{{ domov }}" aria-label="Digitalni arhiv pogodb, na začetno stran"><dc-import name="Znak" hint-size="32px,32px"></dc-import><span class="brand-name">Digitalni arhiv pogodb</span></a>
 <div class="appbar-actions">
 <sc-if value="{{ prijavljen }}" hint-placeholder-val="{{ true }}"><span class="appbar-user">maja.kranjc@primer.si</span></sc-if>
+<button class="btn btn-secondary btn-lang" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Jezik: Slovenščina">SL<svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
 <div class="menu-wrap">
 <button class="btn btn-secondary btn-icon" type="button" aria-haspopup="menu" aria-expanded="{{ odprt }}" aria-label="{{ oznaka }}" onClick="{{ preklopi }}">
 <sc-if value="{{ jeSistemska }}" hint-placeholder-val="{{ true }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg></sc-if>

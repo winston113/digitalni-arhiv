@@ -60,6 +60,6 @@ Podaljšanje pomeni vnos novega datuma poteka. Pogodba se s tem vrne med aktivne
 
 ## Obseg prve različice
 
-Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
+Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, slovenski in angleški vmesnik, skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
 
 Ni vključeno: elektronski podpis, potrjevanje pogodb, skupna raba pogodb, zgodovina različic, funkcije umetne inteligence.

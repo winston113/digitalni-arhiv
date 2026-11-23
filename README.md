@@ -1,5 +1,7 @@
 # Digitalni arhiv pogodb
 
+[English](README.en.md)
+
 Spletna aplikacija za manjša podjetja, ki na enem mestu hrani pogodbe in pravočasno opozori na njihov potek.
 
 Projekt pri predmetu Informatika v podjetju, 1. letnik, Računalništvo in informatika.
@@ -12,6 +14,8 @@ V manjših podjetjih so pogodbe pogosto razpršene po e-pošti, mapah in predali
 2. določitev kategorije in rokov,
 3. iskanje po arhivu,
 4. opozorilo pred potekom ter podaljšanje ali prekinitev pogodbe.
+
+Vmesnik je v slovenščini in angleščini. Jezik izberete v glavi poleg teme; privzeta je slovenščina.
 
 ## Dokumentacija
 
@@ -90,15 +94,17 @@ Pri tem nastavite `TRUST_PROXY=true`. Če Caddy teče na drugem strežniku, vpi�
 
 ### Zitadel ali drug ponudnik OpenID Connect
 
-1. V Zitadelu ustvarite aplikacijo vrste Web z načinom PKCE (brez skrivnosti) ali Code (s skrivnostjo).
-2. Redirect URI: `https://arhiv.primer.si/api/auth/callback/oidc`
-3. V `.env` nastavite `OIDC_ISSUER` (naslov Zitadela), `OIDC_CLIENT_ID` in pri načinu Code še `OIDC_CLIENT_SECRET`.
+Ponudnika nastavi skrbnik v aplikaciji (Skrbništvo, Zunanja prijava), brez ponovnega zagona. Deluje z vsakim ponudnikom OpenID Connect, na primer Zitadel, Keycloak ali Authentik.
 
-Prijava in registracija prek ponudnika sta ločeni: nov račun nastane samo z gumbom na strani Registracija. Registracijo prek ponudnika izklopite z `OIDC_REGISTRATION=false`.
+1. Pri ponudniku ustvarite spletno aplikacijo in vpišite naslov za preusmeritev, ki ga pokaže aplikacija: `https://arhiv.primer.si/api/auth/callback/oidc`.
+2. V aplikaciji vpišite naslov ponudnika, ID odjemalca in način overjanja (PKCE brez skrivnosti, Basic ali POST), enak kot pri ponudniku.
+3. Izberite Preveri povezavo in shranite.
 
-Stanje in točen naslov za preusmeritev sta v aplikaciji: Skrbništvo, Zunanja prijava. Za preizkus na `http://localhost` v Zitadelu vklopite razvojni način (Development Mode).
+Namesto tega lahko uporabite spremenljivke `OIDC_*`; te imajo prednost. Za preizkus na `http://localhost` v Zitadelu vklopite razvojni način (Development Mode).
 
-Če želite prijavo samo prek ponudnika, nastavite `LOCAL_LOGIN=false`. Račun z geslom in račun ponudnika z istim e-poštnim naslovom se zaradi varnosti ne združita samodejno.
+Prijava in registracija prek ponudnika sta ločeni: nov račun nastane samo z gumbom na strani Registracija. Račun z geslom in račun ponudnika z istim e-poštnim naslovom se zaradi varnosti ne združita samodejno.
+
+**Prijava z geslom je vedno na voljo kot rezerva.** Ob nastavljenem ponudniku je na strani Prijava pod povezavo »Prijava z računom … ne deluje?«. Kdor se prijavlja prek ponudnika, si rezervno geslo nastavi na strani Moj račun, lahko pa mu ga nastavi tudi skrbnik.
 
 ### Mailjet ali drug strežnik SMTP
 
@@ -155,3 +161,7 @@ Pri razvoju strežnik zaženite z `BASE_URL=http://localhost:5173`.
 | 1 | 23. 11. – 29. 11. 2026 | Analiza in oblikovanje |
 | 2 | 30. 11. – 6. 12. 2026 | Gradnja aplikacije |
 | 3 | 7. 12. – 10. 12. 2026 | Dodelava in predstavitev |
+
+## Licenca
+
+Projekt je odprtokoden pod [licenco MIT](LICENSE). Licence uporabljenih knjižnic so v [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Pisava IBM Plex Sans je pod licenco SIL OFL 1.1.

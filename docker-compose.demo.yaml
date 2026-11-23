@@ -10,7 +10,6 @@ services:
     environment:
       BASE_URL: ${DEMO_BASE_URL:?Nastavite DEMO_BASE_URL v .env.demo}
       TRUST_PROXY: ${DEMO_TRUST_PROXY:-true}
-      LOCAL_LOGIN: "true"
       REGISTRATION: ${DEMO_REGISTRATION:-true}
       STORAGE_LIMIT_MB: ${DEMO_STORAGE_LIMIT_MB:-500}
       OIDC_ISSUER: ${DEMO_OIDC_ISSUER:-}

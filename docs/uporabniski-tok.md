@@ -27,7 +27,7 @@ flowchart TD
     O --> H
 ```
 
-Odjava je na voljo na vseh zaslonih po prijavi. Preklop teme (sistemska, svetla, temna; privzeto sistemska) je desno zgoraj na vseh zaslonih, tudi pred prijavo.
+Odjava je na voljo na vseh zaslonih po prijavi. Preklop teme (sistemska, svetla, temna; privzeto sistemska) in izbira jezika (slovenščina, angleščina; privzeto slovenščina) sta desno zgoraj na vseh zaslonih, tudi pred prijavo.
 
 ## Navigacija
 
@@ -47,7 +47,7 @@ Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavka
 | Uporabniki (skrbnik) | seznam računov, vloga, način prijave, število pogodb, stanje | Nov uporabnik | Račun s to e-pošto že obstaja |
 | Uporabnik (skrbnik) | ime, vloga, dovoljenja | Shrani, Ponastavi geslo, Blokiraj, Izbriši | Vsaj en dejaven skrbnik mora ostati. |
 | E-pošta (skrbnik) | strežnik SMTP, vrste sporočil, ura pošiljanja | Shrani nastavitve, Pošlji preizkus | Povezava s strežnikom ni uspela. |
-| Zunanja prijava (skrbnik) | stanje OpenID Connect, naslov za preusmeritev | | Ponudnik ni nastavljen. |
+| Zunanja prijava (skrbnik) | nastavitve OpenID Connect, naslov za preusmeritev | Shrani nastavitve, Preveri povezavo | Povezava s ponudnikom ni uspela. |
 | Moj račun | opozorila po e-pošti, sprememba gesla; obvezna ob začasnem geslu | Shrani geslo | Sedanje geslo ni pravilno. |
 
 Vsak zaslon ima stanje nalaganja, vsako uspešno dejanje pa kratko potrditveno sporočilo.
