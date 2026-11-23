@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>E-pošta</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="uporabniki" skrbnik="{{ da }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<div class="page-head"><h1>E-pošta</h1></div>
+<nav class="tabs" aria-label="Skrbništvo"><a href="Uporabniki.dc.html">Uporabniki</a><a href="Posta.dc.html" aria-current="page">E-pošta</a><a href="#zunanja">Zunanja prijava</a></nav>
+<section class="panel"><div class="panel-head"><h2>Strežnik SMTP</h2></div><div class="panel-body">
+<form class="form" onSubmit="{{ ustavi }}">
+<div class="field full"><label class="field-label" for="ps-host">Strežnik</label><input class="input" id="ps-host" name="host" value="{{ f.host }}" onChange="{{ vnos }}"><span class="field-hint">Za Mailjet: in-v3.mailjet.com</span></div>
+<div class="field"><label class="field-label" for="ps-port">Vrata</label><input class="input num" id="ps-port" name="port" value="{{ f.port }}" onChange="{{ vnos }}"></div>
+<div class="field"><label class="field-label" for="ps-sec">Šifriranje</label><span class="select"><select class="input" id="ps-sec" name="sifriranje" value="{{ f.sifriranje }}" onChange="{{ vnos }}"><option value="starttls">STARTTLS (običajno vrata 587)</option><option value="tls">TLS (običajno vrata 465)</option><option value="none">Brez šifriranja</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+<div class="field"><label class="field-label" for="ps-user">Uporabniško ime <span class="muted">(neobvezno)</span></label><input class="input" id="ps-user" name="user" value="{{ f.user }}" onChange="{{ vnos }}"><span class="field-hint">Za Mailjet: ključ API</span></div>
+<div class="field"><label class="field-label" for="ps-pass">Geslo <span class="muted">(neobvezno)</span></label><input class="input" id="ps-pass" name="pass" type="password" value="{{ f.pass }}" onChange="{{ vnos }}"><span class="field-hint">Geslo je shranjeno. Pustite prazno, da ostane.</span></div>
+<div class="field"><label class="field-label" for="ps-from">Naslov pošiljatelja</label><input class="input" id="ps-from" name="from" value="{{ f.from }}" onChange="{{ vnos }}"><span class="field-hint">Naslov mora biti pri ponudniku potrjen.</span></div>
+<div class="field"><label class="field-label" for="ps-name">Ime pošiljatelja <span class="muted">(neobvezno)</span></label><input class="input" id="ps-name" name="ime" value="{{ f.ime }}" onChange="{{ vnos }}"></div>
+<div class="form-actions full"><button class="btn btn-primary" type="submit">Shrani nastavitve</button><button class="btn btn-secondary" type="button">Pošlji preizkus</button><button class="btn btn-text btn-text-danger" type="button">Odstrani nastavitve</button></div>
+</form></div></section>
+<section class="panel"><div class="panel-head"><h2>Uporaba</h2></div><div class="panel-body">
+<form class="form" onSubmit="{{ ustavi }}">
+<fieldset class="fieldset full"><legend class="field-label">Vrste sporočil</legend>
+<label class="check" for="ps-reset"><input type="checkbox" id="ps-reset" checked="{{ ponastavitev }}" onChange="{{ preklopiPonastavitev }}">Ponastavitev gesla</label>
+<label class="check" for="ps-rem"><input type="checkbox" id="ps-rem" checked="{{ opozorila }}" onChange="{{ preklopiOpozorila }}">Opozorila pred potekom pogodb</label></fieldset>
+<div class="field"><label class="field-label" for="ps-ura">Ura pošiljanja opozoril</label><span class="select"><select class="input num" id="ps-ura" name="ura" value="{{ f.ura }}" onChange="{{ vnos }}"><option value="7">7.00</option><option value="8">8.00</option><option value="9">9.00</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span><span class="field-hint">Najprej ob začetku opozorila, nato teden pred rokom in ob poteku.</span></div>
+<div class="form-actions full"><button class="btn btn-primary" type="submit">Shrani uporabo</button><button class="btn btn-secondary" type="button">Pošlji nova opozorila zdaj</button></div>
+</form></div></section>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="uporabniki" skrbnik="{{ da }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"$preview":{"width":1280,"height":1250}}'>
+class Component extends DCLogic {
+  state = { ponastavitev: true, opozorila: true, f: { host: 'in-v3.mailjet.com', port: '587', sifriranje: 'starttls', user: '', pass: '', from: 'arhiv@primer.si', ime: 'Digitalni arhiv pogodb', ura: '8' } };
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    const { f, ponastavitev, opozorila } = this.state;
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }), da: true,
+      f, ponastavitev, opozorila,
+      vnos: (e) => this.setState({ f: { ...f, [e.target.name]: e.target.value } }),
+      preklopiPonastavitev: () => this.setState({ ponastavitev: !ponastavitev }),
+      preklopiOpozorila: () => this.setState({ opozorila: !opozorila }),
+      ustavi: (e) => e.preventDefault()
+    };
+  }
+}
+</script>
+</body>
+</html>
