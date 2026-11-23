@@ -8,6 +8,7 @@ export interface Config {
   dataDir: string;
   secret: string;
   trustProxy: boolean;
+  storageLimit: number | null;
   registration: boolean;
   localLogin: boolean;
   oidc: { issuer: string; clientId: string; clientSecret?: string; name: string; registration: boolean } | null;
@@ -20,6 +21,12 @@ function flag(env: NodeJS.ProcessEnv, name: string, fallback: boolean): boolean 
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`${name} mora biti true ali false.`);
+}
+
+function positive(value: string): number {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) throw new Error('STORAGE_LIMIT_MB mora biti pozitivno število.');
+  return n;
 }
 
 // Skrivnost za seje: iz okolja ali samodejno ustvarjena v podatkovni mapi.
@@ -49,6 +56,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port, baseUrl, dataDir,
     secret: loadSecret(env, dataDir),
     trustProxy: flag(env, 'TRUST_PROXY', false),
+    storageLimit: env.STORAGE_LIMIT_MB ? positive(env.STORAGE_LIMIT_MB) * 1024 * 1024 : null,
     registration: flag(env, 'REGISTRATION', true),
     localLogin: flag(env, 'LOCAL_LOGIN', true),
     oidc: issuer && clientId

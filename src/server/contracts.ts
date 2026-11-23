@@ -41,6 +41,11 @@ export class ContractStore {
 
   private async removeFile(fileId: string) { await rm(this.path(fileId), { force: true }); }
 
+  // Skupna velikost vseh datotek, za omejitev prostora.
+  usedSpace(): number {
+    return (this.db.prepare('SELECT COALESCE(SUM(file_size), 0) AS n FROM contracts').get() as { n: number }).n;
+  }
+
   list(userId: string): Contract[] {
     return (this.db.prepare('SELECT * FROM contracts WHERE user_id = ?').all(userId) as Row[]).map(toContract);
   }
@@ -97,6 +102,12 @@ export class ContractStore {
     this.db.prepare('DELETE FROM contracts WHERE id = ? AND user_id = ?').run(id, userId);
     await this.removeFile(row.file_id);
     return true;
+  }
+
+  async removeAll(userId: string): Promise<void> {
+    const rows = this.db.prepare('SELECT file_id FROM contracts WHERE user_id = ?').all(userId) as { file_id: string }[];
+    this.db.prepare('DELETE FROM contracts WHERE user_id = ?').run(userId);
+    await Promise.all(rows.map((r) => this.removeFile(r.file_id)));
   }
 
   file(userId: string, id: string): { stream: ReadableStream; name: string; size: number } | null {

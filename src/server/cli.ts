@@ -1,5 +1,6 @@
 // Ukazi za skrbnika:
 //   node dist/server/cli.js geslo <e-pošta>   novo geslo (prebere se s standardnega vhoda)
+//   node dist/server/cli.js skrbnik <e-pošta> podeli vlogo skrbnika in odblokira račun
 //   node dist/server/cli.js demo <e-pošta>    doda vzorčne pogodbe uporabniku brez pogodb
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -8,7 +9,8 @@ import { contractInput } from '../shared/contracts.js';
 import { createAuth } from './auth.js';
 import { loadConfig } from './config.js';
 import { ContractStore } from './contracts.js';
-import { openDb } from './db.js';
+import { migrate, openDb } from './db.js';
+import { UserStore } from './users.js';
 
 function fail(message: string, code = 1): never {
   console.error(message);
@@ -16,10 +18,12 @@ function fail(message: string, code = 1): never {
 }
 
 const [command, email] = process.argv.slice(2);
-if (!['geslo', 'demo'].includes(command ?? '') || !email) fail('Uporaba: node dist/server/cli.js geslo|demo <e-pošta>', 2);
+if (!['geslo', 'skrbnik', 'demo'].includes(command ?? '') || !email) fail('Uporaba: node dist/server/cli.js geslo|skrbnik|demo <e-pošta>', 2);
 
 const config = loadConfig();
 const db = openDb(config.dataDir);
+migrate(db);
+const users = new UserStore(db);
 const ctx = await createAuth(config, db, null).$context;
 const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), { includeAccounts: true });
 if (!found) fail('Uporabnik s to e-pošto ne obstaja.');
@@ -33,8 +37,12 @@ if (command === 'geslo') {
   const hash = await ctx.password.hash(password);
   if (found.accounts.some((a) => a.providerId === 'credential')) await ctx.internalAdapter.updatePassword(userId, hash);
   else await ctx.internalAdapter.linkAccount({ userId, providerId: 'credential', accountId: userId, password: hash });
-  db.prepare('DELETE FROM session WHERE userId = ?').run(userId);
+  users.setMustChangePassword(userId, false);
+  users.endSessions(userId);
   console.log('Geslo je spremenjeno, vse seje so odjavljene.');
+} else if (command === 'skrbnik') {
+  users.update(userId, { role: 'admin', disabled: false, permissions: users.access(userId)!.permissions });
+  console.log('Uporabnik je skrbnik.');
 } else {
   const store = new ContractStore(db, config.dataDir);
   if (store.list(userId).length > 0) fail('Uporabnik že ima pogodbe. Vzorčne pogodbe se dodajo samo v prazen arhiv.');

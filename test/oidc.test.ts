@@ -40,8 +40,8 @@ beforeEach(async () => {
 });
 afterEach(() => new Promise((r) => server.close(r)));
 
-async function signIn(t: Awaited<ReturnType<typeof setup>>) {
-  const start = await t.json('/api/auth/sign-in/social', { provider: 'oidc', callbackURL: '/', errorCallbackURL: '/prijava' });
+async function signIn(t: Awaited<ReturnType<typeof setup>>, requestSignUp = true) {
+  const start = await t.json('/api/auth/sign-in/social', { provider: 'oidc', callbackURL: '/', errorCallbackURL: '/prijava', requestSignUp });
   expect(start.status).toBe(200);
   const url = new URL(((await start.json()) as { url: string }).url);
   challenge = url.searchParams.get('code_challenge') ?? '';
@@ -58,9 +58,26 @@ describe('OpenID Connect', () => {
     const first = await signIn(t);
     expect(first.location).toBe('/');
     expect((await t.request('/api/contracts', { cookie: first.cookie })).status).toBe(200);
-    await signIn(t);
+    expect((await signIn(t, false)).location).toBe('/');
     expect(t.db.prepare('SELECT COUNT(*) n FROM user').get()).toEqual({ n: 1 });
     expect(await (await t.request('/api/config')).json()).toMatchObject({ oidc: { name: 'Zitadel' }, localLogin: true });
+  });
+
+  it('sama prijava ne ustvari računa, registracija ga', async () => {
+    const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv', REGISTRATION: 'false' });
+    expect((await signIn(t, false)).location).toContain('error=signup_disabled');
+    expect(t.db.prepare('SELECT COUNT(*) n FROM user').get()).toEqual({ n: 0 });
+    expect(await (await t.request('/api/config')).json()).toMatchObject({ registration: { local: false, oidc: true } });
+    const first = await signIn(t);
+    expect(await (await t.request('/api/me', { cookie: first.cookie })).json()).toMatchObject({ role: 'admin', hasPassword: false });
+  });
+
+  it('blokiran uporabnik se ne more prijaviti prek ponudnika', async () => {
+    const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv' });
+    const { cookie } = await signIn(t);
+    t.db.prepare('UPDATE user_access SET disabled = 1').run();
+    expect((await t.request('/api/contracts', { cookie })).status).toBe(401);
+    expect((await signIn(t, false)).location).toContain('error=ACCOUNT_DISABLED');
   });
 
   it('deluje tudi s skrivnostjo', async () => {

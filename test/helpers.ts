@@ -5,6 +5,7 @@ import { createApp } from '../src/server/app.js';
 import { createAuth, migrateAuth } from '../src/server/auth.js';
 import { loadConfig } from '../src/server/config.js';
 import { migrate, openDb } from '../src/server/db.js';
+import { UserStore } from '../src/server/users.js';
 
 export const ORIGIN = 'http://arhiv.test';
 export const PDF = new TextEncoder().encode('%PDF-1.4\nvsebina');
@@ -21,6 +22,7 @@ export async function setup(env: Record<string, string> = {}) {
   const auth = createAuth(config, db, config.smtp ? async (to, _s, text) => { mails.push({ to, text }); } : null);
   await migrateAuth(auth);
   migrate(db);
+  new UserStore(db).ensureTrigger();
   const app = createApp(config, db, auth);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
@@ -38,7 +40,7 @@ export async function setup(env: Record<string, string> = {}) {
     if (r.status !== 200) throw new Error(await r.text());
     return cookies(r);
   };
-  return { app, db, dataDir, request, json, register, mails };
+  return { app, db, users: new UserStore(db), dataDir, request, json, register, mails };
 }
 
 export const cookies = (r: Response) => r.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');

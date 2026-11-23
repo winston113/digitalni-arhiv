@@ -137,7 +137,7 @@ describe('prijava', () => {
   it('registracijo je mogoče izklopiti', async () => {
     t = await setup({ REGISTRATION: 'false' });
     expect((await t.json('/api/auth/sign-up/email', { email: 'x@primer.si', password: 'dolgo-geslo', name: 'X' })).status).toBe(400);
-    expect(await (await t.request('/api/config')).json()).toMatchObject({ registration: false });
+    expect(await (await t.request('/api/config')).json()).toMatchObject({ registration: { local: false, oidc: false } });
   });
 
   it('ponastavi geslo in odjavi stare seje', async () => {

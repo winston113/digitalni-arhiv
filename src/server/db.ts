@@ -27,6 +27,17 @@ const MIGRATIONS = [
     updated_at TEXT NOT NULL
   );
   CREATE INDEX contracts_user ON contracts(user_id);`,
+  `CREATE TABLE user_access (
+    user_id TEXT PRIMARY KEY REFERENCES user(id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    disabled INTEGER NOT NULL DEFAULT 0,
+    can_create INTEGER NOT NULL DEFAULT 1,
+    can_edit INTEGER NOT NULL DEFAULT 1,
+    can_remove INTEGER NOT NULL DEFAULT 1,
+    must_change_password INTEGER NOT NULL DEFAULT 0
+  );
+  INSERT INTO user_access (user_id, role)
+    SELECT id, CASE WHEN id = (SELECT id FROM user ORDER BY createdAt, rowid LIMIT 1) THEN 'admin' ELSE 'user' END FROM user;`,
 ];
 
 export function openDb(dataDir: string): Db {
