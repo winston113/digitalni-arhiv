@@ -2,22 +2,23 @@ import { ArrowLeft, Ban, CalendarPlus, Clock, CircleX, Download, FileText, Penci
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { ContractView } from '../../shared/contracts.js';
-import { formatDate, isIsoDate, pluralDays } from '../../shared/dates.js';
+import { isIsoDate } from '../../shared/dates.js';
 import { api, ApiError } from '../api.js';
 import { DateInput } from '../components/DateInput.js';
 import { Badge, ConfirmDialog, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
-import { deadline, formatSize, formatValue } from '../format.js';
+import { deadline, formatDate, formatSize, formatValue, pluralDays } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
+import { msg, t } from '../i18n.js';
 
 type Action = 'extend' | 'terminate' | 'remove';
 
 export function ContractDetails() {
   const { id = '' } = useParams();
   const { data, setData, error, retry } = useLoad(() => api.get(id), [id]);
-  if (error?.status === 404) return <NotFound title="Pogodba ne obstaja" text="Morda je bila izbrisana." />;
+  if (error?.status === 404) return <NotFound title={t('Pogodba ne obstaja')} text={t('Morda je bila izbrisana.')} />;
   if (error) return <ErrorNotice message={error.message} retry={retry} />;
-  if (!data || data.id !== id) return <Skeleton label="Nalaganje pogodbe" />;
+  if (!data || data.id !== id) return <Skeleton label={t('Nalaganje pogodbe')} />;
   return <Details c={data} onChange={setData} />;
 }
 
@@ -32,49 +33,49 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
   const changed = (next: ContractView, message: string) => { onChange(next); setAction(null); toast(message); refreshAlerts(); };
 
   const rows: [string, string][] = [
-    ['Pogodbena stranka', c.party],
-    ['Kategorija', c.category],
-    ['Številka pogodbe', c.number ?? 'Ni podatka'],
-    ['Datum začetka', formatDate(c.startDate)],
-    ['Datum poteka', c.endDate ? formatDate(c.endDate) : 'Nedoločen čas'],
-    ['Odpovedni rok', c.noticeDays ? pluralDays(c.noticeDays) : 'Brez odpovednega roka'],
-    ...(c.endDate ? [['Rok za ukrepanje', note ? `${date}, ${note}` : date], ['Opozorilo', `${pluralDays(c.warnDays)} pred rokom`]] as [string, string][] : []),
-    ['Vrednost', c.valueCents === null ? 'Ni podatka' : formatValue(c.valueCents, c.valuePeriod)],
+    [t('Pogodbena stranka'), c.party],
+    [t('Kategorija'), t(c.category)],
+    [t('Številka pogodbe'), c.number ?? t('Ni podatka')],
+    [t('Datum začetka'), formatDate(c.startDate)],
+    [t('Datum poteka'), c.endDate ? formatDate(c.endDate) : t('Nedoločen čas')],
+    [t('Odpovedni rok'), c.noticeDays ? pluralDays(c.noticeDays) : t('Brez odpovednega roka')],
+    ...(c.endDate ? [[t('Rok za ukrepanje'), note ? `${date}, ${note}` : date], [t('Opozorilo'), t('{days} pred rokom', { days: pluralDays(c.warnDays) })]] as [string, string][] : []),
+    [t('Vrednost'), c.valueCents === null ? t('Ni podatka') : formatValue(c.valueCents, c.valuePeriod)],
   ];
 
   return (
     <>
-      <Link className="back" to="/pogodbe"><Icon of={ArrowLeft} />Nazaj na pogodbe</Link>
+      <Link className="back" to="/pogodbe"><Icon of={ArrowLeft} />{t('Nazaj na pogodbe')}</Link>
       <div className="page-head"><div className="head-title"><h1>{c.title}</h1><Badge status={c.status} /></div></div>
-      {c.status === 'kmalu' && <div className="notice notice-warning"><Icon of={Clock} /><div>{(c.daysLeft ?? 0) < 0 ? `Rok za ukrepanje je minil ${date}, pogodba poteče ${formatDate(c.endDate!)}.` : `Rok za ukrepanje je ${date}, ${note}.`} Pogodbo podaljšajte ali prekinite.</div></div>}
-      {c.status === 'potekla' && <div className="notice notice-error"><Icon of={CircleX} /><div>Pogodba je potekla {formatDate(c.endDate!)}. Podaljšajte jo ali prekinite.</div></div>}
+      {c.status === 'kmalu' && <div className="notice notice-warning"><Icon of={Clock} /><div>{(c.daysLeft ?? 0) < 0 ? t('Rok za ukrepanje je minil {date}, pogodba poteče {end}.', { date, end: formatDate(c.endDate!) }) : t('Rok za ukrepanje je {date}, {note}.', { date, note })} {t('Pogodbo podaljšajte ali prekinite.')}</div></div>}
+      {c.status === 'potekla' && <div className="notice notice-error"><Icon of={CircleX} /><div>{t('Pogodba je potekla {end}. Podaljšajte jo ali prekinite.', { end: formatDate(c.endDate!) })}</div></div>}
       {(may.edit || may.remove) && <div className="actions">
-        {open && c.endDate && <button type="button" className="btn btn-primary" onClick={() => setAction('extend')}><Icon of={CalendarPlus} />Podaljšaj</button>}
-        {open && <button type="button" className="btn btn-secondary" onClick={() => setAction('terminate')}><Icon of={Ban} />Prekini</button>}
-        {may.edit && <Link className="btn btn-secondary" to={`/pogodbe/${c.id}/uredi`}><Icon of={Pencil} />Uredi</Link>}
-        {may.remove && <button type="button" className="btn btn-text btn-text-danger" onClick={() => setAction('remove')}><Icon of={Trash2} />Izbriši</button>}
+        {open && c.endDate && <button type="button" className="btn btn-primary" onClick={() => setAction('extend')}><Icon of={CalendarPlus} />{t('Podaljšaj')}</button>}
+        {open && <button type="button" className="btn btn-secondary" onClick={() => setAction('terminate')}><Icon of={Ban} />{t('Prekini')}</button>}
+        {may.edit && <Link className="btn btn-secondary" to={`/pogodbe/${c.id}/uredi`}><Icon of={Pencil} />{t('Uredi')}</Link>}
+        {may.remove && <button type="button" className="btn btn-text btn-text-danger" onClick={() => setAction('remove')}><Icon of={Trash2} />{t('Izbriši')}</button>}
       </div>}
       <div className="cols">
         <section className="panel">
-          <div className="panel-head"><h2>Podatki o pogodbi</h2></div>
+          <div className="panel-head"><h2>{t('Podatki o pogodbi')}</h2></div>
           <div className="panel-body"><dl className="data">
             {rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd className="num">{value}</dd></div>)}
-            {c.notes && <div style={{ gridColumn: '1 / -1' }}><dt>Opombe</dt><dd className="notes">{c.notes}</dd></div>}
+            {c.notes && <div style={{ gridColumn: '1 / -1' }}><dt>{t('Opombe')}</dt><dd className="notes">{c.notes}</dd></div>}
           </dl></div>
         </section>
         <section className="panel">
-          <div className="panel-head"><h2>Dokument</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />Prenesi PDF</a></div>
+          <div className="panel-head"><h2>{t('Dokument')}</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />{t('Prenesi PDF')}</a></div>
           <div className="panel-body stack">
-            <iframe className="pdf" src={file} title={`Predogled dokumenta ${c.fileName}`} loading="lazy" />
+            <iframe className="pdf" src={file} title={t('Predogled dokumenta {name}', { name: c.fileName })} loading="lazy" />
             <div className="file"><Icon of={FileText} /><div className="file-body"><a className="link file-name" href={file} target="_blank" rel="noreferrer">{c.fileName}</a><div className="file-meta num">{formatSize(c.fileSize)}</div></div></div>
           </div>
         </section>
       </div>
-      {action === 'extend' && <ExtendDialog c={c} close={() => setAction(null)} done={(n) => changed(n, 'Pogodba je podaljšana.')} />}
+      {action === 'extend' && <ExtendDialog c={c} close={() => setAction(null)} done={(n) => changed(n, t('Pogodba je podaljšana.'))} />}
       {action === 'terminate' && (
-        <ConfirmDialog title="Prekinitev pogodbe" label="Prekini pogodbo" busyLabel="Prekinjanje" close={() => setAction(null)}
-          text={`Pogodba ${c.title} bo označena kot prekinjena. Opozoril zanjo ne boste več prejemali.`}
-          run={async () => changed(await api.terminate(c.id), 'Pogodba je prekinjena.')} />
+        <ConfirmDialog title={t('Prekinitev pogodbe')} label={t('Prekini pogodbo')} busyLabel={t('Prekinjanje')} close={() => setAction(null)}
+          text={t('Pogodba {title} bo označena kot prekinjena. Opozoril zanjo ne boste več prejemali.', { title: c.title })}
+          run={async () => changed(await api.terminate(c.id), t('Pogodba je prekinjena.'))} />
       )}
       {action === 'remove' && <RemoveDialog c={c} close={() => setAction(null)} />}
     </>
@@ -87,8 +88,8 @@ function ExtendDialog({ c, close, done }: { c: ContractView; close: () => void; 
   const [busy, setBusy] = useState(false);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!isIsoDate(endDate)) return setError('Vnesite nov datum poteka, na primer 15. 1. 2028.');
-    if (endDate <= c.endDate!) return setError('Nov datum mora biti po sedanjem datumu poteka.');
+    if (!isIsoDate(endDate)) return setError(t('Vnesite nov datum poteka, na primer {date}.', { date: formatDate('2028-01-15') }));
+    if (endDate <= c.endDate!) return setError(msg('Nov datum mora biti po sedanjem datumu poteka.'));
     setBusy(true);
     try { done(await api.extend(c.id, endDate)); } catch (err) {
       const e2 = err as ApiError;
@@ -97,11 +98,11 @@ function ExtendDialog({ c, close, done }: { c: ContractView; close: () => void; 
     }
   };
   return (
-    <Dialog title="Podaljšanje pogodbe" onClose={close}>
-      <p>{c.title} {c.status === 'potekla' ? 'je potekla' : 'poteče'} {formatDate(c.endDate!)}.</p>
+    <Dialog title={t('Podaljšanje pogodbe')} onClose={close}>
+      <p>{c.status === 'potekla' ? t('{title} je potekla {end}.', { title: c.title, end: formatDate(c.endDate!) }) : t('{title} poteče {end}.', { title: c.title, end: formatDate(c.endDate!) })}</p>
       <form onSubmit={submit} noValidate>
-        <Field id="newEndDate" label="Nov datum poteka" error={error}>{(a) => <DateInput {...a} value={endDate} onChange={setEndDate} data-autofocus />}</Field>
-        <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={close}>Prekliči</button><Submit busy={busy} busyLabel="Shranjevanje">Podaljšaj pogodbo</Submit></div>
+        <Field id="newEndDate" label={t('Nov datum poteka')} error={error}>{(a) => <DateInput {...a} value={endDate} onChange={setEndDate} data-autofocus />}</Field>
+        <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={close}>{t('Prekliči')}</button><Submit busy={busy} busyLabel={t('Shranjevanje')}>{t('Podaljšaj pogodbo')}</Submit></div>
       </form>
     </Dialog>
   );
@@ -111,8 +112,8 @@ function RemoveDialog({ c, close }: { c: ContractView; close: () => void }) {
   const navigate = useNavigate();
   const { toast } = useApp();
   return (
-    <ConfirmDialog title="Brisanje pogodbe" label="Izbriši pogodbo" busyLabel="Brisanje" close={close}
-      text={`Pogodba ${c.title} in datoteka PDF bosta trajno izbrisani.`}
-      run={async () => { await api.remove(c.id); toast('Pogodba je izbrisana.'); navigate('/pogodbe', { replace: true }); }} />
+    <ConfirmDialog title={t('Brisanje pogodbe')} label={t('Izbriši pogodbo')} busyLabel={t('Brisanje')} close={close}
+      text={t('Pogodba {title} in datoteka PDF bosta trajno izbrisani.', { title: c.title })}
+      run={async () => { await api.remove(c.id); toast(t('Pogodba je izbrisana.')); navigate('/pogodbe', { replace: true }); }} />
   );
 }

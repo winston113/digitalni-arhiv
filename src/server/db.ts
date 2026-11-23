@@ -47,6 +47,7 @@ const MIGRATIONS = [
     sent_at TEXT NOT NULL,
     PRIMARY KEY (contract_id, end_date, stage)
   );`,
+  `ALTER TABLE user_access ADD COLUMN language TEXT NOT NULL DEFAULT 'sl';`,
 ];
 
 export function openDb(dataDir: string): Db {

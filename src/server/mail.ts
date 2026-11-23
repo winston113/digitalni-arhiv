@@ -52,7 +52,7 @@ export class Mail {
   setUses(uses: MailUses): void { this.settings.set('mail-uses', uses); }
 
   get ready(): boolean { return this.smtp() !== null; }
-  get canReset(): boolean { return this.ready && this.config.localLogin && this.uses.passwordReset; }
+  get canReset(): boolean { return this.ready && this.uses.passwordReset; }
   get canRemind(): boolean { return this.ready && this.uses.reminders; }
 
   view(): MailView {
@@ -89,14 +89,14 @@ export class Mail {
   }
 }
 
-export function mailError(error: unknown): string {
-  const e = error as { code?: string; responseCode?: number; response?: string };
-  const detail = e.response ? ` Odgovor strežnika: ${e.response.slice(0, 200)}` : '';
+export function mailError(error: unknown): { error: string; detail: string } {
+  const e = error as { code?: string; response?: string };
+  const detail = e.response?.slice(0, 200) ?? '';
   switch (e.code) {
-    case 'EAUTH': return `Strežnik je zavrnil prijavo. Preverite uporabniško ime in geslo.${detail}`;
-    case 'EDNS': case 'ENOTFOUND': return 'Strežnika s tem naslovom ni mogoče najti.';
-    case 'ETIMEDOUT': case 'ECONNECTION': case 'ECONNREFUSED': case 'ESOCKET': case 'ETLS': return 'Povezava s strežnikom ni uspela. Preverite naslov, vrata in način šifriranja.';
-    case 'EENVELOPE': case 'EMESSAGE': return `Strežnik je zavrnil pošiljatelja ali prejemnika.${detail}`;
-    default: return `Pošiljanje ni uspelo.${detail}`;
+    case 'EAUTH': return { error: 'Strežnik je zavrnil prijavo. Preverite uporabniško ime in geslo.', detail };
+    case 'EDNS': case 'ENOTFOUND': return { error: 'Strežnika s tem naslovom ni mogoče najti.', detail };
+    case 'ETIMEDOUT': case 'ECONNECTION': case 'ECONNREFUSED': case 'ESOCKET': case 'ETLS': return { error: 'Povezava s strežnikom ni uspela. Preverite naslov, vrata in način šifriranja.', detail };
+    case 'EENVELOPE': case 'EMESSAGE': return { error: 'Strežnik je zavrnil pošiljatelja ali prejemnika.', detail };
+    default: return { error: 'Pošiljanje ni uspelo.', detail };
   }
 }

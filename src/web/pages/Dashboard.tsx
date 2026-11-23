@@ -1,30 +1,32 @@
 import { CircleCheck, Mail, Plus } from 'lucide-react';
 import { Link } from 'react-router';
 import { sortByDeadline, STATUSES } from '../../shared/contracts.js';
-import { formatDate, today } from '../../shared/dates.js';
+import { today } from '../../shared/dates.js';
+import { formatDate } from '../format.js';
 import { api } from '../api.js';
 import { ContractTable } from '../components/ContractTable.js';
 import { Badge, Empty, ErrorNotice, Icon, Skeleton } from '../components/ui.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
+import { t } from '../i18n.js';
 
 export function Dashboard() {
-  usePageTitle('Nadzorna plošča');
+  usePageTitle(t('Nadzorna plošča'));
   const { data, error, retry } = useLoad(api.list, []);
   const { config, user } = useApp();
   const { create } = user!.permissions;
-  const add = create && <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
+  const add = create && <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />{t('Nova pogodba')}</Link>;
   const upcoming = data?.filter((c) => c.status !== 'prekinjena' && c.actionDate !== null).sort(sortByDeadline).slice(0, 3) ?? [];
   const recent = data ? [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3) : [];
 
   return (
     <>
-      <div className="page-head"><h1>Nadzorna plošča</h1>{data && data.length > 0 && add}</div>
+      <div className="page-head"><h1>{t('Nadzorna plošča')}</h1>{data && data.length > 0 && add}</div>
       {error && <ErrorNotice message={error.message} retry={retry} />}
-      {!data && !error && <Skeleton label="Nalaganje pogodb" />}
-      {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text={create ? 'Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.' : 'Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.'}>{add}</Empty>}
+      {!data && !error && <Skeleton label={t('Nalaganje pogodb')} />}
+      {data?.length === 0 && <Empty title={t('V arhivu še ni pogodb')} text={create ? t('Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.') : t('Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.')}>{add}</Empty>}
       {data && data.length > 0 && (
         <>
-          {config.reminders && !user!.emailVerified && <div className="notice"><Icon of={Mail} /><div>Za opozorila po e-pošti <Link className="link" to="/racun">potrdite svoj naslov</Link>.</div></div>}
+          {config.reminders && !user!.emailVerified && <div className="notice"><Icon of={Mail} /><div>{t('Za opozorila po e-pošti')}{' '}<Link className="link" to="/racun">{t('potrdite svoj naslov')}</Link>.</div></div>}
           <div className="counts">
             {STATUSES.map((s) => (
               <Link key={s} className="count" to={`/pogodbe?status=${s}`}>
@@ -33,12 +35,12 @@ export function Dashboard() {
             ))}
           </div>
           <section className="panel">
-            <div className="panel-head"><h2>Najbližji roki</h2><Link className="btn btn-text" to="/opozorila">Vsa opozorila</Link></div>
+            <div className="panel-head"><h2>{t('Najbližji roki')}</h2><Link className="btn btn-text" to="/opozorila">{t('Vsa opozorila')}</Link></div>
             {upcoming.length > 0 ? <ContractTable contracts={upcoming} />
-              : <div className="empty"><Icon of={CircleCheck} size="lg" /><p>Nobena pogodba nima prihajajočega roka.</p></div>}
+              : <div className="empty"><Icon of={CircleCheck} size="lg" /><p>{t('Nobena pogodba nima prihajajočega roka.')}</p></div>}
           </section>
           <section className="panel">
-            <div className="panel-head"><h2>Nazadnje dodane</h2></div>
+            <div className="panel-head"><h2>{t('Nazadnje dodane')}</h2></div>
             <ul className="recent">
               {recent.map((c) => <li key={c.id}><Link to={`/pogodbe/${c.id}`}>{c.title}</Link><span className="muted num">{formatDate(today(new Date(c.createdAt)))}</span></li>)}
             </ul>

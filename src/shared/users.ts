@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Lang } from './i18n.js';
 
 export const ROLES = ['user', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
@@ -22,6 +23,7 @@ export interface Me extends Access {
   hasPassword: boolean;
   emailVerified: boolean;
   reminders: boolean;
+  language: Lang;
 }
 
 export interface ManagedUser extends Me {

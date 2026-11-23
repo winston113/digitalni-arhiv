@@ -71,7 +71,7 @@ describe('nastavitve pošte', () => {
     t.control.fail = Object.assign(new Error('x'), { code: 'EAUTH', response: '535 no' });
     const r = await call('POST', '/test');
     expect(r.status).toBe(502);
-    expect(((await r.json()) as { error: string }).error).toMatch(/zavrnil prijavo.*535 no/);
+    expect(await r.json()).toMatchObject({ error: expect.stringMatching(/zavrnil prijavo/), detail: '535 no' });
   });
 
   it('ponastavitev gesla je mogoče izklopiti in poslati povezavo iz skrbniškega dela', async () => {
@@ -182,6 +182,17 @@ describe('opozorila', () => {
     expect(t.mails).toHaveLength(1);
   });
 
+  it('piše v jeziku uporabnika', async () => {
+    await add(ana, { title: 'Najem', endDate: inDays(20) });
+    expect((await t.json('/api/me/language', { language: 'xx' }, { method: 'PUT', cookie: ana })).status).toBe(400);
+    expect((await t.json('/api/me/language', { language: 'en' }, { method: 'PUT', cookie: ana })).status).toBe(204);
+    await t.reminders.run();
+    expect(t.mails[0]!.subject).toBe('1 contract needs action');
+    expect(t.mails[0]!.text).toMatch(/action is due by .* in 20 days/);
+    await t.json('/api/auth/request-password-reset', { email: 'ana@primer.si', redirectTo: '/novo-geslo' });
+    expect(t.mails[1]!.subject).toBe('Password reset');
+  });
+
   it('sočasna zagona ne pošljeta dvakrat', async () => {
     await add(ana, { endDate: inDays(5) });
     await Promise.all([t.reminders.run(), t.reminders.run()]);
@@ -190,6 +201,6 @@ describe('opozorila', () => {
 
   it('sklanja zadevo', () => {
     const c = { contract: { title: 'A', party: 'B', endDate: '2027-01-01', actionDate: '2027-01-01', daysLeft: 1, id: 'x' }, stage: 'teden' } as never;
-    expect([1, 2, 3, 5].map((n) => composeReminder('X', Array(n).fill(c), '').subject)).toEqual(['1 pogodba zahteva ukrepanje', '2 pogodbi zahtevata ukrepanje', '3 pogodbe zahtevajo ukrepanje', '5 pogodb zahteva ukrepanje']);
+    expect([1, 2, 3, 5].map((n) => composeReminder('sl', 'X', Array(n).fill(c), '').subject)).toEqual(['1 pogodba zahteva ukrepanje', '2 pogodbi zahtevata ukrepanje', '3 pogodbe zahtevajo ukrepanje', '5 pogodb zahteva ukrepanje']);
   });
 });

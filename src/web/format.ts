@@ -1,30 +1,45 @@
 import type { ContractView, ValuePeriod } from '../shared/contracts.js';
-import { formatDate, pluralDays } from '../shared/dates.js';
+import { formatDate as formatIn, pluralDays as daysIn } from '../shared/dates.js';
+import { getLang, t } from './i18n.js';
 
-const PERIOD: Record<ValuePeriod, string> = { enkratno: '', mesecno: ' na mesec', letno: ' na leto' };
-const money = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const formatDate = (iso: string) => formatIn(iso, getLang());
+export const pluralDays = (n: number) => daysIn(n, getLang());
 
-export const formatValue = (cents: number, period: ValuePeriod) => `${money.format(cents / 100)} €${PERIOD[period]}`;
-export const formatSize = (bytes: number) =>
-  bytes < 1_000_000 ? `${Math.max(1, Math.round(bytes / 1000))} kB` : `${(bytes / 1_000_000).toFixed(1).replace('.', ',')} MB`;
+export function formatValue(cents: number, period: ValuePeriod): string {
+  const amount = new Intl.NumberFormat(getLang() === 'en' ? 'en-GB' : 'de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100);
+  const text = getLang() === 'en' ? `€${amount}` : `${amount} €`;
+  return period === 'mesecno' ? t('{amount} na mesec', { amount: text }) : period === 'letno' ? t('{amount} na leto', { amount: text }) : text;
+}
+
+export function formatSize(bytes: number): string {
+  if (bytes < 1_000_000) return `${Math.max(1, Math.round(bytes / 1000))} kB`;
+  const mb = (bytes / 1_000_000).toFixed(1);
+  return `${getLang() === 'en' ? mb : mb.replace('.', ',')} MB`;
+}
+
+export function formatTime(d: Date): string {
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return getLang() === 'en' ? `${String(d.getHours()).padStart(2, '0')}:${min}` : `${d.getHours()}.${min}`;
+}
 
 export function deadline(c: ContractView): { date: string; note: string } {
-  if (c.actionDate === null || c.daysLeft === null) return { date: 'Nedoločen čas', note: '' };
+  if (c.actionDate === null || c.daysLeft === null) return { date: t('Nedoločen čas'), note: '' };
   const note = c.status === 'prekinjena' ? ''
-    : c.daysLeft < 0 ? 'rok je minil' : c.daysLeft === 0 ? 'danes' : `čez ${pluralDays(c.daysLeft)}`;
+    : c.daysLeft < 0 ? t('rok je minil') : c.daysLeft === 0 ? t('danes') : t('čez {days}', { days: pluralDays(c.daysLeft) });
   return { date: formatDate(c.actionDate), note };
 }
 
-// Sprejme 480, 480,5, 1.250,00 in 1250.00. Vrne null za prazno in NaN za neveljavno.
+// Sprejme 480, 480,5, 1.250,00, 1,250.00 in 1250.00. Vrne null za prazno in NaN za neveljavno.
 export function parseAmount(text: string): number | null {
-  const t = text.replace(/[\s €]/g, '');
-  if (!t) return null;
-  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(t)) return Math.round(Number(t.replace(/\./g, '').replace(',', '.')) * 100);
-  if (/^\d+([.,]\d{1,2})?$/.test(t)) return Math.round(Number(t.replace(',', '.')) * 100);
+  const v = text.replace(/[\s €]/g, '');
+  if (!v) return null;
+  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(/\./g, '').replace(',', '.')) * 100);
+  if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(/,/g, '')) * 100);
+  if (/^\d+([.,]\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(',', '.')) * 100);
   return NaN;
 }
 
-export function pluralContracts(n: number): string {
-  const r = n % 100;
-  return r === 1 ? 'pogodbe' : 'pogodb';
+export function shownOf(shown: number, total: number): string {
+  if (getLang() === 'en') return `Showing ${shown} of ${total} ${total === 1 ? 'contract' : 'contracts'}`;
+  return `Prikazanih ${shown} od ${total} ${total % 100 === 1 ? 'pogodbe' : 'pogodb'}`;
 }

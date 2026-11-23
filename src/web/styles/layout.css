@@ -21,6 +21,9 @@
 .tabs a:focus-visible{outline-offset:-2px}
 .intro{margin-bottom:var(--space-4)}
 code{font:inherit;font-weight:500;overflow-wrap:anywhere}
+.btn-lang{gap:var(--space-1);padding:0 var(--space-2);font-variant-numeric:tabular-nums}
+.disclosure{align-self:flex-start;min-height:var(--control-height);padding:0;border:0;background:none;color:var(--primary);text-decoration:underline;text-underline-offset:3px;text-align:left;cursor:pointer}
+.copyable{flex:1;min-width:0;padding:9px var(--space-3);border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--canvas);user-select:all}
 .fieldset{display:flex;flex-direction:column;margin:0;padding:0;border:0;min-width:0}
 .fieldset legend{padding:0}
 .table td.main{min-width:200px}

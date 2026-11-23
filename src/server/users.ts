@@ -1,7 +1,8 @@
+import { toLang, type Lang } from '../shared/i18n.js';
 import type { Access, ManagedUser, UserUpdate } from '../shared/users.js';
 import type { Db } from './db.js';
 
-interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; must_change_password: number; reminders: number }
+interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; must_change_password: number; reminders: number; language: string }
 interface UserRow extends AccessRow { id: string; name: string; email: string; createdAt: string | number; emailVerified: number; has_password: number; has_oidc: number; contracts: number }
 
 const toAccess = (r: AccessRow): Access => ({
@@ -19,7 +20,7 @@ const USERS = `SELECT u.id, u.name, u.email, u.createdAt, u.emailVerified, a.*,
 
 const toUser = (r: UserRow): ManagedUser => ({
   id: r.id, name: r.name, email: r.email, createdAt: new Date(r.createdAt).toISOString(),
-  hasPassword: r.has_password !== 0, hasOidc: r.has_oidc !== 0, contracts: r.contracts, emailVerified: r.emailVerified !== 0, reminders: r.reminders !== 0, ...toAccess(r),
+  hasPassword: r.has_password !== 0, hasOidc: r.has_oidc !== 0, contracts: r.contracts, emailVerified: r.emailVerified !== 0, reminders: r.reminders !== 0, language: toLang(r.language), ...toAccess(r),
 });
 
 // Vloge in dovoljenja so ločeni od računov, zato jih registracija ne more nastaviti.
@@ -70,6 +71,15 @@ export class UserStore {
 
   setReminders(id: string, value: boolean): void {
     this.db.prepare('UPDATE user_access SET reminders = ? WHERE user_id = ?').run(+value, id);
+  }
+
+  language(id: string): Lang {
+    const row = this.db.prepare('SELECT language FROM user_access WHERE user_id = ?').get(id) as { language: string } | undefined;
+    return toLang(row?.language);
+  }
+
+  setLanguage(id: string, value: Lang): void {
+    this.db.prepare('UPDATE user_access SET language = ? WHERE user_id = ?').run(value, id);
   }
 
   endSessions(id: string): void { this.db.prepare('DELETE FROM session WHERE userId = ?').run(id); }

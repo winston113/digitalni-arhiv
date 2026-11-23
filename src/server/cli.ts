@@ -26,7 +26,7 @@ const config = loadConfig();
 const db = openDb(config.dataDir);
 migrate(db);
 const users = new UserStore(db);
-const ctx = await createAuth(config, db, new Mail(config, new Settings(db, config.secret))).$context;
+const ctx = await createAuth(config, db, new Mail(config, new Settings(db, config.secret)), null).$context;
 const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), { includeAccounts: true });
 if (!found) fail('Uporabnik s to e-pošto ne obstaja.');
 const userId = found.user.id;

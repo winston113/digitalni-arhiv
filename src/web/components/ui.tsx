@@ -1,29 +1,31 @@
 import { Ban, CircleAlert, CircleCheck, CircleX, Clock, FileText, LoaderCircle, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import type { Status } from '../../shared/contracts.js';
+import type { Key } from '../../shared/i18n.js';
 import type { ApiError } from '../api.js';
+import { t, tr } from '../i18n.js';
 
 export function Icon({ of: Glyph, size = '' }: { of: LucideIcon; size?: '' | 'sm' | 'lg' }) {
   return <Glyph className={size ? `icon icon-${size}` : 'icon'} aria-hidden="true" />;
 }
 
-const BADGES: Record<Status, [string, string, LucideIcon]> = {
+const BADGES: Record<Status, [string, Key, LucideIcon]> = {
   aktivna: ['badge-active', 'Aktivna', CircleCheck],
   kmalu: ['badge-soon', 'Kmalu poteče', Clock],
   potekla: ['badge-expired', 'Potekla', CircleX],
   prekinjena: ['badge-ended', 'Prekinjena', Ban],
 };
-export const STATUS_NAMES = Object.fromEntries(Object.entries(BADGES).map(([k, v]) => [k, v[1]])) as Record<Status, string>;
+export const statusName = (s: Status) => t(BADGES[s][1]);
 
 export function Badge({ status }: { status: Status }) {
   const [cls, label, icon] = BADGES[status];
-  return <span className={`badge ${cls}`}><Icon of={icon} size="sm" />{label}</span>;
+  return <span className={`badge ${cls}`}><Icon of={icon} size="sm" />{t(label)}</span>;
 }
 
 export function AccountBadge({ disabled }: { disabled: boolean }) {
   return disabled
-    ? <span className="badge badge-ended"><Icon of={Ban} size="sm" />Blokiran</span>
-    : <span className="badge badge-active"><Icon of={CircleCheck} size="sm" />Dejaven</span>;
+    ? <span className="badge badge-ended"><Icon of={Ban} size="sm" />{t('Blokiran')}</span>
+    : <span className="badge badge-active"><Icon of={CircleCheck} size="sm" />{t('Dejaven')}</span>;
 }
 
 export function Submit({ busy, busyLabel, children, className = 'btn btn-primary', onClick, ...rest }:
@@ -42,20 +44,20 @@ export function Field({ id, label, optional, hint, error, full, children }: {
   const describedBy = error || hint ? `${id}-opis` : undefined;
   return (
     <div className={full ? 'field full' : 'field'}>
-      <label className="field-label" htmlFor={id}>{label}{optional && <span className="muted"> (neobvezno)</span>}</label>
+      <label className="field-label" htmlFor={id}>{label}{optional && <span className="muted"> ({t('neobvezno')})</span>}</label>
       {children({ id, 'aria-invalid': Boolean(error), 'aria-describedby': describedBy })}
       {error
-        ? <span className="field-error" id={describedBy}><Icon of={CircleAlert} size="sm" />{error}</span>
+        ? <span className="field-error" id={describedBy}><Icon of={CircleAlert} size="sm" />{tr(error)}</span>
         : hint && <span className="field-hint" id={describedBy}>{hint}</span>}
     </div>
   );
 }
 
-export function ErrorNotice({ message, retry }: { message: string; retry?: () => void }) {
+export function ErrorNotice({ message, detail, retry }: { message: string; detail?: string; retry?: () => void }) {
   return (
     <div className="notice notice-error" role="alert">
       <Icon of={CircleAlert} />
-      <div>{message}{retry && <> <button type="button" className="btn btn-text" onClick={retry}>Poskusi znova</button></>}</div>
+      <div>{tr(message)}{detail && <> {t('Odgovor strežnika: {detail}', { detail })}</>}{retry && <> <button type="button" className="btn btn-text" onClick={retry}>{t('Poskusi znova')}</button></>}</div>
     </div>
   );
 }
@@ -104,7 +106,7 @@ export function ConfirmDialog({ title, text, label, busyLabel, run, close }: { t
       <p>{text}</p>
       {error && <ErrorNotice message={error} />}
       <form className="dialog-actions" onSubmit={submit}>
-        <button type="button" className="btn btn-secondary" onClick={close} data-autofocus>Prekliči</button>
+        <button type="button" className="btn btn-secondary" onClick={close} data-autofocus>{t('Prekliči')}</button>
         <Submit busy={busy} busyLabel={busyLabel} className="btn btn-danger">{label}</Submit>
       </form>
     </Dialog>

@@ -42,7 +42,7 @@ describe('datumi', () => {
     expect(['15. 1. 2027', '15.1.2027', '15.\u00a01.\u00a02027', '2027-01-15', '31. 2. 2027', '1/15/2027', ''].map(parseDate)).toEqual(['2027-01-15', '2027-01-15', '2027-01-15', '2027-01-15', null, null, null]);
   });
   it('sklanja dneve', () => {
-    expect([1, 2, 3, 23, 101, 102, 0].map(pluralDays)).toEqual(['1 dan', '2 dneva', '3 dni', '23 dni', '101 dan', '102 dneva', '0 dni']);
+    expect([1, 2, 3, 23, 101, 102, 0].map((n) => pluralDays(n))).toEqual(['1 dan', '2 dneva', '3 dni', '23 dni', '101 dan', '102 dneva', '0 dni']);
   });
 });
 

@@ -1,24 +1,24 @@
+import { msg } from './i18n.js';
 import type { ContractView } from '../shared/contracts.js';
 import type { MailInput, MailUses, MailView } from '../shared/mail.js';
+import type { Key, Lang } from '../shared/i18n.js';
+import type { OidcCheck, OidcInput, OidcView } from '../shared/oidc.js';
 import type { ManagedUser, Me, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
-  localLogin: boolean;
   registration: { local: boolean; oidc: boolean };
   passwordReset: boolean;
   reminders: boolean;
   oidc: { name: string } | null;
 }
 
-export interface OidcView { issuer: string | null; clientId: string | null; name: string | null; hasSecret: boolean; registration: boolean; redirectUri: string }
-
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number, readonly fields: Record<string, string> = {}) { super(message); }
+  constructor(message: string, readonly status: number, readonly fields: Record<string, string> = {}, readonly detail = '') { super(message); }
 }
 
-const OFFLINE = 'Povezava s strežnikom ni uspela. Preverite povezavo in poskusite znova.';
+const OFFLINE: Key = 'Povezava s strežnikom ni uspela. Preverite povezavo in poskusite znova.';
 
-const AUTH_MESSAGES: Record<string, string> = {
+const AUTH_MESSAGES: Record<string, Key> = {
   INVALID_EMAIL_OR_PASSWORD: 'Napačna e-pošta ali geslo.',
   INVALID_EMAIL: 'Vnesite veljaven e-poštni naslov.',
   PASSWORD_TOO_SHORT: 'Geslo je prekratko. Vnesite najmanj 8 znakov.',
@@ -37,10 +37,10 @@ async function send(path: string, init: RequestInit = {}): Promise<Response> {
     throw new ApiError(OFFLINE, 0);
   }
   if (response.ok) return response;
-  const body = await response.json().catch(() => ({})) as { error?: string; code?: string; fields?: Record<string, string> };
-  if (response.status === 429) throw new ApiError('Preveč poskusov. Počakajte minuto in poskusite znova.', 429);
-  const message = body.error ?? AUTH_MESSAGES[body.code ?? ''] ?? 'Dejanje ni uspelo. Poskusite znova.';
-  throw new ApiError(message, response.status, body.fields);
+  const body = await response.json().catch(() => ({})) as { error?: string; code?: string; fields?: Record<string, string>; detail?: string };
+  if (response.status === 429) throw new ApiError(msg('Preveč poskusov. Počakajte minuto in poskusite znova.'), 429);
+  const message = body.error ?? AUTH_MESSAGES[body.code ?? ''] ?? msg('Dejanje ni uspelo. Poskusite znova.');
+  throw new ApiError(message, response.status, body.fields, body.detail);
 }
 
 const withBody = (method: string) => (path: string, body: unknown) =>
@@ -92,6 +92,11 @@ export const api = {
   saveMailUses: async (data: MailUses) => (await put('/api/admin/mail/uses', data)).json() as Promise<MailView>,
   testMail: async () => (await post('/api/admin/mail/test', {})).json() as Promise<{ to: string }>,
   runReminders: async () => (await post('/api/admin/mail/reminders', {})).json() as Promise<{ sent: number; failed: number }>,
+  saveOidc: async (data: OidcInput) => (await put('/api/admin/oidc', data)).json() as Promise<OidcView>,
+  clearOidc: async () => (await withBody('DELETE')('/api/admin/oidc', {})).json() as Promise<OidcView>,
+  checkOidc: async (issuer: string) => (await post('/api/admin/oidc/check', { issuer })).json() as Promise<OidcCheck>,
+  setLanguage: (language: Lang) => put('/api/me/language', { language }),
+  firstPassword: (newPassword: string) => post('/api/password/first', { newPassword }),
   oidc: async () => (await send('/api/admin/oidc')).json() as Promise<OidcView>,
   removeUser: (id: string) => send(`/api/admin/users/${id}`, { method: 'DELETE' }),
 };

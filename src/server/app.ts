@@ -9,12 +9,14 @@ import { z } from 'zod';
 import { contractInput, fieldErrors, MAX_FILE_SIZE, toView } from '../shared/contracts.js';
 import { isIsoDate, today } from '../shared/dates.js';
 import { password, type Access, type Me, type Permission } from '../shared/users.js';
-import { createAdminApi, createMailApi } from './admin.js';
-import { CLIENT_IP_HEADER, type Auth } from './auth.js';
+import { createAdminApi, createMailApi, createOidcApi } from './admin.js';
+import { CLIENT_IP_HEADER, type AuthHolder } from './auth.js';
 import type { Config } from './config.js';
 import { ContractStore, type Upload } from './contracts.js';
 import type { Db } from './db.js';
+import { LANGS } from '../shared/i18n.js';
 import type { Mail } from './mail.js';
+import type { Oidc } from './oidc.js';
 import type { Reminders } from './reminders.js';
 import { UserStore } from './users.js';
 
@@ -56,7 +58,7 @@ async function readForm(c: Context): Promise<{ data: unknown; upload: Upload | n
   return { data, upload: { name: cleanFileName(file.name), bytes }, fileError: null };
 }
 
-export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, reminders: Reminders, webDir: string | null = null) {
+export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, webDir: string | null = null) {
   const store = new ContractStore(db, config.dataDir);
   const users = new UserStore(db);
   const app = new Hono<Env>();
@@ -83,17 +85,16 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
   app.get('/api/health', (c) => { db.prepare('SELECT 1').get(); return c.json({ ok: true }); });
 
   app.get('/api/config', (c) => c.json({
-    localLogin: config.localLogin,
-    registration: { local: config.localLogin && config.registration, oidc: config.oidc?.registration ?? false },
+    registration: { local: config.registration, oidc: oidc.current?.registration ?? false },
     passwordReset: mail.canReset,
     reminders: mail.canRemind,
-    oidc: config.oidc ? { name: config.oidc.name } : null,
+    oidc: oidc.current ? { name: oidc.current.name } : null,
   }));
 
   app.on(['GET', 'POST'], '/api/auth/*', (c) => {
     const headers = new Headers(c.req.raw.headers);
     headers.set(CLIENT_IP_HEADER, clientIp(c, config.trustProxy));
-    return auth.handler(new Request(c.req.raw, { headers }));
+    return auth.current.handler(new Request(c.req.raw, { headers }));
   });
 
   // Zaščita pred zahtevami z drugih strani (CSRF), prijava in stanje računa.
@@ -101,7 +102,7 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
     if (c.req.method !== 'GET' && c.req.header('origin') !== config.baseUrl) {
       throw new HTTPException(403, { message: 'Zahteva ni dovoljena.' });
     }
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const session = await auth.current.api.getSession({ headers: c.req.raw.headers });
     const access = session && users.access(session.user.id);
     if (!session || !access || access.disabled) throw new HTTPException(401, { message: 'Seja je potekla. Prijavite se znova.' });
     c.set('userId', session.user.id);
@@ -119,12 +120,12 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
   });
 
   app.get('/api/me', async (c) => {
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const session = await auth.current.api.getSession({ headers: c.req.raw.headers });
     const user = session && users.get(session.user.id);
     c.header('Cache-Control', 'no-store');
     if (!user || user.disabled) return c.json(null);
-    const { id, name, email, hasPassword, emailVerified, reminders: wants, role, disabled, mustChangePassword, permissions } = user;
-    return c.json({ id, name, email, hasPassword, emailVerified, reminders: wants, role, disabled, mustChangePassword, permissions } satisfies Me);
+    const { id, name, email, hasPassword, emailVerified, reminders: wants, language, role, disabled, mustChangePassword, permissions } = user;
+    return c.json({ id, name, email, hasPassword, emailVerified, reminders: wants, language, role, disabled, mustChangePassword, permissions } satisfies Me);
   });
 
   app.post('/api/password', guard, async (c) => {
@@ -137,7 +138,7 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
     const headers = new Headers(c.req.raw.headers);
     headers.set(CLIENT_IP_HEADER, clientIp(c, config.trustProxy));
     headers.delete('content-length');
-    const response = await auth.handler(new Request(`${config.baseUrl}/api/auth/change-password`, {
+    const response = await auth.current.handler(new Request(`${config.baseUrl}/api/auth/change-password`, {
       method: 'POST', headers, body: JSON.stringify({ ...parsed.data, revokeOtherSessions: true }),
     }));
     if (response.ok) {
@@ -152,6 +153,22 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
     const parsed = z.object({ enabled: z.boolean() }).safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'Neveljavna zahteva.' }, 400);
     users.setReminders(c.get('userId'), parsed.data.enabled);
+    return c.body(null, 204);
+  });
+
+  app.put('/api/me/language', guard, async (c) => {
+    const parsed = z.object({ language: z.enum(LANGS) }).safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Neveljavna zahteva.' }, 400);
+    users.setLanguage(c.get('userId'), parsed.data.language);
+    return c.body(null, 204);
+  });
+
+  // Prvo geslo za uporabnika, ki se prijavlja prek ponudnika, da ima rezervno prijavo.
+  app.post('/api/password/first', guard, async (c) => {
+    const parsed = z.object({ newPassword: password }).safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Preverite označena polja.', fields: fieldErrors(parsed.error) }, 400);
+    if (users.get(c.get('userId'))!.hasPassword) return c.json({ error: 'Geslo je že nastavljeno.' }, 409);
+    await auth.current.api.setPassword({ body: parsed.data, headers: c.req.raw.headers });
     return c.body(null, 204);
   });
 
@@ -232,13 +249,9 @@ export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, remind
     if (c.get('access').role !== 'admin') throw new HTTPException(403, { message: 'Ta del je namenjen skrbnikom.' });
     await next();
   });
-  admin.route('/users', createAdminApi(config, auth, mail, users, store));
+  admin.route('/users', createAdminApi(auth, mail, users, store));
   admin.route('/mail', createMailApi(config, mail, reminders, users));
-  admin.get('/oidc', (c) => c.json({
-    issuer: config.oidc?.issuer ?? null, clientId: config.oidc?.clientId ?? null, name: config.oidc?.name ?? null,
-    hasSecret: Boolean(config.oidc?.clientSecret), registration: config.oidc?.registration ?? false,
-    redirectUri: `${config.baseUrl}/api/auth/callback/oidc`,
-  }));
+  admin.route('/oidc', createOidcApi(config, auth, oidc));
   app.route('/api/admin', admin);
   app.all('/api/*', (c) => c.json({ error: 'Naslov ne obstaja.' }, 404));
 

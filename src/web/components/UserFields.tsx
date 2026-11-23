@@ -1,8 +1,10 @@
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import type { Permissions, Role } from '../../shared/users.js';
+import type { Key } from '../../shared/i18n.js';
 import { Field, Icon } from './ui.js';
+import { t } from '../i18n.js';
 
-const PERMISSION_LABELS: [keyof Permissions, string][] = [
+const PERMISSION_LABELS: [keyof Permissions, Key][] = [
   ['create', 'Dodajanje pogodb'],
   ['edit', 'Urejanje, podaljšanje in prekinitev'],
   ['remove', 'Brisanje pogodb'],
@@ -21,8 +23,8 @@ export function generatePassword(): string {
 
 export function RoleField({ value, onChange, disabled, error }: { value: Role; onChange: (r: Role) => void; disabled?: boolean; error?: string }) {
   return (
-    <Field id="role" label="Vloga" full error={error} hint={disabled ? 'Svoje vloge ne morete spremeniti.' : 'Skrbnik upravlja uporabnike. Tujih pogodb ne vidi.'}>
-      {(a) => <span className="select"><select {...a} className="input" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as Role)}><option value="user">Uporabnik</option><option value="admin">Skrbnik</option></select><Icon of={ChevronDown} /></span>}
+    <Field id="role" label={t('Vloga')} full error={error} hint={disabled ? t('Svoje vloge ne morete spremeniti.') : t('Skrbnik upravlja uporabnike. Tujih pogodb ne vidi.')}>
+      {(a) => <span className="select"><select {...a} className="input" value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as Role)}><option value="user">{t('Uporabnik')}</option><option value="admin">{t('Skrbnik')}</option></select><Icon of={ChevronDown} /></span>}
     </Field>
   );
 }
@@ -30,11 +32,11 @@ export function RoleField({ value, onChange, disabled, error }: { value: Role; o
 export function PermissionFields({ value, onChange }: { value: Permissions; onChange: (p: Permissions) => void }) {
   return (
     <fieldset className="fieldset full">
-      <legend className="field-label">Dovoljenja za lastne pogodbe</legend>
+      <legend className="field-label">{t('Dovoljenja za lastne pogodbe')}</legend>
       {PERMISSION_LABELS.map(([key, label]) => (
-        <label key={key} className="check" htmlFor={`p-${key}`}><input id={`p-${key}`} type="checkbox" checked={value[key]} onChange={(e) => onChange({ ...value, [key]: e.target.checked })} />{label}</label>
+        <label key={key} className="check" htmlFor={`p-${key}`}><input id={`p-${key}`} type="checkbox" checked={value[key]} onChange={(e) => onChange({ ...value, [key]: e.target.checked })} />{t(label)}</label>
       ))}
-      <span className="field-hint">Ogled in prenos lastnih pogodb sta vedno mogoča.</span>
+      <span className="field-hint">{t('Ogled in prenos lastnih pogodb sta vedno mogoča.')}</span>
     </fieldset>
   );
 }
@@ -42,10 +44,10 @@ export function PermissionFields({ value, onChange }: { value: Permissions; onCh
 export function TemporaryPassword({ value, onChange, must, onMust, error }: { value: string; onChange: (v: string) => void; must: boolean; onMust: (v: boolean) => void; error?: string }) {
   return (
     <div className="stack full">
-      <Field id="newUserPassword" label="Geslo" error={error} hint="Geslo prepišite ali kopirajte zdaj, pozneje ne bo več vidno.">
-        {(a) => <span className="with-button"><input {...a} className="input num" autoComplete="off" spellCheck={false} value={value} onChange={(e) => onChange(e.target.value)} /><button type="button" className="btn btn-secondary" onClick={() => onChange(generatePassword())}><Icon of={RefreshCw} />Ustvari</button></span>}
+      <Field id="newUserPassword" label={t('Geslo')} error={error} hint={t('Geslo prepišite ali kopirajte zdaj, pozneje ne bo več vidno.')}>
+        {(a) => <span className="with-button"><input {...a} className="input num" autoComplete="off" spellCheck={false} value={value} onChange={(e) => onChange(e.target.value)} /><button type="button" className="btn btn-secondary" onClick={() => onChange(generatePassword())}><Icon of={RefreshCw} />{t('Ustvari')}</button></span>}
       </Field>
-      <label className="check" htmlFor="must"><input id="must" type="checkbox" checked={must} onChange={(e) => onMust(e.target.checked)} />Uporabnik mora ob naslednji prijavi spremeniti geslo</label>
+      <label className="check" htmlFor="must"><input id="must" type="checkbox" checked={must} onChange={(e) => onMust(e.target.checked)} />{t('Uporabnik mora ob naslednji prijavi spremeniti geslo')}</label>
     </div>
   );
 }

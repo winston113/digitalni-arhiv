@@ -1,9 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { Lang } from '../shared/i18n.js';
 import type { Me } from '../shared/users.js';
+import { t } from './i18n.js';
 import { ApiError, type AppConfig } from './api.js';
 
 interface AppState {
   config: AppConfig;
+  lang: Lang;
+  setLang: (lang: Lang) => void;
   user: Me | null;
   setUser: (user: Me | null) => void;
   refreshUser: () => Promise<void>;
@@ -39,7 +43,7 @@ export function useLoad<T>(load: () => Promise<T>, deps: unknown[]) {
 }
 
 export function usePageTitle(title: string) {
-  useEffect(() => { document.title = `${title} | Digitalni arhiv pogodb`; }, [title]);
+  useEffect(() => { document.title = `${title} | ${t('Digitalni arhiv pogodb')}`; }, [title]);
 }
 
 export type Children = { children: ReactNode };

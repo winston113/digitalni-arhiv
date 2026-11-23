@@ -2,7 +2,9 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { MAIL_SECURITY, type MailSecurity } from '../shared/mail.js';
+import { normalizeIssuer, OIDC_METHODS, type OidcMethod } from '../shared/oidc.js';
 import type { Smtp } from './mail.js';
+import type { OidcConfig } from './oidc.js';
 
 export interface Config {
   port: number;
@@ -12,8 +14,7 @@ export interface Config {
   trustProxy: boolean;
   storageLimit: number | null;
   registration: boolean;
-  localLogin: boolean;
-  oidc: { issuer: string; clientId: string; clientSecret?: string; name: string; registration: boolean } | null;
+  oidc: OidcConfig | null;
   smtp: Smtp | null;
 }
 
@@ -29,6 +30,13 @@ function positive(value: string): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) throw new Error('STORAGE_LIMIT_MB mora biti pozitivno število.');
   return n;
+}
+
+function oidcMethod(env: NodeJS.ProcessEnv): OidcMethod {
+  const value = env.OIDC_METHOD || (env.OIDC_CLIENT_SECRET ? 'client_secret_post' : 'none');
+  if (!(OIDC_METHODS as readonly string[]).includes(value)) throw new Error('OIDC_METHOD mora biti none, client_secret_basic ali client_secret_post.');
+  if (value !== 'none' && !env.OIDC_CLIENT_SECRET) throw new Error('Za izbrani OIDC_METHOD je potrebna OIDC_CLIENT_SECRET.');
+  return value as OidcMethod;
 }
 
 function smtpSecurity(env: NodeJS.ProcessEnv, port: number): MailSecurity {
@@ -67,14 +75,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: flag(env, 'TRUST_PROXY', false),
     storageLimit: env.STORAGE_LIMIT_MB ? positive(env.STORAGE_LIMIT_MB) * 1024 * 1024 : null,
     registration: flag(env, 'REGISTRATION', true),
-    localLogin: flag(env, 'LOCAL_LOGIN', true),
     oidc: issuer && clientId
-      ? { issuer: issuer.replace(/\/+$/, ''), clientId, clientSecret: env.OIDC_CLIENT_SECRET || undefined, name: env.OIDC_NAME || 'OpenID Connect', registration: flag(env, 'OIDC_REGISTRATION', true) }
+      ? { issuer: normalizeIssuer(issuer), clientId, method: oidcMethod(env), clientSecret: env.OIDC_CLIENT_SECRET || undefined, name: env.OIDC_NAME || 'OpenID Connect', scopes: env.OIDC_SCOPES || 'openid profile email', registration: flag(env, 'OIDC_REGISTRATION', true) }
       : null,
     smtp: host && from
       ? { host, port: smtpPort, security: smtpSecurity(env, smtpPort), user: env.SMTP_USER ?? '', password: env.SMTP_PASSWORD ?? '', from, fromName: env.SMTP_FROM_NAME ?? '' }
       : null,
   };
-  if (!config.localLogin && !config.oidc) throw new Error('Če je LOCAL_LOGIN=false, mora biti nastavljen OIDC.');
+  if (env.LOCAL_LOGIN) console.warn('LOCAL_LOGIN ni več podprt: prijava z geslom je vedno na voljo kot rezerva.');
   return config;
 }

@@ -1,32 +1,40 @@
 import { STAGES, stageOf, type Stage } from '../shared/reminders.js';
 import { sortByDeadline, toView, type ContractView } from '../shared/contracts.js';
 import { formatDate, pluralDays, today } from '../shared/dates.js';
+import { toLang, translate, type Lang } from '../shared/i18n.js';
 import type { Config } from './config.js';
 import type { ContractStore } from './contracts.js';
 import type { Db } from './db.js';
 import type { Mail } from './mail.js';
 import type { Settings } from './settings.js';
 
-interface Recipient { id: string; name: string; email: string }
+interface Recipient { id: string; name: string; email: string; language: string }
 interface Due { contract: ContractView; stage: Stage }
 
 const HOUR = 3_600_000;
 
-function line({ contract: c, stage }: Due, baseUrl: string): string {
-  const when = stage === 'potekla' ? `pogodba je potekla ${formatDate(c.endDate!)}`
-    : (c.daysLeft ?? 0) < 0 ? `rok za ukrepanje je minil ${formatDate(c.actionDate!)}, pogodba poteče ${formatDate(c.endDate!)}`
-    : c.daysLeft === 0 ? 'rok za ukrepanje je danes'
-    : `rok za ukrepanje je ${formatDate(c.actionDate!)}, čez ${pluralDays(c.daysLeft!)}`;
-  return `${c.title} (${c.party})\n${when}\n${baseUrl}/pogodbe/${c.id}`.replace(/ /g, ' ');
+function line(lang: Lang, { contract: c, stage }: Due, baseUrl: string): string {
+  const end = formatDate(c.endDate!, lang);
+  const action = formatDate(c.actionDate!, lang);
+  const when = stage === 'potekla' ? translate(lang, 'pogodba je potekla {end}', { end })
+    : (c.daysLeft ?? 0) < 0 ? translate(lang, 'rok za ukrepanje je minil {action}, pogodba poteče {end}', { action, end })
+    : c.daysLeft === 0 ? translate(lang, 'rok za ukrepanje je danes')
+    : translate(lang, 'rok za ukrepanje je {action}, čez {days}', { action, days: pluralDays(c.daysLeft!, lang) });
+  return `${c.title} (${c.party})\n${when}\n${baseUrl}/pogodbe/${c.id}`.replace(/\u00a0/g, ' ');
 }
 
-export function composeReminder(name: string, due: Due[], baseUrl: string): { subject: string; text: string } {
-  const n = due.length;
+function subject(lang: Lang, n: number): string {
+  if (lang === 'en') return n === 1 ? '1 contract needs action' : `${n} contracts need action`;
   const r = n % 100;
-  const noun = r === 1 ? 'pogodba zahteva' : r === 2 ? 'pogodbi zahtevata' : r === 3 || r === 4 ? 'pogodbe zahtevajo' : 'pogodb zahteva';
+  return `${n} ${r === 1 ? 'pogodba zahteva' : r === 2 ? 'pogodbi zahtevata' : r === 3 || r === 4 ? 'pogodbe zahtevajo' : 'pogodb zahteva'} ukrepanje`;
+}
+
+export function composeReminder(lang: Lang, name: string, due: Due[], baseUrl: string): { subject: string; text: string } {
   return {
-    subject: `${n} ${noun} ukrepanje`,
-    text: `Pozdravljeni, ${name},\n\npodaljšajte ali prekinite naslednje pogodbe:\n\n${due.map((d) => line(d, baseUrl)).join('\n\n')}\n\nOpozorila po e-pošti izklopite na ${baseUrl}/racun\n`,
+    subject: subject(lang, due.length),
+    text: translate(lang, 'Pozdravljeni, {name},\n\npodaljšajte ali prekinite naslednje pogodbe:\n\n{list}\n\nOpozorila po e-pošti izklopite na {url}\n', {
+      name, list: due.map((d) => line(lang, d, baseUrl)).join('\n\n'), url: `${baseUrl}/racun`,
+    }),
   };
 }
 
@@ -38,7 +46,7 @@ export class Reminders {
 
   // Samo dejavni uporabniki s potrjenim naslovom, da sporočil ni mogoče usmeriti na tuj naslov.
   private recipients(): Recipient[] {
-    return this.db.prepare(`SELECT u.id, u.name, u.email FROM user u JOIN user_access a ON a.user_id = u.id
+    return this.db.prepare(`SELECT u.id, u.name, u.email, a.language FROM user u JOIN user_access a ON a.user_id = u.id
       WHERE u.emailVerified = 1 AND a.disabled = 0 AND a.reminders = 1`).all() as Recipient[];
   }
 
@@ -74,7 +82,7 @@ export class Reminders {
       const due = this.due(user.id, now);
       if (due.length === 0) continue;
       try {
-        await this.mail.send({ to: user.email, ...composeReminder(user.name, due, this.config.baseUrl) });
+        await this.mail.send({ to: user.email, ...composeReminder(toLang(user.language), user.name, due, this.config.baseUrl) });
         this.markSent(due);
         sent++;
       } catch (error) {

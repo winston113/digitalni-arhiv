@@ -4,13 +4,14 @@ import { getMigrations } from 'better-auth/db/migration';
 import { genericOAuth } from 'better-auth/plugins/generic-oauth';
 import type { Config } from './config.js';
 import type { Db } from './db.js';
+import { translate } from '../shared/i18n.js';
 import type { Mail } from './mail.js';
+import { discoveryUrl, type OidcConfig } from './oidc.js';
 import { UserStore } from './users.js';
 
 export const CLIENT_IP_HEADER = 'x-arhiv-client-ip';
 
-export function createAuth(config: Config, db: Db, mail: Mail) {
-  const { oidc } = config;
+export function createAuth(config: Config, db: Db, mail: Mail, oidc: OidcConfig | null) {
   const users = new UserStore(db);
   return betterAuth({
     appName: 'Digitalni arhiv pogodb',
@@ -20,7 +21,7 @@ export function createAuth(config: Config, db: Db, mail: Mail) {
     trustedOrigins: [config.baseUrl],
     telemetry: { enabled: false },
     emailAndPassword: {
-      enabled: config.localLogin,
+      enabled: true,
       disableSignUp: !config.registration,
       minPasswordLength: 8,
       revokeSessionsOnPasswordReset: true,
@@ -29,8 +30,8 @@ export function createAuth(config: Config, db: Db, mail: Mail) {
         if (!mail.canReset) return;
         mail.sendLater({
           to: user.email,
-          subject: 'Ponastavitev gesla',
-          text: `Pozdravljeni,\n\nprejeli smo zahtevo za ponastavitev gesla v Digitalnem arhivu pogodb. Novo geslo nastavite na povezavi, ki velja eno uro:\n\n${url}\n\nČe zahteve niste poslali vi, sporočilo prezrite.\n`,
+          subject: translate(users.language(user.id), 'Ponastavitev gesla'),
+          text: translate(users.language(user.id), 'Pozdravljeni,\n\nprejeli smo zahtevo za ponastavitev gesla v Digitalnem arhivu pogodb. Novo geslo nastavite na povezavi, ki velja eno uro:\n\n{url}\n\nČe zahteve niste poslali vi, sporočilo prezrite.\n', { url }),
         });
       },
     },
@@ -42,8 +43,8 @@ export function createAuth(config: Config, db: Db, mail: Mail) {
         if (!mail.ready) return;
         mail.sendLater({
           to: user.email,
-          subject: 'Potrditev e-poštnega naslova',
-          text: `Pozdravljeni,\n\nza prejemanje opozoril iz Digitalnega arhiva pogodb potrdite svoj naslov na povezavi, ki velja eno uro:\n\n${url}\n\nČe tega niste zahtevali, sporočilo prezrite in povezave ne odpirajte.\n`,
+          subject: translate(users.language(user.id), 'Potrditev e-poštnega naslova'),
+          text: translate(users.language(user.id), 'Pozdravljeni,\n\nza prejemanje opozoril iz Digitalnega arhiva pogodb potrdite svoj naslov na povezavi, ki velja eno uro:\n\n{url}\n\nČe tega niste zahtevali, sporočilo prezrite in povezave ne odpirajte.\n', { url }),
         });
       },
     },
@@ -86,16 +87,16 @@ export function createAuth(config: Config, db: Db, mail: Mail) {
           config: [{
             providerId: 'oidc',
             name: oidc.name,
-            discoveryUrl: `${oidc.issuer}/.well-known/openid-configuration`,
+            discoveryUrl: discoveryUrl(oidc.issuer),
             clientId: oidc.clientId,
             clientSecret: oidc.clientSecret,
-            scopes: ['openid', 'profile', 'email'],
+            scopes: oidc.scopes.split(' '),
             pkce: true,
             requireIdTokenVerification: true,
             // Prijava in registracija sta ločeni: nov račun nastane samo na izrecno zahtevo.
             disableImplicitSignUp: true,
             disableSignUp: !oidc.registration,
-            ...(oidc.clientSecret ? {} : { tokenEndpointAuth: { method: 'none' as const } }),
+            tokenEndpointAuth: { method: oidc.method },
           }],
         })]
       : [],
@@ -107,4 +108,13 @@ export type Auth = ReturnType<typeof createAuth>;
 export async function migrateAuth(auth: Auth): Promise<void> {
   const { runMigrations } = await getMigrations(auth.options);
   await runMigrations();
+}
+
+// Nastavitve ponudnika se lahko spremenijo med delovanjem, zato je prijava zamenljiva.
+export class AuthHolder {
+  current: Auth;
+
+  constructor(private build: () => Auth) { this.current = build(); }
+
+  rebuild(): void { this.current = this.build(); }
 }

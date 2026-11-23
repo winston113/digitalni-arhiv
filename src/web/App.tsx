@@ -2,6 +2,8 @@ import { CircleCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 import type { Me } from '../shared/users.js';
+import type { Lang } from '../shared/i18n.js';
+import { applyLang, getLang, storedLang, t } from './i18n.js';
 import { api, type ApiError, type AppConfig } from './api.js';
 import { AuthShell, Shell } from './components/Shell.js';
 import { ErrorNotice, Icon, Skeleton } from './components/ui.js';
@@ -15,7 +17,7 @@ import { Dashboard } from './pages/Dashboard.js';
 import { ForgotPassword, NewPassword } from './pages/Password.js';
 import { MailSettings } from './pages/MailSettings.js';
 import { NotFound } from './pages/NotFound.js';
-import { OidcStatus } from './pages/OidcStatus.js';
+import { OidcSettings } from './pages/OidcSettings.js';
 import { SignIn } from './pages/SignIn.js';
 import { SignUp } from './pages/SignUp.js';
 import { EditUser, NewUser } from './pages/UserForm.js';
@@ -28,6 +30,7 @@ export function App() {
   const [error, setError] = useState<ApiError | null>(null);
   const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
   const [alerts, setAlerts] = useState(0);
+  const [lang, setLangState] = useState(getLang);
   const nextId = useRef(0);
 
   const start = useCallback(() => {
@@ -35,6 +38,16 @@ export function App() {
     Promise.all([api.config(), api.me()]).then(([config, u]) => { setUser(u); setBoot({ config }); }, setError);
   }, []);
   useEffect(start, [start]);
+
+  const setLang = useCallback((next: Lang) => { applyLang(next); setLangState(next); }, []);
+  // Izbira v brskalniku ima prednost; sicer velja jezik, shranjen pri računu. Strežnik ga uporabi za pošto.
+  const userId = user?.id;
+  const userLang = user?.language;
+  useEffect(() => {
+    if (!userId || !userLang) return;
+    if (storedLang() === null) setLang(userLang);
+    else if (lang !== userLang) api.setLanguage(lang).then(() => setUser((u) => u && { ...u, language: lang }), () => {});
+  }, [userId, userLang, lang, setLang]);
 
   const toast = useCallback((message: string) => {
     const id = nextId.current++;
@@ -48,15 +61,15 @@ export function App() {
   const refreshConfig = useCallback(async () => { const config = await api.config(); setBoot({ config }); }, []);
   const refreshUser = useCallback(async () => setUser(await api.me()), []);
 
-  const value = useMemo(() => boot && { config: boot.config, user, setUser, refreshUser, refreshConfig, toast, alerts, refreshAlerts }, [boot, user, refreshUser, refreshConfig, toast, alerts, refreshAlerts]);
+  const value = useMemo(() => boot && { config: boot.config, lang, setLang, user, setUser, refreshUser, refreshConfig, toast, alerts, refreshAlerts }, [boot, lang, setLang, user, refreshUser, refreshConfig, toast, alerts, refreshAlerts]);
   if (error) return <main className="content"><ErrorNotice message={error.message} retry={start} /></main>;
-  if (!value) return <main className="content"><Skeleton label="Nalaganje" /></main>;
+  if (!value) return <main className="content"><Skeleton label={t('Nalaganje')} /></main>;
 
   return (
     <AppContext value={value}>
       <Routes>
         {user?.mustChangePassword ? (
-          <Route path="*" element={<AuthShell title="Novo geslo" text="Vaše geslo je začasno. Pred nadaljevanjem ga spremenite." signOut><ChangePasswordForm /></AuthShell>} />
+          <Route path="*" element={<AuthShell title={t('Novo geslo')} text={t('Vaše geslo je začasno. Pred nadaljevanjem ga spremenite.')} signOut><ChangePasswordForm /></AuthShell>} />
         ) : user ? (
           <Route element={<Shell />}>
             <Route index element={<Dashboard />} />
@@ -70,10 +83,10 @@ export function App() {
               <Route path="skrbnistvo">
                 <Route index element={<Navigate to="uporabniki" replace />} />
                 <Route path="uporabniki" element={<Users />} />
-                {value.config.localLogin && <Route path="uporabniki/nov" element={<NewUser />} />}
+                <Route path="uporabniki/nov" element={<NewUser />} />
                 <Route path="uporabniki/:id" element={<EditUser />} />
                 <Route path="posta" element={<MailSettings />} />
-                <Route path="prijava" element={<OidcStatus />} />
+                <Route path="prijava" element={<OidcSettings />} />
               </Route>
             )}
             {['prijava', 'registracija', 'pozabljeno-geslo'].map((p) => <Route key={p} path={p} element={<Navigate to="/" replace />} />)}

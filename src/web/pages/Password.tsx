@@ -5,9 +5,10 @@ import { api, ApiError } from '../api.js';
 import { AuthShell } from '../components/Shell.js';
 import { ErrorNotice, Field, Icon, Submit } from '../components/ui.js';
 import { useApp, usePageTitle } from '../state.js';
+import { msg, t } from '../i18n.js';
 
 export function ForgotPassword() {
-  usePageTitle('Pozabljeno geslo');
+  usePageTitle(t('Pozabljeno geslo'));
   const [email, setEmail] = useState('');
   const [field, setField] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +18,7 @@ export function ForgotPassword() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const valid = /^\S+@\S+\.\S+$/.test(email.trim());
-    setField(valid ? '' : 'Vnesite veljaven e-poštni naslov.');
+    setField(valid ? '' : msg('Vnesite veljaven e-poštni naslov.'));
     setError('');
     if (!valid) return;
     setBusy(true);
@@ -26,56 +27,56 @@ export function ForgotPassword() {
   };
 
   return (
-    <AuthShell title="Pozabljeno geslo" text="Na e-poštni naslov vam pošljemo povezavo za novo geslo.">
+    <AuthShell title={t('Pozabljeno geslo')} text={t('Na e-poštni naslov vam pošljemo povezavo za novo geslo.')}>
       {error && <ErrorNotice message={error} />}
       {sent
-        ? <div className="notice notice-success" role="status"><Icon of={CircleCheck} /><div>Če račun s tem naslovom obstaja, smo poslali povezavo. Velja eno uro.</div></div>
+        ? <div className="notice notice-success" role="status"><Icon of={CircleCheck} /><div>{t('Če račun s tem naslovom obstaja, smo poslali povezavo. Velja eno uro.')}</div></div>
         : (
           <form onSubmit={submit} noValidate>
-            <Field id="email" label="E-pošta" error={field}>{(a) => <input {...a} className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
-            <Submit busy={busy} busyLabel="Pošiljanje" className="btn btn-primary btn-block">Pošlji povezavo</Submit>
+            <Field id="email" label={t('E-pošta')} error={field}>{(a) => <input {...a} className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
+            <Submit busy={busy} busyLabel={t('Pošiljanje')} className="btn btn-primary btn-block">{t('Pošlji povezavo')}</Submit>
           </form>
         )}
-      <p><Link className="link" to="/prijava">Nazaj na prijavo</Link></p>
+      <p><Link className="link" to="/prijava">{t('Nazaj na prijavo')}</Link></p>
     </AuthShell>
   );
 }
 
 export function NewPassword() {
-  usePageTitle('Novo geslo');
+  usePageTitle(t('Novo geslo'));
   const { toast, setUser } = useApp();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get('token');
   const [password, setPassword] = useState('');
   const [field, setField] = useState('');
-  const [error, setError] = useState(token ? '' : 'Povezava je potekla ali je že bila uporabljena. Zahtevajte novo.');
+  const [error, setError] = useState<string>(token ? '' : msg('Povezava je potekla ali je že bila uporabljena. Zahtevajte novo.'));
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setField(password.length < 8 ? 'Geslo je prekratko. Vnesite najmanj 8 znakov.' : '');
+    setField(password.length < 8 ? msg('Geslo je prekratko. Vnesite najmanj 8 znakov.') : '');
     setError('');
     if (password.length < 8 || !token) return;
     setBusy(true);
     try {
       await api.resetPassword(token, password);
       setUser(null);
-      toast('Geslo je spremenjeno. Prijavite se z novim geslom.');
+      toast(t('Geslo je spremenjeno. Prijavite se z novim geslom.'));
       navigate('/prijava', { replace: true });
     } catch (err) { setError((err as ApiError).message); setBusy(false); }
   };
 
   return (
-    <AuthShell title="Novo geslo" text="Po spremembi gesla boste odjavljeni na vseh napravah.">
+    <AuthShell title={t('Novo geslo')} text={t('Po spremembi gesla boste odjavljeni na vseh napravah.')}>
       {error && <ErrorNotice message={error} />}
       {token && (
         <form onSubmit={submit} noValidate>
-          <Field id="password" label="Novo geslo" hint="Najmanj 8 znakov." error={field}>{(a) => <input {...a} className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />}</Field>
-          <Submit busy={busy} busyLabel="Shranjevanje" className="btn btn-primary btn-block">Shrani geslo</Submit>
+          <Field id="password" label={t('Novo geslo')} hint={t('Najmanj 8 znakov.')} error={field}>{(a) => <input {...a} className="input" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />}</Field>
+          <Submit busy={busy} busyLabel={t('Shranjevanje')} className="btn btn-primary btn-block">{t('Shrani geslo')}</Submit>
         </form>
       )}
-      <p><Link className="link" to="/pozabljeno-geslo">Zahtevaj novo povezavo</Link></p>
+      <p><Link className="link" to="/pozabljeno-geslo">{t('Zahtevaj novo povezavo')}</Link></p>
     </AuthShell>
   );
 }

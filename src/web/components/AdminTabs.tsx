@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router';
+import { t } from '../i18n.js';
 
 export function AdminTabs() {
   return (
-    <nav className="tabs" aria-label="Skrbništvo">
-      <NavLink to="/skrbnistvo/uporabniki">Uporabniki</NavLink>
-      <NavLink to="/skrbnistvo/posta">E-pošta</NavLink>
-      <NavLink to="/skrbnistvo/prijava">Zunanja prijava</NavLink>
+    <nav className="tabs" aria-label={t('Skrbništvo')}>
+      <NavLink to="/skrbnistvo/uporabniki">{t('Uporabniki')}</NavLink>
+      <NavLink to="/skrbnistvo/posta">{t('E-pošta')}</NavLink>
+      <NavLink to="/skrbnistvo/prijava">{t('Zunanja prijava')}</NavLink>
     </nav>
   );
 }

@@ -1,13 +1,16 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { fieldErrors } from '../shared/contracts.js';
 import { passwordReset, userCreate, userUpdate, type Access } from '../shared/users.js';
-import type { Auth } from './auth.js';
+import type { AuthHolder } from './auth.js';
 import type { Config } from './config.js';
+import { translate } from '../shared/i18n.js';
+import { issuer, oidcInput } from '../shared/oidc.js';
 import { mailInput, mailUses } from '../shared/mail.js';
 import type { ContractStore } from './contracts.js';
 import { mailError, type Mail } from './mail.js';
+import { checkIssuer, type Oidc } from './oidc.js';
 import type { Reminders } from './reminders.js';
 import type { UserStore } from './users.js';
 
@@ -21,12 +24,9 @@ const body = async <T extends z.ZodType>(c: { req: { json: () => Promise<unknown
 const invalid = (error: z.ZodError) => ({ error: 'Preverite označena polja.', fields: fieldErrors(error) });
 
 // Kliče se samo za skrbnike. Pogodb drugih uporabnikov ne razkriva, razen njihovega števila.
-export function createAdminApi(config: Config, auth: Auth, mail: Mail, users: UserStore, contracts: ContractStore) {
+export function createAdminApi(auth: AuthHolder, mail: Mail, users: UserStore, contracts: ContractStore) {
   const app = new Hono<Env>();
 
-  const requireLocal = () => {
-    if (!config.localLogin) throw new HTTPException(409, { message: 'Prijava z geslom je izklopljena.' });
-  };
 
   app.get('/', (c) => c.json(users.list()));
 
@@ -36,11 +36,10 @@ export function createAdminApi(config: Config, auth: Auth, mail: Mail, users: Us
   });
 
   app.post('/', async (c) => {
-    requireLocal();
     const parsed = await body(c, userCreate);
     if (!parsed.success) return c.json(invalid(parsed.error), 400);
     const { name, email, password, role, permissions, mustChangePassword } = parsed.data;
-    const ctx = await auth.$context;
+    const ctx = await auth.current.$context;
     if (await ctx.internalAdapter.findUserByEmail(email)) {
       return c.json({ error: 'Preverite označena polja.', fields: { email: 'Račun s to e-pošto že obstaja.' } }, 409);
     }
@@ -72,17 +71,18 @@ export function createAdminApi(config: Config, auth: Auth, mail: Mail, users: Us
   });
 
   app.post('/:id/password', async (c) => {
-    requireLocal();
     const id = c.req.param('id');
     const user = users.get(id);
     if (!user) return c.json(NOT_FOUND, 404);
-    if (!user.hasPassword) return c.json({ error: 'Uporabnik se prijavlja prek zunanjega ponudnika in nima gesla.' }, 409);
     if (id === c.get('userId')) return c.json({ error: 'Svoje geslo spremenite na strani Moj račun.' }, 409);
     const parsed = await body(c, passwordReset);
     if (!parsed.success) return c.json(invalid(parsed.error), 400);
-    const ctx = await auth.$context;
-    await ctx.internalAdapter.updatePassword(id, await ctx.password.hash(parsed.data.password));
-    users.setMustChangePassword(id, parsed.data.mustChangePassword);
+    const ctx = await auth.current.$context;
+    const hash = await ctx.password.hash(parsed.data.password);
+    if (user.hasPassword) await ctx.internalAdapter.updatePassword(id, hash);
+    else await ctx.internalAdapter.linkAccount({ userId: id, providerId: 'credential', accountId: id, password: hash });
+    // Kdor se prijavlja prek ponudnika, začasnega gesla morda ne pozna, zato ga sprememba ne sme zakleniti.
+    users.setMustChangePassword(id, parsed.data.mustChangePassword && !user.hasOidc);
     users.endSessions(id);
     return c.json(users.get(id));
   });
@@ -92,8 +92,7 @@ export function createAdminApi(config: Config, auth: Auth, mail: Mail, users: Us
     const user = users.get(c.req.param('id'));
     if (!user) return c.json(NOT_FOUND, 404);
     if (!mail.canReset) return c.json({ error: 'Pošiljanje povezav po e-pošti ni vklopljeno.' }, 409);
-    if (!user.hasPassword) return c.json({ error: 'Uporabnik se prijavlja prek zunanjega ponudnika in nima gesla.' }, 409);
-    await auth.api.requestPasswordReset({ body: { email: user.email, redirectTo: '/novo-geslo' } });
+    await auth.current.api.requestPasswordReset({ body: { email: user.email, redirectTo: '/novo-geslo' } });
     return c.body(null, 204);
   });
 
@@ -143,18 +142,55 @@ export function createMailApi(config: Config, mail: Mail, reminders: Reminders, 
   // Preizkusno sporočilo gre vedno na naslov prijavljenega skrbnika.
   app.post('/test', async (c) => {
     if (!mail.ready) return c.json({ error: 'Najprej shranite nastavitve pošte.' }, 409);
-    const { email } = users.get(c.get('userId'))!;
+    const { email, language } = users.get(c.get('userId'))!;
     try {
-      await mail.send({ to: email, subject: 'Preizkusno sporočilo', text: 'Pošiljanje pošte iz Digitalnega arhiva pogodb deluje.\n' });
+      await mail.send({ to: email, subject: translate(language, 'Preizkusno sporočilo'), text: translate(language, 'Pošiljanje pošte iz Digitalnega arhiva pogodb deluje.') });
       return c.json({ to: email });
     } catch (error) {
-      return c.json({ error: mailError(error) }, 502);
+      return c.json(mailError(error), 502);
     }
   });
 
   app.post('/reminders', async (c) => {
     if (!mail.canRemind) return c.json({ error: 'Opozorila po e-pošti niso vklopljena ali pošta ni nastavljena.' }, 409);
     return c.json(await reminders.run());
+  });
+
+  return app;
+}
+
+export function createOidcApi(config: Config, auth: AuthHolder, oidc: Oidc) {
+  const app = new Hono<Env>();
+  const requirePanel = () => {
+    if (config.oidc) throw new HTTPException(409, { message: 'Ponudnik je nastavljen v okolju vsebnika in ga tu ni mogoče spremeniti.' });
+  };
+
+  app.get('/', (c) => c.json(oidc.view()));
+
+  app.put('/', async (c) => {
+    requirePanel();
+    const parsed = await body(c, oidcInput);
+    if (!parsed.success) return c.json(invalid(parsed.error), 400);
+    const checked = await checkIssuer(parsed.data.issuer);
+    if (typeof checked === 'string') return c.json({ error: 'Preverite označena polja.', fields: { issuer: checked } }, 400);
+    if (!oidc.save(parsed.data)) return c.json({ error: 'Preverite označena polja.', fields: { clientSecret: 'Vnesite skrivnost odjemalca.' } }, 400);
+    auth.rebuild();
+    return c.json(oidc.view());
+  });
+
+  app.delete('/', (c) => {
+    requirePanel();
+    oidc.clear();
+    auth.rebuild();
+    return c.json(oidc.view());
+  });
+
+  app.post('/check', async (c) => {
+    const parsed = await body(c, z.object({ issuer }));
+    if (!parsed.success) return c.json(invalid(parsed.error), 400);
+    const checked = await checkIssuer(parsed.data.issuer);
+    if (typeof checked === 'string') return c.json({ error: 'Preverite označena polja.', fields: { issuer: checked } }, 400);
+    return c.json(checked);
   });
 
   return app;

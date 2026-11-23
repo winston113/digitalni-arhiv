@@ -60,7 +60,7 @@ describe('OpenID Connect', () => {
     expect((await t.request('/api/contracts', { cookie: first.cookie })).status).toBe(200);
     expect((await signIn(t, false)).location).toBe('/');
     expect(t.db.prepare('SELECT COUNT(*) n FROM user').get()).toEqual({ n: 1 });
-    expect(await (await t.request('/api/config')).json()).toMatchObject({ oidc: { name: 'Zitadel' }, localLogin: true });
+    expect(await (await t.request('/api/config')).json()).toMatchObject({ oidc: { name: 'Zitadel' } });
   });
 
   it('sama prijava ne ustvari računa, registracija ga', async () => {
@@ -106,9 +106,92 @@ describe('OpenID Connect', () => {
     expect((await signIn(t)).location).toContain('error=');
   });
 
-  it('lokalno prijavo je mogoče izklopiti', async () => {
+  it('geslo je vedno rezerva, tudi z LOCAL_LOGIN=false', async () => {
     const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv', LOCAL_LOGIN: 'false' });
-    expect((await t.json('/api/auth/sign-in/email', { email: 'a@b.si', password: 'dolgo-geslo' })).status).toBe(400);
+    await t.register('geslo@primer.si');
+    expect((await t.json('/api/auth/sign-in/email', { email: 'geslo@primer.si', password: 'dolgo-geslo' })).status).toBe(200);
+  });
+
+  it('uporabnik ponudnika si nastavi rezervno geslo in se prijavi brez ponudnika', async () => {
+    const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv' });
+    const { cookie } = await signIn(t);
+    const first = (newPassword: string) => t.json('/api/password/first', { newPassword }, { cookie });
+    expect((await first('kratko')).status).toBe(400);
+    expect((await first('rezervno-geslo')).status).toBe(204);
+    expect((await first('drugo-geslo-1')).status).toBe(409);
+    expect((await t.json('/api/password/first', { newPassword: 'x-brez-prijave' })).status).toBe(401);
+    expect((await t.json('/api/auth/sign-in/email', { email: 'maja@primer.si', password: 'rezervno-geslo' })).status).toBe(200);
+    expect((await signIn(t, false)).location).toBe('/');
+  });
+
+  it('skrbnik lahko nastavi geslo uporabniku ponudnika, ne da bi ga zaklenil', async () => {
+    const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv' });
+    const admin = await t.register('skrbnik@primer.si');
+    await signIn(t);
+    const id = (t.db.prepare("SELECT id FROM user WHERE email = 'maja@primer.si'").get() as { id: string }).id;
+    const r = await t.json(`/api/admin/users/${id}/password`, { password: 'nastavljeno-1', mustChangePassword: true }, { cookie: admin });
+    expect(await r.json()).toMatchObject({ hasPassword: true, hasOidc: true, mustChangePassword: false });
+    expect((await t.json('/api/auth/sign-in/email', { email: 'maja@primer.si', password: 'nastavljeno-1' })).status).toBe(200);
+  });
+});
+
+describe('nastavitve ponudnika v skrbniškem delu', () => {
+  const body = (over: object = {}) => ({ name: 'Moj ponudnik', issuer: `${issuer}/.well-known/openid-configuration`, clientId: 'arhiv', method: 'none', clientSecret: null, scopes: 'profile email', registration: true, ...over });
+  const call = (t: Awaited<ReturnType<typeof setup>>, cookie: string, method: string, path = '', data: unknown = body()) => t.json(`/api/admin/oidc${path}`, data, { method, cookie });
+  const config = async (t: Awaited<ReturnType<typeof setup>>) => (await (await t.request('/api/config')).json()) as { oidc: { name: string } | null; registration: { oidc: boolean } };
+
+  it('začnejo veljati brez ponovnega zagona in jih je mogoče odstraniti', async () => {
+    const t = await setup();
+    const admin = await t.register('skrbnik@primer.si');
+    expect((await config(t)).oidc).toBeNull();
+    const saved = await call(t, admin, 'PUT');
+    expect(await saved.json()).toMatchObject({ source: 'panel', settings: { issuer, scopes: 'openid profile email', hasSecret: false } });
+    expect((await config(t)).oidc).toEqual({ name: 'Moj ponudnik' });
     expect((await signIn(t)).location).toBe('/');
+    expect((await t.request('/api/contracts', { cookie: admin })).status).toBe(200);
+    await call(t, admin, 'PUT', '', body({ registration: false }));
+    person.sub = 'nekdo-drug'; person.email = 'drug@primer.si';
+    expect((await signIn(t)).location).toContain('error=');
+    expect((await call(t, admin, 'DELETE')).status).toBe(200);
+    expect((await config(t)).oidc).toBeNull();
+  });
+
+  it('skrivnost je šifrirana, se ne vrne in se ne pošlje drugemu ponudniku', async () => {
+    const t = await setup();
+    const admin = await t.register('skrbnik@primer.si');
+    expect((await call(t, admin, 'PUT', '', body({ method: 'client_secret_basic' }))).status).toBe(400);
+    const saved = await call(t, admin, 'PUT', '', body({ method: 'client_secret_basic', clientSecret: 'zelo-skrivno' }));
+    expect(await saved.text()).not.toContain('zelo-skrivno');
+    expect(JSON.stringify(t.db.prepare('SELECT * FROM settings').all())).not.toContain('zelo-skrivno');
+    expect((await signIn(t)).location).toBe('/');
+    expect(Buffer.from(secretSeen.replace('Basic ', ''), 'base64').toString()).toBe('arhiv:zelo-skrivno');
+    expect((await call(t, admin, 'PUT', '', body({ method: 'client_secret_post' }))).status).toBe(200);
+    await signIn(t);
+    expect(secretSeen).toBe('zelo-skrivno');
+    expect((await call(t, admin, 'PUT', '', body({ method: 'client_secret_post', clientId: 'drug' }))).status).toBe(400);
+  });
+
+  it('preveri naslov, preden ga shrani', async () => {
+    const t = await setup();
+    const admin = await t.register('skrbnik@primer.si');
+    const error = async (value: string, path = '', method = 'PUT') => ((await (await call(t, admin, method, path, body({ issuer: value }))).json()) as { fields: { issuer: string } }).fields.issuer;
+    expect(await error('ftp://x')).toMatch(/https/);
+    expect(await error('http://primer.si')).toMatch(/https/);
+    expect(await error(`${issuer}/ni`)).toMatch(/ni konfiguracije/);
+    expect(await error('http://127.0.0.1:9', '/check', 'POST')).toMatch(/ni uspela/);
+    expect(await (await call(t, admin, 'POST', '/check')).json()).toMatchObject({ issuer });
+    expect((await config(t)).oidc).toBeNull();
+  });
+
+  it('samo za skrbnike; okolje ima prednost', async () => {
+    let t = await setup();
+    await t.register('skrbnik@primer.si');
+    const ana = await t.register('ana@primer.si');
+    for (const [m, p] of [['PUT', ''], ['DELETE', ''], ['POST', '/check']] as const) expect((await call(t, ana, m, p)).status).toBe(403);
+    expect((await t.request('/api/admin/oidc', { cookie: ana })).status).toBe(403);
+    t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv' });
+    const admin = await t.register('skrbnik@primer.si');
+    expect((await call(t, admin, 'PUT')).status).toBe(409);
+    expect((await call(t, admin, 'DELETE')).status).toBe(409);
   });
 });
