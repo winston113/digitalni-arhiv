@@ -32,7 +32,7 @@ Ena pisava: IBM Plex Sans v debelinah 400, 500 in 600. Naslov strani je `page-ti
 
 ## Postavitev
 
-Od 900 px širine je levo `sidebar-width`, desno vsebina do `content-width` z robom `space-6`. Pod 900 px je navigacija spodaj, rob vsebine je `space-4`, vsebina v enem stolpcu. Obrazci so široki največ `form-width`.
+Na vrhu vsakega zaslona je Glava s preklopom teme desno. Znak in ime sta povsod ena povezava na začetno stran. Od 900 px širine je levo `sidebar-width`, desno vsebina do `content-width` z robom `space-6`. Pod 900 px je navigacija spodaj, rob vsebine je `space-4`, vsebina v enem stolpcu. Obrazci so široki največ `form-width`.
 
 ## Stanja in dostopnost
 

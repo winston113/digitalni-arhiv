@@ -17,6 +17,8 @@ V manjših podjetjih so pogodbe pogosto razpršene po e-pošti, mapah in predali
 
 - [Opis procesa](docs/opis-procesa.md)
 - [Uporabniški tok in zasloni](docs/uporabniski-tok.md)
+- [Design sistem](design/project/README.md)
+- [Sprint poročilo 1](docs/porocila/sprint-1.md)
 
 ## Uporabljena orodja
 

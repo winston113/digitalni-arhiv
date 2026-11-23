@@ -31,7 +31,7 @@ Odjava je na voljo na vseh zaslonih po prijavi. Preklop teme (sistemska, svetla,
 
 ## Navigacija
 
-Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavkami: Nadzorna plošča, Pogodbe, Opozorila. Gumb »Nova pogodba« je na voljo na nadzorni plošči in seznamu pogodb.
+Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavkami: Nadzorna plošča, Pogodbe, Opozorila. Znak in ime aplikacije sta ena povezava na začetno stran: po prijavi na nadzorno ploščo, pred prijavo na prijavo. Gumb »Nova pogodba« je na voljo na nadzorni plošči in seznamu pogodb.
 
 ## Zasloni
 
