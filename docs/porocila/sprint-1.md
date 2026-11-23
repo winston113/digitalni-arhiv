@@ -6,7 +6,7 @@ Obdobje: 23. 11. – 29. 11. 2026. Osnutek, stanje 23. 11. 2026.
 
 - Opisali smo poslovni proces, uporabnika in pravila za roke ter statuse.
 - Določili smo uporabniški tok in sedem zaslonov.
-- Pripravili smo mini design sistem: temno zelena primarna barva, pisava IBM Plex Sans, razmiki, 14 komponent in pravila za besedila.
+- Pripravili smo mini design sistem: temno zelena primarna barva, pisava IBM Plex Sans, razmiki, 17 komponent, svetla in temna tema, znak in pravila za besedila.
 
 ## Kaj ni uspelo in zakaj
 
@@ -17,7 +17,10 @@ Obdobje: 23. 11. – 29. 11. 2026. Osnutek, stanje 23. 11. 2026.
 1. Začetni prompt (odlomek): »We have been tasked with making a digital contract archive. [...] Before we start designing and coding and whatnot, we should create a github repo and flesh out a general idea how this will look and work. As the plan specifies, the project or "app" should be simple and user friendly, it should not look blatantly vibe-coded, so make it consistent throughout every page. Absolutely ZERO emojis allowed, this is non-negotiable.«
    Učinek: najprej proces in oblikovanje, šele nato koda; enoten slog od začetka.
 
-Prompta 2 in 3 še nista izbrana.
+2. Popravki design sistema (odlomek): »Make light/dark/system theme choices. A persistent button across all pages that defaults to system. [...] Make the logo and/or name clickable that redirects back to the main home page.«
+   Učinek: tema in glava sta postali del sistema, še preden so nastali zasloni.
+
+Prompt 3 še ni izbran.
 
 ## Plan za naslednji sprint
 
