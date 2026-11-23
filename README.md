@@ -52,7 +52,7 @@ Vse nastavitve so opisane v [.env.example](.env.example).
 
 Prvi ustvarjeni račun samodejno postane skrbnik, ne glede na način registracije. Zato se registrirajte, **preden aplikacijo odprete drugim**, nato po potrebi nastavite `REGISTRATION=false` in znova zaženite vsebnik.
 
-Skrbnik v razdelku Uporabniki ustvarja račune, ponastavlja gesla, blokira in briše uporabnike ter vsakemu določi, ali sme pogodbe dodajati, urejati in brisati. Tujih pogodb ne vidi.
+Skrbnik v razdelku Skrbništvo ustvarja račune, ponastavlja gesla, blokira in briše uporabnike ter vsakemu določi, ali sme pogodbe dodajati, urejati in brisati. Tujih pogodb ne vidi.
 
 ### Javna predstavitvena različica
 
@@ -64,7 +64,7 @@ docker compose -f docker-compose.demo.yaml --env-file .env.demo up -d --build
 ```
 
 1. Skrbnika ustvarite, preden je naslov javen: v Caddyju dostop najprej omejite na svoje omrežje (spodaj).
-2. V razdelku Uporabniki ustvarite testni račun; izklopite »mora ob naslednji prijavi spremeniti geslo«.
+2. V razdelku Skrbništvo ustvarite testni račun; izklopite »mora ob naslednji prijavi spremeniti geslo«.
 3. Dodajte vzorčne pogodbe: `docker compose -f docker-compose.demo.yaml --env-file .env.demo exec arhiv node dist/server/cli.js demo <e-pošta>`
 4. V Caddyju odstranite omejitev.
 
@@ -96,11 +96,21 @@ Pri tem nastavite `TRUST_PROXY=true`. Če Caddy teče na drugem strežniku, vpi�
 
 Prijava in registracija prek ponudnika sta ločeni: nov račun nastane samo z gumbom na strani Registracija. Registracijo prek ponudnika izklopite z `OIDC_REGISTRATION=false`.
 
+Stanje in točen naslov za preusmeritev sta v aplikaciji: Skrbništvo, Zunanja prijava. Za preizkus na `http://localhost` v Zitadelu vklopite razvojni način (Development Mode).
+
 Če želite prijavo samo prek ponudnika, nastavite `LOCAL_LOGIN=false`. Račun z geslom in račun ponudnika z istim e-poštnim naslovom se zaradi varnosti ne združita samodejno.
 
 ### Mailjet ali drug strežnik SMTP
 
-Nastavite `SMTP_HOST=in-v3.mailjet.com`, `SMTP_PORT=587`, ključ API kot `SMTP_USER`, skrivni ključ kot `SMTP_PASSWORD` in potrjen naslov pošiljatelja kot `SMTP_FROM`. Brez teh nastavitev ponastavitev gesla po pošti ni na voljo.
+Pošto nastavi skrbnik v aplikaciji (Skrbništvo, E-pošta): strežnik `in-v3.mailjet.com`, vrata 587, STARTTLS, ključ API kot uporabniško ime, skrivni ključ kot geslo in potrjen naslov pošiljatelja. Geslo je v bazi šifrirano. Namesto tega lahko uporabite spremenljivke `SMTP_*`; te imajo prednost.
+
+Pošta se uporablja za:
+
+- **opozorila pred potekom**: enkrat na dan povzetek novih opozoril, prvič ob začetku opozorila, nato teden pred rokom za ukrepanje in ob poteku;
+- **ponastavitev gesla**, na zahtevo uporabnika ali skrbnika;
+- **potrditev e-poštnega naslova**, ki je pogoj za prejemanje opozoril.
+
+Uporabnik opozorila izklopi na strani Moj račun.
 
 ### Skrbniški ukazi
 
@@ -115,6 +125,15 @@ docker compose exec arhiv node dist/server/cli.js demo uporabnik@primer.si    # 
 Ustavite vsebnik (`docker compose stop`), kopirajte celoten nosilec `podatki` in ga znova zaženite. Kopija vsebuje bazo, datoteke PDF in skrivnost za seje.
 
 Če namesto nosilca uporabite mapo na gostitelju, mora vanjo lahko pisati uporabnik 1000 oziroma uporabnik, ki ga nastavite z `user:` v `compose.yaml` (na Unraidu običajno `99:100`).
+
+### Podman
+
+Docker Compose deluje tudi s Podmanom:
+
+```sh
+systemctl --user enable --now podman.socket
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+```
 
 ## Razvoj
 

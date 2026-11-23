@@ -1,4 +1,4 @@
-import { CircleCheck, Plus } from 'lucide-react';
+import { CircleCheck, Mail, Plus } from 'lucide-react';
 import { Link } from 'react-router';
 import { sortByDeadline, STATUSES } from '../../shared/contracts.js';
 import { formatDate, today } from '../../shared/dates.js';
@@ -10,7 +10,8 @@ import { useApp, useLoad, usePageTitle } from '../state.js';
 export function Dashboard() {
   usePageTitle('Nadzorna plošča');
   const { data, error, retry } = useLoad(api.list, []);
-  const { create } = useApp().user!.permissions;
+  const { config, user } = useApp();
+  const { create } = user!.permissions;
   const add = create && <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
   const upcoming = data?.filter((c) => c.status !== 'prekinjena' && c.actionDate !== null).sort(sortByDeadline).slice(0, 3) ?? [];
   const recent = data ? [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3) : [];
@@ -23,6 +24,7 @@ export function Dashboard() {
       {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text={create ? 'Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.' : 'Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.'}>{add}</Empty>}
       {data && data.length > 0 && (
         <>
+          {config.reminders && !user!.emailVerified && <div className="notice"><Icon of={Mail} /><div>Za opozorila po e-pošti <Link className="link" to="/racun">potrdite svoj naslov</Link>.</div></div>}
           <div className="counts">
             {STATUSES.map((s) => (
               <Link key={s} className="count" to={`/pogodbe?status=${s}`}>

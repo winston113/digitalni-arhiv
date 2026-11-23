@@ -26,10 +26,10 @@ export function AccountBadge({ disabled }: { disabled: boolean }) {
     : <span className="badge badge-active"><Icon of={CircleCheck} size="sm" />Dejaven</span>;
 }
 
-export function Submit({ busy, busyLabel, children, className = 'btn btn-primary', ...rest }:
+export function Submit({ busy, busyLabel, children, className = 'btn btn-primary', onClick, ...rest }:
   { busy: boolean; busyLabel: string } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button type="submit" className={className} aria-busy={busy} onClick={busy ? (e) => e.preventDefault() : undefined} {...rest}>
+    <button type="submit" className={className} aria-busy={busy} {...rest} onClick={busy ? (e) => e.preventDefault() : onClick}>
       {busy ? <><Icon of={LoaderCircle} />{busyLabel}</> : children}
     </button>
   );

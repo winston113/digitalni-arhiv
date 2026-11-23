@@ -22,7 +22,7 @@ Oseba, ki v manjšem podjetju skrbi za pogodbe: vodja pisarne, računovodja ali 
 | 1. Nalaganje | Pogodba ostane v e-pošti ali mapi | Uporabnik naloži PDF v arhiv |
 | 2. Razvrščanje | Ni enotnega sistema | Izbere kategorijo, vpiše pogodbeno stranko in roke |
 | 3. Iskanje | Ročno pregledovanje map | Iskanje po nazivu, stranki ali številki ter filtri |
-| 4. Opozorilo | Odvisno od spomina | Aplikacija prikaže pogodbe, ki zahtevajo ukrepanje |
+| 4. Opozorilo | Odvisno od spomina | Aplikacija prikaže pogodbe, ki zahtevajo ukrepanje, in o njih obvesti po e-pošti |
 | 5. Zaključek | Pogosto prepozno | Uporabnik pogodbo podaljša ali prekine |
 
 ## Podatki o pogodbi
@@ -60,6 +60,6 @@ Podaljšanje pomeni vnos novega datuma poteka. Pogodba se s tem vrne med aktivne
 
 ## Obseg prve različice
 
-Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla po e-pošti.
+Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
 
-Ni vključeno: elektronski podpis, potrjevanje pogodb, skupna raba pogodb, zgodovina različic, opozorila po e-pošti, funkcije umetne inteligence.
+Ni vključeno: elektronski podpis, potrjevanje pogodb, skupna raba pogodb, zgodovina različic, funkcije umetne inteligence.

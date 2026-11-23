@@ -77,7 +77,7 @@ export function createAdminApi(config: Config, auth: Auth, mail: Mail, users: Us
     const user = users.get(id);
     if (!user) return c.json(NOT_FOUND, 404);
     if (!user.hasPassword) return c.json({ error: 'Uporabnik se prijavlja prek zunanjega ponudnika in nima gesla.' }, 409);
-    if (id === c.get('userId')) return c.json({ error: 'Svoje geslo spremenite na strani Sprememba gesla.' }, 409);
+    if (id === c.get('userId')) return c.json({ error: 'Svoje geslo spremenite na strani Moj račun.' }, 409);
     const parsed = await body(c, passwordReset);
     if (!parsed.success) return c.json(invalid(parsed.error), 400);
     const ctx = await auth.$context;

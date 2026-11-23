@@ -46,6 +46,8 @@ Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavka
 | Opozorila | pogodbe, razvrščene po roku za ukrepanje | Odpri pogodbo | Trenutno nobena pogodba ne zahteva ukrepanja. |
 | Uporabniki (skrbnik) | seznam računov, vloga, način prijave, število pogodb, stanje | Nov uporabnik | Račun s to e-pošto že obstaja |
 | Uporabnik (skrbnik) | ime, vloga, dovoljenja | Shrani, Ponastavi geslo, Blokiraj, Izbriši | Vsaj en dejaven skrbnik mora ostati. |
-| Sprememba gesla | sedanje in novo geslo; obvezna ob začasnem geslu | Shrani geslo | Sedanje geslo ni pravilno. |
+| E-pošta (skrbnik) | strežnik SMTP, vrste sporočil, ura pošiljanja | Shrani nastavitve, Pošlji preizkus | Povezava s strežnikom ni uspela. |
+| Zunanja prijava (skrbnik) | stanje OpenID Connect, naslov za preusmeritev | | Ponudnik ni nastavljen. |
+| Moj račun | opozorila po e-pošti, sprememba gesla; obvezna ob začasnem geslu | Shrani geslo | Sedanje geslo ni pravilno. |
 
 Vsak zaslon ima stanje nalaganja, vsako uspešno dejanje pa kratko potrditveno sporočilo.

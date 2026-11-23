@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { api, ApiError } from '../api.js';
 import { ErrorNotice, Field, Submit } from '../components/ui.js';
-import { useApp, usePageTitle } from '../state.js';
+import { useApp } from '../state.js';
 
 export function ChangePasswordForm() {
   const { toast, refreshUser } = useApp();
@@ -41,9 +41,4 @@ export function ChangePasswordForm() {
       </form>
     </>
   );
-}
-
-export function ChangePassword() {
-  usePageTitle('Sprememba gesla');
-  return <><div className="page-head"><h1>Sprememba gesla</h1></div><p className="muted">Na drugih napravah boste odjavljeni.</p><div className="narrow"><ChangePasswordForm /></div></>;
 }

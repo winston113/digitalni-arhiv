@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, KeyRound, Trash2 } from 'lucide-react';
+import { ArrowLeft, Ban, KeyRound, Mail, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { fieldErrors } from '../../shared/contracts.js';
@@ -11,7 +11,7 @@ import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
 
 const ALL = { create: true, edit: true, remove: true };
-const Back = () => <Link className="back" to="/uporabniki"><Icon of={ArrowLeft} />Nazaj na uporabnike</Link>;
+const Back = () => <Link className="back" to="/skrbnistvo/uporabniki"><Icon of={ArrowLeft} />Nazaj na uporabnike</Link>;
 
 export function NewUser() {
   usePageTitle('Nov uporabnik');
@@ -31,7 +31,7 @@ export function NewUser() {
     try {
       await api.createUser(parsed.data);
       toast('Uporabnik je ustvarjen.');
-      navigate('/uporabniki', { replace: true });
+      navigate('/skrbnistvo/uporabniki', { replace: true });
     } catch (err) {
       const { message, fields: invalid } = err as ApiError;
       setFields(invalid);
@@ -50,7 +50,7 @@ export function NewUser() {
         <TemporaryPassword value={f.password} onChange={(password) => setF({ ...f, password })} must={f.mustChangePassword} onMust={(mustChangePassword) => setF({ ...f, mustChangePassword })} error={fields.password} />
         <RoleField value={f.role} onChange={(role) => setF({ ...f, role })} error={fields.role} />
         <PermissionFields value={f.permissions} onChange={(permissions) => setF({ ...f, permissions })} />
-        <div className="form-actions full"><Submit busy={busy} busyLabel="Ustvarjanje">Ustvari uporabnika</Submit><Link className="btn btn-secondary" to="/uporabniki">Prekliči</Link></div>
+        <div className="form-actions full"><Submit busy={busy} busyLabel="Ustvarjanje">Ustvari uporabnika</Submit><Link className="btn btn-secondary" to="/skrbnistvo/uporabniki">Prekliči</Link></div>
       </form>
     </>
   );
@@ -59,7 +59,7 @@ export function NewUser() {
 export function EditUser() {
   const { id = '' } = useParams();
   const { data, setData, error, retry } = useLoad(() => api.user(id), [id]);
-  if (error?.status === 404) return <NotFound title="Uporabnik ne obstaja" text="Morda je bil izbrisan." to="/uporabniki" label="Na seznam uporabnikov" />;
+  if (error?.status === 404) return <NotFound title="Uporabnik ne obstaja" text="Morda je bil izbrisan." to="/skrbnistvo/uporabniki" label="Na seznam uporabnikov" />;
   if (error) return <ErrorNotice message={error.message} retry={retry} />;
   if (!data || data.id !== id) return <Skeleton label="Nalaganje uporabnika" />;
   return <Editor key={data.id} u={data} onChange={setData} />;
@@ -95,6 +95,7 @@ function Editor({ u, onChange }: { u: ManagedUser; onChange: (u: ManagedUser) =>
     setDialog(null);
     toast(disabled ? 'Uporabnik je blokiran.' : 'Uporabnik je odblokiran.');
   };
+  const sendLink = () => { setError(''); api.sendResetLink(u.id).then(() => toast(`Povezava je poslana na ${u.email}.`), (err: ApiError) => setError(err.message)); };
   const unblock = () => setDisabled(false).catch((err: ApiError) => setError(err.message));
 
   return (
@@ -106,6 +107,7 @@ function Editor({ u, onChange }: { u: ManagedUser; onChange: (u: ManagedUser) =>
       {!self && (
         <div className="actions">
           {config.localLogin && u.hasPassword && <button type="button" className="btn btn-secondary" onClick={() => setDialog('password')}><Icon of={KeyRound} />Ponastavi geslo</button>}
+          {config.passwordReset && u.hasPassword && <button type="button" className="btn btn-secondary" onClick={sendLink}><Icon of={Mail} />Pošlji povezavo za geslo</button>}
           {u.disabled
             ? <button type="button" className="btn btn-secondary" onClick={unblock}>Odblokiraj</button>
             : <button type="button" className="btn btn-secondary" onClick={() => setDialog('block')}><Icon of={Ban} />Blokiraj</button>}
@@ -121,7 +123,7 @@ function Editor({ u, onChange }: { u: ManagedUser; onChange: (u: ManagedUser) =>
       {dialog === 'password' && <ResetDialog u={u} close={() => setDialog(null)} done={(next) => { onChange(next); setDialog(null); toast('Geslo je ponastavljeno.'); }} />}
       {dialog === 'block' && <ConfirmDialog title="Blokiranje uporabnika" label="Blokiraj" busyLabel="Blokiranje" close={() => setDialog(null)} run={() => setDisabled(true)} text={`Uporabnik ${u.name} bo takoj odjavljen na vseh napravah in se ne bo mogel prijaviti. Pogodbe ostanejo shranjene.`} />}
       {dialog === 'remove' && <ConfirmDialog title="Brisanje uporabnika" label="Izbriši uporabnika" busyLabel="Brisanje" close={() => setDialog(null)}
-        run={async () => { await api.removeUser(u.id); toast('Uporabnik je izbrisan.'); navigate('/uporabniki', { replace: true }); }}
+        run={async () => { await api.removeUser(u.id); toast('Uporabnik je izbrisan.'); navigate('/skrbnistvo/uporabniki', { replace: true }); }}
         text={`Račun ${u.email} bo trajno izbrisan skupaj z vsemi pogodbami in datotekami PDF. Število pogodb: ${u.contracts}.`} />}
     </>
   );

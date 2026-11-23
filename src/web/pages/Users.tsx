@@ -1,6 +1,7 @@
 import { Plus, Users as UsersIcon } from 'lucide-react';
 import { Link } from 'react-router';
 import { api } from '../api.js';
+import { AdminTabs } from '../components/AdminTabs.js';
 import { AccountBadge, Empty, ErrorNotice, Icon, Skeleton } from '../components/ui.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 
@@ -10,7 +11,8 @@ export function Users() {
   const { data, error, retry } = useLoad(api.users, []);
   return (
     <>
-      <div className="page-head"><h1>Uporabniki</h1>{config.localLogin && <Link className="btn btn-primary" to="/uporabniki/nov"><Icon of={Plus} />Nov uporabnik</Link>}</div>
+      <div className="page-head"><h1>Uporabniki</h1>{config.localLogin && <Link className="btn btn-primary" to="/skrbnistvo/uporabniki/nov"><Icon of={Plus} />Nov uporabnik</Link>}</div>
+      <AdminTabs />
       {error && <ErrorNotice message={error.message} retry={retry} />}
       {!data && !error && <Skeleton label="Nalaganje uporabnikov" />}
       {data?.length === 0 && <Empty icon={UsersIcon} title="Ni uporabnikov" text="Ustvarite prvega uporabnika." />}
@@ -21,7 +23,7 @@ export function Users() {
             <tbody role="rowgroup">
               {data.map((u) => (
                 <tr key={u.id} role="row">
-                  <td role="cell" className="main"><Link className="title" to={`/uporabniki/${u.id}`}>{u.name}</Link>{u.id === me?.id && <span className="muted"> (vi)</span>}<span className="sub">{u.email}</span></td>
+                  <td role="cell" className="main"><Link className="title" to={`/skrbnistvo/uporabniki/${u.id}`}>{u.name}</Link>{u.id === me?.id && <span className="muted"> (vi)</span>}<span className="sub">{u.email}</span></td>
                   <td role="cell" data-label="Vloga">{u.role === 'admin' ? 'Skrbnik' : 'Uporabnik'}</td>
                   <td role="cell" data-label="Prijava">{[u.hasPassword && 'Geslo', u.hasOidc && (config.oidc?.name ?? 'Zunanji ponudnik')].filter(Boolean).join(', ')}</td>
                   <td role="cell" className="num" data-label="Pogodbe">{u.contracts}</td>

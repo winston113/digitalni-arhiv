@@ -7,6 +7,7 @@ interface AppState {
   user: Me | null;
   setUser: (user: Me | null) => void;
   refreshUser: () => Promise<void>;
+  refreshConfig: () => Promise<void>;
   toast: (message: string) => void;
   alerts: number;
   refreshAlerts: () => void;

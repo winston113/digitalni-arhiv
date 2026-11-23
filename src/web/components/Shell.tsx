@@ -1,4 +1,4 @@
-import { Bell, FileText, LayoutDashboard, LogOut, UserCog, Users } from 'lucide-react';
+import { Bell, FileText, LayoutDashboard, LogOut, Settings, UserCog } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { api } from '../api.js';
@@ -22,7 +22,7 @@ function NavItems({ first }: { first: string }) {
       <NavLink className="nav-item" to="/" end><Icon of={LayoutDashboard} />{first}</NavLink>
       <NavLink className="nav-item" to="/pogodbe"><Icon of={FileText} />Pogodbe</NavLink>
       <NavLink className="nav-item" to="/opozorila"><Icon of={Bell} />Opozorila{alerts > 0 && <span className="nav-count" aria-label={`Število opozoril: ${alerts}`}>{alerts}</span>}</NavLink>
-      {user?.role === 'admin' && <NavLink className="nav-item" to="/uporabniki"><Icon of={Users} />Uporabniki</NavLink>}
+      {user?.role === 'admin' && <NavLink className="nav-item" to="/skrbnistvo"><Icon of={Settings} />Skrbništvo</NavLink>}
     </>
   );
 }
@@ -59,8 +59,8 @@ export function Shell() {
           <header className="appbar">
             <Brand className="brand brand-app" />
             <div className="appbar-actions">
-              {user?.hasPassword ? <Link className="appbar-user" to="/geslo" title="Sprememba gesla">{user.email}</Link> : <span className="appbar-user">{user?.email}</span>}
-              {user?.hasPassword && <Link className="btn btn-secondary btn-icon account-phone" to="/geslo" aria-label="Sprememba gesla"><Icon of={UserCog} /></Link>}
+              <Link className="appbar-user" to="/racun" title="Moj račun">{user?.email}</Link>
+              <Link className="btn btn-secondary btn-icon account-phone" to="/racun" aria-label="Moj račun"><Icon of={UserCog} /></Link>
               <ThemeMenu />
               <SignOutButton />
             </div>

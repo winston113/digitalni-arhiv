@@ -1,12 +1,16 @@
 import type { ContractView } from '../shared/contracts.js';
+import type { MailInput, MailUses, MailView } from '../shared/mail.js';
 import type { ManagedUser, Me, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
   localLogin: boolean;
   registration: { local: boolean; oidc: boolean };
   passwordReset: boolean;
+  reminders: boolean;
   oidc: { name: string } | null;
 }
+
+export interface OidcView { issuer: string | null; clientId: string | null; name: string | null; hasSecret: boolean; registration: boolean; redirectUri: string }
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly fields: Record<string, string> = {}) { super(message); }
@@ -79,5 +83,15 @@ export const api = {
   createUser: async (data: UserCreate) => (await post('/api/admin/users', data)).json() as Promise<ManagedUser>,
   updateUser: async (id: string, data: UserUpdate) => (await put(`/api/admin/users/${id}`, data)).json() as Promise<ManagedUser>,
   setUserPassword: async (id: string, data: { password: string; mustChangePassword: boolean }) => (await post(`/api/admin/users/${id}/password`, data)).json() as Promise<ManagedUser>,
+  sendResetLink: (id: string) => post(`/api/admin/users/${id}/reset-link`, {}),
+  sendVerification: (email: string) => post('/api/auth/send-verification-email', { email, callbackURL: '/racun?potrjeno=1' }),
+  setReminders: (enabled: boolean) => put('/api/me/reminders', { enabled }),
+  mail: async () => (await send('/api/admin/mail')).json() as Promise<MailView>,
+  saveMail: async (data: MailInput) => (await put('/api/admin/mail', data)).json() as Promise<MailView>,
+  clearMail: async () => (await withBody('DELETE')('/api/admin/mail', {})).json() as Promise<MailView>,
+  saveMailUses: async (data: MailUses) => (await put('/api/admin/mail/uses', data)).json() as Promise<MailView>,
+  testMail: async () => (await post('/api/admin/mail/test', {})).json() as Promise<{ to: string }>,
+  runReminders: async () => (await post('/api/admin/mail/reminders', {})).json() as Promise<{ sent: number; failed: number }>,
+  oidc: async () => (await send('/api/admin/oidc')).json() as Promise<OidcView>,
   removeUser: (id: string) => send(`/api/admin/users/${id}`, { method: 'DELETE' }),
 };
