@@ -1,7 +1,4 @@
 /* Žetoni iz design sistema (tokens.json) in postavitev zaslonov. */
-@font-face{font-family:"IBM Plex Sans";font-weight:400;src:url("ds/digitalniarhivpogodb/fonts/IBMPlexSans-Regular.woff2") format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:500;src:url("ds/digitalniarhivpogodb/fonts/IBMPlexSans-Medium.woff2") format("woff2")}
-@font-face{font-family:"IBM Plex Sans";font-weight:600;src:url("ds/digitalniarhivpogodb/fonts/IBMPlexSans-SemiBold.woff2") format("woff2")}
 :root,[data-theme=light]{
  --primary:#1f4d3a;--primary-hover:#163a2b;--primary-tint:#e6efe9;--on-primary:#ffffff;
  --nav:#1f4d3a;--nav-active:#163a2b;--on-nav:#ffffff;--on-nav-muted:#c9d9cf;
