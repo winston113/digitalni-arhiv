@@ -5,9 +5,9 @@ import { AuthShell } from '../components/Shell.js';
 import { ErrorNotice, Field, Submit } from '../components/ui.js';
 import { useApp, usePageTitle } from '../state.js';
 
-const OIDC_ERRORS: Record<string, string> = {
+export const OIDC_ERRORS: Record<string, string> = {
   account_not_linked: 'Za ta e-poštni naslov že obstaja račun z geslom. Prijavite se z geslom.',
-  signup_disabled: 'Ustvarjanje novih računov ni omogočeno. Obrnite se na skrbnika.',
+  ACCOUNT_DISABLED: 'Račun je blokiran. Obrnite se na skrbnika.',
 };
 
 export function SignIn() {
@@ -19,7 +19,8 @@ export function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fields, setFields] = useState<Record<string, string>>({});
-  const [error, setError] = useState(code ? OIDC_ERRORS[code] ?? 'Prijava pri ponudniku ni uspela. Poskusite znova.' : '');
+  const canRegister = config.registration.local || config.registration.oidc;
+  const [error, setError] = useState(code === 'signup_disabled' ? (config.registration.oidc ? 'Račun še ne obstaja. Najprej se registrirajte.' : 'Račun ne obstaja, registracija pa ni omogočena. Obrnite se na skrbnika.') : code ? OIDC_ERRORS[code] ?? 'Prijava pri ponudniku ni uspela. Poskusite znova.' : '');
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
@@ -31,14 +32,14 @@ export function SignIn() {
     setBusy(true);
     try {
       await api.signIn(email.trim(), password);
-      const user = await api.session();
+      const user = await api.me();
       navigate('/', { replace: true });
       setUser(user);
     } catch (err) { setError((err as ApiError).message); setBusy(false); }
   };
   const oidc = async () => {
     setError('');
-    try { await api.signInOidc(); } catch (err) { setError((err as ApiError).message); }
+    try { await api.signInOidc(false); } catch (err) { setError((err as ApiError).message); }
   };
 
   return (
@@ -54,7 +55,7 @@ export function SignIn() {
       {config.localLogin && config.oidc && <div className="separator">ali</div>}
       {config.oidc && <button type="button" className={`btn btn-block ${config.localLogin ? 'btn-secondary' : 'btn-primary'}`} onClick={oidc}>Prijava z računom {config.oidc.name}</button>}
       {config.passwordReset && <p><Link className="link" to="/pozabljeno-geslo">Pozabljeno geslo</Link></p>}
-      {config.registration && <p>Še nimate računa? <Link className="link" to="/registracija">Ustvarite račun</Link></p>}
+      {canRegister && <p>Še nimate računa? <Link className="link" to="/registracija">Ustvarite račun</Link></p>}
     </AuthShell>
   );
 }

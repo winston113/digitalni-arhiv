@@ -1,4 +1,4 @@
-import { Bell, FileText, LayoutDashboard, LogOut } from 'lucide-react';
+import { Bell, FileText, LayoutDashboard, LogOut, UserCog, Users } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { api } from '../api.js';
@@ -16,18 +16,30 @@ function Brand({ className = 'brand' }: { className?: string }) {
 }
 
 function NavItems({ first }: { first: string }) {
-  const { alerts } = useApp();
+  const { alerts, user } = useApp();
   return (
     <>
       <NavLink className="nav-item" to="/" end><Icon of={LayoutDashboard} />{first}</NavLink>
       <NavLink className="nav-item" to="/pogodbe"><Icon of={FileText} />Pogodbe</NavLink>
       <NavLink className="nav-item" to="/opozorila"><Icon of={Bell} />Opozorila{alerts > 0 && <span className="nav-count" aria-label={`Število opozoril: ${alerts}`}>{alerts}</span>}</NavLink>
+      {user?.role === 'admin' && <NavLink className="nav-item" to="/uporabniki"><Icon of={Users} />Uporabniki</NavLink>}
     </>
   );
 }
 
+function useSignOut() {
+  const { setUser, toast } = useApp();
+  return async () => {
+    try { await api.signOut(); setUser(null); } catch { toast('Odjava ni uspela. Poskusite znova.'); }
+  };
+}
+
+function SignOutButton() {
+  return <button type="button" className="btn btn-secondary" onClick={useSignOut()}><Icon of={LogOut} /><span className="btn-label">Odjava</span></button>;
+}
+
 export function Shell() {
-  const { user, setUser, toast, refreshAlerts } = useApp();
+  const { user, refreshAlerts } = useApp();
   const { pathname } = useLocation();
   const main = useRef<HTMLElement>(null);
   const first = useRef(true);
@@ -39,10 +51,6 @@ export function Shell() {
     main.current?.focus({ preventScroll: true });
   }, [pathname, refreshAlerts]);
 
-  const signOut = async () => {
-    try { await api.signOut(); setUser(null); } catch { toast('Odjava ni uspela. Poskusite znova.'); }
-  };
-
   return (
     <>
       <div className="layout">
@@ -51,23 +59,24 @@ export function Shell() {
           <header className="appbar">
             <Brand className="brand brand-app" />
             <div className="appbar-actions">
-              <span className="appbar-user">{user?.email}</span>
+              {user?.hasPassword ? <Link className="appbar-user" to="/geslo" title="Sprememba gesla">{user.email}</Link> : <span className="appbar-user">{user?.email}</span>}
+              {user?.hasPassword && <Link className="btn btn-secondary btn-icon account-phone" to="/geslo" aria-label="Sprememba gesla"><Icon of={UserCog} /></Link>}
               <ThemeMenu />
-              <button type="button" className="btn btn-secondary" onClick={signOut}><Icon of={LogOut} /><span className="btn-label">Odjava</span></button>
+              <SignOutButton />
             </div>
           </header>
           <main className="content" ref={main} tabIndex={-1}><Outlet /></main>
         </div>
       </div>
-      <div className="nav-bottom-wrap"><nav className="nav nav-bottom" aria-label="Glavna navigacija, telefon"><NavItems first="Pregled" /></nav></div>
+      <div className="nav-bottom-wrap"><nav className={`nav nav-bottom${user?.role === 'admin' ? ' nav-bottom-4' : ''}`} aria-label="Glavna navigacija, telefon"><NavItems first="Pregled" /></nav></div>
     </>
   );
 }
 
-export function AuthShell({ title, text, children }: { title: string; text: string } & Children) {
+export function AuthShell({ title, text, signOut = false, children }: { title: string; text: string; signOut?: boolean } & Children) {
   return (
     <div className="auth-page">
-      <header className="appbar"><Brand /><div className="appbar-actions"><ThemeMenu /></div></header>
+      <header className="appbar"><Brand /><div className="appbar-actions"><ThemeMenu />{signOut && <SignOutButton />}</div></header>
       <main className="auth"><div className="auth-box">
         <div className="auth-head"><Logo large /><h1>{title}</h1><p className="muted">{text}</p></div>
         {children}

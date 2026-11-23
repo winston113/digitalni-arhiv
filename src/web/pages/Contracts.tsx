@@ -6,7 +6,7 @@ import { api } from '../api.js';
 import { ContractTable } from '../components/ContractTable.js';
 import { Empty, ErrorNotice, Icon, Skeleton, STATUS_NAMES } from '../components/ui.js';
 import { pluralContracts } from '../format.js';
-import { useLoad, usePageTitle } from '../state.js';
+import { useApp, useLoad, usePageTitle } from '../state.js';
 
 const fold = (s: string) => s.toLocaleLowerCase('sl').normalize('NFD').replace(/\p{M}/gu, '');
 
@@ -46,14 +46,15 @@ export function Contracts() {
     const text = fold([c.title, c.party, c.number ?? ''].join(' '));
     return words.every((w) => text.includes(w)) && (!category || c.category === category) && (!status || c.status === status);
   }).sort(sortByDeadline);
-  const add = <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
+  const { create } = useApp().user!.permissions;
+  const add = create && <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
 
   return (
     <>
       <div className="page-head"><h1>Pogodbe</h1>{data && data.length > 0 && add}</div>
       {error && <ErrorNotice message={error.message} retry={retry} />}
       {!data && !error && <Skeleton label="Nalaganje pogodb" />}
-      {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text="Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.">{add}</Empty>}
+      {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text={create ? 'Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.' : 'Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.'}>{add}</Empty>}
       {data && data.length > 0 && (
         <>
           <div className="filters">

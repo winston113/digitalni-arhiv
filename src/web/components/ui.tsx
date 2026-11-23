@@ -1,6 +1,7 @@
 import { Ban, CircleAlert, CircleCheck, CircleX, Clock, FileText, LoaderCircle, type LucideIcon } from 'lucide-react';
-import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import type { Status } from '../../shared/contracts.js';
+import type { ApiError } from '../api.js';
 
 export function Icon({ of: Glyph, size = '' }: { of: LucideIcon; size?: '' | 'sm' | 'lg' }) {
   return <Glyph className={size ? `icon icon-${size}` : 'icon'} aria-hidden="true" />;
@@ -17,6 +18,12 @@ export const STATUS_NAMES = Object.fromEntries(Object.entries(BADGES).map(([k, v
 export function Badge({ status }: { status: Status }) {
   const [cls, label, icon] = BADGES[status];
   return <span className={`badge ${cls}`}><Icon of={icon} size="sm" />{label}</span>;
+}
+
+export function AccountBadge({ disabled }: { disabled: boolean }) {
+  return disabled
+    ? <span className="badge badge-ended"><Icon of={Ban} size="sm" />Blokiran</span>
+    : <span className="badge badge-active"><Icon of={CircleCheck} size="sm" />Dejaven</span>;
 }
 
 export function Submit({ busy, busyLabel, children, className = 'btn btn-primary', ...rest }:
@@ -80,5 +87,26 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
       <h2 id="dialog-title">{title}</h2>
       {children}
     </dialog>
+  );
+}
+
+export function ConfirmDialog({ title, text, label, busyLabel, run, close }: { title: string; text: string; label: string; busyLabel: string; run: () => Promise<void>; close: () => void }) {
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    try { await run(); } catch (err) { setError((err as ApiError).message); setBusy(false); }
+  };
+  return (
+    <Dialog title={title} onClose={close}>
+      <p>{text}</p>
+      {error && <ErrorNotice message={error} />}
+      <form className="dialog-actions" onSubmit={submit}>
+        <button type="button" className="btn btn-secondary" onClick={close} data-autofocus>Prekliči</button>
+        <Submit busy={busy} busyLabel={busyLabel} className="btn btn-danger">{label}</Submit>
+      </form>
+    </Dialog>
   );
 }

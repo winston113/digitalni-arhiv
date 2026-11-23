@@ -5,12 +5,13 @@ import { formatDate, today } from '../../shared/dates.js';
 import { api } from '../api.js';
 import { ContractTable } from '../components/ContractTable.js';
 import { Badge, Empty, ErrorNotice, Icon, Skeleton } from '../components/ui.js';
-import { useLoad, usePageTitle } from '../state.js';
+import { useApp, useLoad, usePageTitle } from '../state.js';
 
 export function Dashboard() {
   usePageTitle('Nadzorna plošča');
   const { data, error, retry } = useLoad(api.list, []);
-  const add = <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
+  const { create } = useApp().user!.permissions;
+  const add = create && <Link className="btn btn-primary" to="/pogodbe/nova"><Icon of={Plus} />Nova pogodba</Link>;
   const upcoming = data?.filter((c) => c.status !== 'prekinjena' && c.actionDate !== null).sort(sortByDeadline).slice(0, 3) ?? [];
   const recent = data ? [...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3) : [];
 
@@ -19,7 +20,7 @@ export function Dashboard() {
       <div className="page-head"><h1>Nadzorna plošča</h1>{data && data.length > 0 && add}</div>
       {error && <ErrorNotice message={error.message} retry={retry} />}
       {!data && !error && <Skeleton label="Nalaganje pogodb" />}
-      {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text="Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.">{add}</Empty>}
+      {data?.length === 0 && <Empty title="V arhivu še ni pogodb" text={create ? 'Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.' : 'Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.'}>{add}</Empty>}
       {data && data.length > 0 && (
         <>
           <div className="counts">

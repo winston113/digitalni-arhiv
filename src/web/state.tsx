@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { ApiError, type AppConfig, type User } from './api.js';
+import type { Me } from '../shared/users.js';
+import { ApiError, type AppConfig } from './api.js';
 
 interface AppState {
   config: AppConfig;
-  user: User | null;
-  setUser: (user: User | null) => void;
+  user: Me | null;
+  setUser: (user: Me | null) => void;
+  refreshUser: () => Promise<void>;
   toast: (message: string) => void;
   alerts: number;
   refreshAlerts: () => void;

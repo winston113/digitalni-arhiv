@@ -5,7 +5,7 @@ import type { ContractView } from '../../shared/contracts.js';
 import { formatDate, isIsoDate, pluralDays } from '../../shared/dates.js';
 import { api, ApiError } from '../api.js';
 import { DateInput } from '../components/DateInput.js';
-import { Badge, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
+import { Badge, ConfirmDialog, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { deadline, formatSize, formatValue } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
@@ -23,11 +23,12 @@ export function ContractDetails() {
 
 function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView) => void }) {
   usePageTitle(c.title);
-  const { toast, refreshAlerts } = useApp();
+  const { user, toast, refreshAlerts } = useApp();
+  const may = user!.permissions;
   const [action, setAction] = useState<Action | null>(null);
   const { date, note } = deadline(c);
   const file = `/api/contracts/${c.id}/file`;
-  const open = c.status !== 'prekinjena';
+  const open = may.edit && c.status !== 'prekinjena';
   const changed = (next: ContractView, message: string) => { onChange(next); setAction(null); toast(message); refreshAlerts(); };
 
   const rows: [string, string][] = [
@@ -47,12 +48,12 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
       <div className="page-head"><div className="head-title"><h1>{c.title}</h1><Badge status={c.status} /></div></div>
       {c.status === 'kmalu' && <div className="notice notice-warning"><Icon of={Clock} /><div>{(c.daysLeft ?? 0) < 0 ? `Rok za ukrepanje je minil ${date}, pogodba poteče ${formatDate(c.endDate!)}.` : `Rok za ukrepanje je ${date}, ${note}.`} Pogodbo podaljšajte ali prekinite.</div></div>}
       {c.status === 'potekla' && <div className="notice notice-error"><Icon of={CircleX} /><div>Pogodba je potekla {formatDate(c.endDate!)}. Podaljšajte jo ali prekinite.</div></div>}
-      <div className="actions">
+      {(may.edit || may.remove) && <div className="actions">
         {open && c.endDate && <button type="button" className="btn btn-primary" onClick={() => setAction('extend')}><Icon of={CalendarPlus} />Podaljšaj</button>}
         {open && <button type="button" className="btn btn-secondary" onClick={() => setAction('terminate')}><Icon of={Ban} />Prekini</button>}
-        <Link className="btn btn-secondary" to={`/pogodbe/${c.id}/uredi`}><Icon of={Pencil} />Uredi</Link>
-        <button type="button" className="btn btn-text btn-text-danger" onClick={() => setAction('remove')}><Icon of={Trash2} />Izbriši</button>
-      </div>
+        {may.edit && <Link className="btn btn-secondary" to={`/pogodbe/${c.id}/uredi`}><Icon of={Pencil} />Uredi</Link>}
+        {may.remove && <button type="button" className="btn btn-text btn-text-danger" onClick={() => setAction('remove')}><Icon of={Trash2} />Izbriši</button>}
+      </div>}
       <div className="cols">
         <section className="panel">
           <div className="panel-head"><h2>Podatki o pogodbi</h2></div>
@@ -101,27 +102,6 @@ function ExtendDialog({ c, close, done }: { c: ContractView; close: () => void; 
       <form onSubmit={submit} noValidate>
         <Field id="newEndDate" label="Nov datum poteka" error={error}>{(a) => <DateInput {...a} value={endDate} onChange={setEndDate} data-autofocus />}</Field>
         <div className="dialog-actions"><button type="button" className="btn btn-secondary" onClick={close}>Prekliči</button><Submit busy={busy} busyLabel="Shranjevanje">Podaljšaj pogodbo</Submit></div>
-      </form>
-    </Dialog>
-  );
-}
-
-function ConfirmDialog({ title, text, label, busyLabel, run, close }: { title: string; text: string; label: string; busyLabel: string; run: () => Promise<void>; close: () => void }) {
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    try { await run(); } catch (err) { setError((err as ApiError).message); setBusy(false); }
-  };
-  return (
-    <Dialog title={title} onClose={close}>
-      <p>{text}</p>
-      {error && <ErrorNotice message={error} />}
-      <form className="dialog-actions" onSubmit={submit}>
-        <button type="button" className="btn btn-secondary" onClick={close} data-autofocus>Prekliči</button>
-        <Submit busy={busy} busyLabel={busyLabel} className="btn btn-danger">{label}</Submit>
       </form>
     </Dialog>
   );

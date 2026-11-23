@@ -1,12 +1,12 @@
 import type { ContractView } from '../shared/contracts.js';
+import type { ManagedUser, Me, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
   localLogin: boolean;
-  registration: boolean;
+  registration: { local: boolean; oidc: boolean };
   passwordReset: boolean;
   oidc: { name: string } | null;
 }
-export interface User { id: string; name: string; email: string }
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly fields: Record<string, string> = {}) { super(message); }
@@ -21,6 +21,7 @@ const AUTH_MESSAGES: Record<string, string> = {
   PASSWORD_TOO_LONG: 'Geslo je predolgo. Vnesite največ 128 znakov.',
   USER_ALREADY_EXISTS: 'Račun s to e-pošto že obstaja. Prijavite se ali uporabite drug naslov.',
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: 'Račun s to e-pošto že obstaja. Prijavite se ali uporabite drug naslov.',
+  ACCOUNT_DISABLED: 'Račun je blokiran. Obrnite se na skrbnika.',
   INVALID_TOKEN: 'Povezava je potekla ali je že bila uporabljena. Zahtevajte novo.',
 };
 
@@ -38,8 +39,11 @@ async function send(path: string, init: RequestInit = {}): Promise<Response> {
   throw new ApiError(message, response.status, body.fields);
 }
 
-const post = (path: string, body: unknown) =>
-  send(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const withBody = (method: string) => (path: string, body: unknown) =>
+  send(path, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+const post = withBody('POST');
+const put = withBody('PUT');
 
 function formData(data: unknown, file: File | null): FormData {
   const form = new FormData();
@@ -50,14 +54,14 @@ function formData(data: unknown, file: File | null): FormData {
 
 export const api = {
   config: async () => (await send('/api/config')).json() as Promise<AppConfig>,
-  session: async () => ((await (await send('/api/auth/get-session')).json()) as { user: User } | null)?.user ?? null,
+  me: async () => (await send('/api/me')).json() as Promise<Me | null>,
   signIn: (email: string, password: string) => post('/api/auth/sign-in/email', { email, password }),
   signUp: (name: string, email: string, password: string) => post('/api/auth/sign-up/email', { name, email, password }),
   signOut: () => post('/api/auth/sign-out', {}),
   requestReset: (email: string) => post('/api/auth/request-password-reset', { email, redirectTo: '/novo-geslo' }),
   resetPassword: (token: string, newPassword: string) => post('/api/auth/reset-password', { token, newPassword }),
-  signInOidc: async () => {
-    const r = await post('/api/auth/sign-in/social', { provider: 'oidc', callbackURL: '/', errorCallbackURL: '/prijava' });
+  signInOidc: async (requestSignUp: boolean) => {
+    const r = await post('/api/auth/sign-in/social', { provider: 'oidc', callbackURL: '/', errorCallbackURL: requestSignUp ? '/registracija' : '/prijava', requestSignUp });
     window.location.assign(((await r.json()) as { url: string }).url);
   },
   list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
@@ -69,4 +73,11 @@ export const api = {
   extend: async (id: string, endDate: string) => (await post(`/api/contracts/${id}/extend`, { endDate })).json() as Promise<ContractView>,
   terminate: async (id: string) => (await post(`/api/contracts/${id}/terminate`, {})).json() as Promise<ContractView>,
   remove: (id: string) => send(`/api/contracts/${id}`, { method: 'DELETE' }),
+  changePassword: (currentPassword: string, newPassword: string) => post('/api/password', { currentPassword, newPassword }),
+  users: async () => (await send('/api/admin/users')).json() as Promise<ManagedUser[]>,
+  user: async (id: string) => (await send(`/api/admin/users/${id}`)).json() as Promise<ManagedUser>,
+  createUser: async (data: UserCreate) => (await post('/api/admin/users', data)).json() as Promise<ManagedUser>,
+  updateUser: async (id: string, data: UserUpdate) => (await put(`/api/admin/users/${id}`, data)).json() as Promise<ManagedUser>,
+  setUserPassword: async (id: string, data: { password: string; mustChangePassword: boolean }) => (await post(`/api/admin/users/${id}/password`, data)).json() as Promise<ManagedUser>,
+  removeUser: (id: string) => send(`/api/admin/users/${id}`, { method: 'DELETE' }),
 };
