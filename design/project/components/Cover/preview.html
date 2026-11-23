@@ -1,0 +1,19 @@
+<!-- @dsCard height=280 -->
+<!doctype html>
+<html lang="sl"><head><meta charset="utf-8"><style>
+body{margin:0;background:var(--surface);position:relative;width:960px;height:280px;overflow:hidden}
+svg{position:absolute;inset:0}
+.pri{fill:var(--primary)}.dark{fill:var(--primary-hover)}.tint{fill:var(--primary-tint)}.ink{fill:var(--ink)}.warn{fill:var(--warning)}
+rect.cell,.cells rect{rx:var(--radius-sm)}
+.name{position:absolute;left:32px;bottom:72px;font:600 64px/.95 var(--font-sans);letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.tag{position:absolute;left:34px;bottom:32px;max-width:440px;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+</style></head><body>
+<svg width="960" height="280" viewBox="0 0 960 280" aria-hidden="true">
+<!-- bloki: primary 384, primary-hover 192, primary-tint 320, ink 64; warning samo en dan
+ razporeditev: neenak pas čez vrh, brez razmikov
+ vzorec: koledar 7 x 4, ker sistem varuje roke pogodb; en dan je rok za ukrepanje
+ merila: korak 8 in 32 (space-2, space-6), vogali radius-sm -->
+<rect class="pri" x="0" y="0" width="384" height="120"/><rect class="dark" x="384" y="0" width="192" height="120"/><rect class="tint" x="576" y="0" width="320" height="120"/><rect class="ink" x="896" y="0" width="64" height="120"/>
+<g class="cells"><rect class="pri" x="656" y="16" width="24" height="16"/><rect class="pri" x="688" y="16" width="24" height="16"/><rect class="pri" x="720" y="16" width="24" height="16"/><rect class="pri" x="752" y="16" width="24" height="16"/><rect class="pri" x="784" y="16" width="24" height="16"/><rect class="pri" x="816" y="16" width="24" height="16"/><rect class="pri" x="848" y="16" width="24" height="16"/><rect class="pri" x="656" y="40" width="24" height="16"/><rect class="pri" x="688" y="40" width="24" height="16"/><rect class="pri" x="720" y="40" width="24" height="16"/><rect class="pri" x="752" y="40" width="24" height="16"/><rect class="pri" x="784" y="40" width="24" height="16"/><rect class="pri" x="816" y="40" width="24" height="16"/><rect class="pri" x="848" y="40" width="24" height="16"/><rect class="pri" x="656" y="64" width="24" height="16"/><rect class="pri" x="688" y="64" width="24" height="16"/><rect class="pri" x="720" y="64" width="24" height="16"/><rect class="pri" x="752" y="64" width="24" height="16"/><rect class="warn" x="784" y="64" width="24" height="16"/><rect class="pri" x="816" y="64" width="24" height="16"/><rect class="pri" x="848" y="64" width="24" height="16"/><rect class="pri" x="656" y="88" width="24" height="16"/><rect class="pri" x="688" y="88" width="24" height="16"/><rect class="pri" x="720" y="88" width="24" height="16"/><rect class="pri" x="752" y="88" width="24" height="16"/><rect class="pri" x="784" y="88" width="24" height="16"/><rect class="pri" x="816" y="88" width="24" height="16"/><rect class="pri" x="848" y="88" width="24" height="16"/></g></svg>
+<div class="name">Digitalni arhiv pogodb</div><div class="tag">Pogodbe na enem mestu, roki pod nadzorom.</div>
+</body></html>

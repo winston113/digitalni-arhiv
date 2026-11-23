@@ -1,0 +1,13 @@
+<!-- @dsCard group="Obrazci" height=560 -->
+<!doctype html>
+<html lang="sl"><head><meta charset="utf-8"><style>body{padding:16px}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.stack{display:grid;gap:16px}</style></head><body>
+<form class="form" onsubmit="return false">
+<div class="field full"><label class="field-label" for="p1">Naziv</label><input class="input" id="p1" value="Vzdrževanje računalniške opreme"></div>
+<div class="field"><label class="field-label" for="p2">Kategorija</label><span class="select"><select class="input" id="p2"><option>Najem</option><option>Dobava</option><option selected>Storitve</option><option>Zaposlitev</option><option>Zavarovanje</option><option>Licence in naročnine</option><option>Drugo</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg></span></div>
+<div class="field"><label class="field-label" for="p3">Odpovedni rok <span class="muted">(neobvezno)</span></label><input class="input num" id="p3" inputmode="numeric" value="30" aria-describedby="p3h"><span class="field-hint" id="p3h">Število dni pred potekom.</span></div>
+<div class="field"><label class="field-label" for="p4">Datum začetka</label><input class="input num" id="p4" value="15. 1. 2026"></div>
+<div class="field"><label class="field-label" for="p5">Datum poteka</label><input class="input num" id="p5" value="10. 1. 2026" aria-invalid="true" aria-describedby="p5e"><span class="field-error" id="p5e"><svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" /> <line x1="12" x2="12" y1="8" y2="12" /> <line x1="12" x2="12.01" y1="16" y2="16" /></svg>Datum poteka ne sme biti pred datumom začetka.</span></div>
+<label class="check full"><input type="checkbox" id="p6">Pogodba za nedoločen čas</label>
+<div class="field full"><label class="field-label" for="p7">Opombe <span class="muted">(neobvezno)</span></label><textarea class="input" id="p7">Odziv v štirih urah, obisk enkrat mesečno.</textarea></div>
+</form>
+</body></html>
