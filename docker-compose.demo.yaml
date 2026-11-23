@@ -1,0 +1,35 @@
+# Javna predstavitvena različica: ločen vsebnik, ločeni podatki, omejeni viri.
+# Zagon: docker compose -f docker-compose.demo.yaml --env-file .env.demo up -d --build
+name: arhiv-demo
+
+services:
+  arhiv:
+    image: ghcr.io/winston113/digitalni-arhiv:latest
+    build: .
+    restart: unless-stopped
+    environment:
+      BASE_URL: ${DEMO_BASE_URL:?Nastavite DEMO_BASE_URL v .env.demo}
+      TRUST_PROXY: ${DEMO_TRUST_PROXY:-true}
+      LOCAL_LOGIN: "true"
+      REGISTRATION: ${DEMO_REGISTRATION:-true}
+      STORAGE_LIMIT_MB: ${DEMO_STORAGE_LIMIT_MB:-500}
+      OIDC_ISSUER: ${DEMO_OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${DEMO_OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${DEMO_OIDC_CLIENT_SECRET:-}
+      OIDC_NAME: ${DEMO_OIDC_NAME:-Zitadel}
+      DATA_DIR: /data
+      PORT: "3000"
+    ports:
+      - "${DEMO_BIND:-127.0.0.1:3100}:3000"
+    volumes:
+      - podatki:/data
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    cpus: 1
+    pids_limit: 100
+
+volumes:
+  podatki:

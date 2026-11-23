@@ -48,6 +48,36 @@ docker compose up -d --build
 
 Vse nastavitve so opisane v [.env.example](.env.example).
 
+### Prvi skrbnik
+
+Prvi ustvarjeni račun samodejno postane skrbnik, ne glede na način registracije. Zato se registrirajte, **preden aplikacijo odprete drugim**, nato po potrebi nastavite `REGISTRATION=false` in znova zaženite vsebnik.
+
+Skrbnik v razdelku Uporabniki ustvarja račune, ponastavlja gesla, blokira in briše uporabnike ter vsakemu določi, ali sme pogodbe dodajati, urejati in brisati. Tujih pogodb ne vidi.
+
+### Javna predstavitvena različica
+
+Teče ločeno od zasebne namestitve, z lastnimi podatki in omejenimi viri.
+
+```sh
+cp .env.demo.example .env.demo      # nastavite DEMO_BASE_URL
+docker compose -f docker-compose.demo.yaml --env-file .env.demo up -d --build
+```
+
+1. Skrbnika ustvarite, preden je naslov javen: v Caddyju dostop najprej omejite na svoje omrežje (spodaj).
+2. V razdelku Uporabniki ustvarite testni račun; izklopite »mora ob naslednji prijavi spremeniti geslo«.
+3. Dodajte vzorčne pogodbe: `docker compose -f docker-compose.demo.yaml --env-file .env.demo exec arhiv node dist/server/cli.js demo <e-pošta>`
+4. V Caddyju odstranite omejitev.
+
+```
+arhiv-demo.primer.si {
+    @zunaj not remote_ip private_ranges
+    respond @zunaj 403              # odstranite, ko je skrbnik ustvarjen
+    reverse_proxy 127.0.0.1:3100
+}
+```
+
+Po ocenjevanju: `docker compose -f docker-compose.demo.yaml --env-file .env.demo down -v` (izbriše tudi podatke).
+
 ### Caddy
 
 ```
@@ -64,6 +94,8 @@ Pri tem nastavite `TRUST_PROXY=true`. Če Caddy teče na drugem strežniku, vpi�
 2. Redirect URI: `https://arhiv.primer.si/api/auth/callback/oidc`
 3. V `.env` nastavite `OIDC_ISSUER` (naslov Zitadela), `OIDC_CLIENT_ID` in pri načinu Code še `OIDC_CLIENT_SECRET`.
 
+Prijava in registracija prek ponudnika sta ločeni: nov račun nastane samo z gumbom na strani Registracija. Registracijo prek ponudnika izklopite z `OIDC_REGISTRATION=false`.
+
 Če želite prijavo samo prek ponudnika, nastavite `LOCAL_LOGIN=false`. Račun z geslom in račun ponudnika z istim e-poštnim naslovom se zaradi varnosti ne združita samodejno.
 
 ### Mailjet ali drug strežnik SMTP
@@ -74,6 +106,7 @@ Nastavite `SMTP_HOST=in-v3.mailjet.com`, `SMTP_PORT=587`, ključ API kot `SMTP_U
 
 ```sh
 docker compose exec arhiv node dist/server/cli.js geslo uporabnik@primer.si   # novo geslo
+docker compose exec arhiv node dist/server/cli.js skrbnik uporabnik@primer.si # vloga skrbnika
 docker compose exec arhiv node dist/server/cli.js demo uporabnik@primer.si    # vzorčne pogodbe v prazen arhiv
 ```
 

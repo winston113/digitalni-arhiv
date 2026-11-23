@@ -1,0 +1,23 @@
+# Zasebna namestitev. Nastavitve so v datoteki .env (glejte .env.example).
+name: arhiv
+
+services:
+  arhiv:
+    image: ghcr.io/winston113/digitalni-arhiv:latest
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATA_DIR: /data
+      PORT: "3000"
+    ports:
+      - "${BIND:-127.0.0.1:3000}:3000"
+    volumes:
+      - podatki:/data
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  podatki:
