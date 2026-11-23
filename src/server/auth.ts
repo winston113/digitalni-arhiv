@@ -4,12 +4,12 @@ import { getMigrations } from 'better-auth/db/migration';
 import { genericOAuth } from 'better-auth/plugins/generic-oauth';
 import type { Config } from './config.js';
 import type { Db } from './db.js';
-import type { SendMail } from './mail.js';
+import type { Mail } from './mail.js';
 import { UserStore } from './users.js';
 
 export const CLIENT_IP_HEADER = 'x-arhiv-client-ip';
 
-export function createAuth(config: Config, db: Db, sendMail: SendMail | null) {
+export function createAuth(config: Config, db: Db, mail: Mail) {
   const { oidc } = config;
   const users = new UserStore(db);
   return betterAuth({
@@ -25,16 +25,31 @@ export function createAuth(config: Config, db: Db, sendMail: SendMail | null) {
       minPasswordLength: 8,
       revokeSessionsOnPasswordReset: true,
       onPasswordReset: async ({ user }) => users.setMustChangePassword(user.id, false),
-      ...(sendMail && {
-        // Pošiljanja ne čakamo, da odzivni čas ne razkrije, ali račun obstaja.
-        sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
-          void sendMail(
-            user.email,
-            'Ponastavitev gesla',
-            `Pozdravljeni,\n\nprejeli smo zahtevo za ponastavitev gesla v Digitalnem arhivu pogodb. Novo geslo nastavite na povezavi, ki velja eno uro:\n\n${url}\n\nČe zahteve niste poslali vi, sporočilo prezrite.\n`,
-          ).catch((error) => console.error('Pošiljanje sporočila ni uspelo:', error));
-        },
-      }),
+      sendResetPassword: async ({ user, url }) => {
+        if (!mail.canReset) return;
+        mail.sendLater({
+          to: user.email,
+          subject: 'Ponastavitev gesla',
+          text: `Pozdravljeni,\n\nprejeli smo zahtevo za ponastavitev gesla v Digitalnem arhivu pogodb. Novo geslo nastavite na povezavi, ki velja eno uro:\n\n${url}\n\nČe zahteve niste poslali vi, sporočilo prezrite.\n`,
+        });
+      },
+    },
+    emailVerification: {
+      expiresIn: 60 * 60,
+      sendOnSignUp: false,
+      sendOnSignIn: false,
+      sendVerificationEmail: async ({ user, url }) => {
+        if (!mail.ready) return;
+        mail.sendLater({
+          to: user.email,
+          subject: 'Potrditev e-poštnega naslova',
+          text: `Pozdravljeni,\n\nza prejemanje opozoril iz Digitalnega arhiva pogodb potrdite svoj naslov na povezavi, ki velja eno uro:\n\n${url}\n\nČe tega niste zahtevali, sporočilo prezrite in povezave ne odpirajte.\n`,
+        });
+      },
+    },
+    account: {
+      // Računi se nikoli ne povežejo samodejno, da tuj vnaprej ustvarjen račun ne more prevzeti prijave prek ponudnika.
+      accountLinking: { disableImplicitLinking: true },
     },
     databaseHooks: {
       session: {
@@ -55,6 +70,7 @@ export function createAuth(config: Config, db: Db, sendMail: SendMail | null) {
         '/sign-in/social': { window: 60, max: 20 },
         '/sign-up/email': { window: 60, max: 5 },
         '/request-password-reset': { window: 60, max: 3 },
+        '/send-verification-email': { window: 60, max: 2 },
         '/reset-password': { window: 60, max: 5 },
         '/change-password': { window: 60, max: 5 },
         '/get-session': false,

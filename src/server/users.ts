@@ -1,8 +1,8 @@
 import type { Access, ManagedUser, UserUpdate } from '../shared/users.js';
 import type { Db } from './db.js';
 
-interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; must_change_password: number }
-interface UserRow extends AccessRow { id: string; name: string; email: string; createdAt: string | number; has_password: number; has_oidc: number; contracts: number }
+interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; must_change_password: number; reminders: number }
+interface UserRow extends AccessRow { id: string; name: string; email: string; createdAt: string | number; emailVerified: number; has_password: number; has_oidc: number; contracts: number }
 
 const toAccess = (r: AccessRow): Access => ({
   role: r.role === 'admin' ? 'admin' : 'user',
@@ -11,7 +11,7 @@ const toAccess = (r: AccessRow): Access => ({
   permissions: { create: r.can_create !== 0, edit: r.can_edit !== 0, remove: r.can_remove !== 0 },
 });
 
-const USERS = `SELECT u.id, u.name, u.email, u.createdAt, a.*,
+const USERS = `SELECT u.id, u.name, u.email, u.createdAt, u.emailVerified, a.*,
   EXISTS (SELECT 1 FROM account x WHERE x.userId = u.id AND x.providerId = 'credential') AS has_password,
   EXISTS (SELECT 1 FROM account x WHERE x.userId = u.id AND x.providerId = 'oidc') AS has_oidc,
   (SELECT COUNT(*) FROM contracts c WHERE c.user_id = u.id) AS contracts
@@ -19,7 +19,7 @@ const USERS = `SELECT u.id, u.name, u.email, u.createdAt, a.*,
 
 const toUser = (r: UserRow): ManagedUser => ({
   id: r.id, name: r.name, email: r.email, createdAt: new Date(r.createdAt).toISOString(),
-  hasPassword: r.has_password !== 0, hasOidc: r.has_oidc !== 0, contracts: r.contracts, ...toAccess(r),
+  hasPassword: r.has_password !== 0, hasOidc: r.has_oidc !== 0, contracts: r.contracts, emailVerified: r.emailVerified !== 0, reminders: r.reminders !== 0, ...toAccess(r),
 });
 
 // Vloge in dovoljenja so ločeni od računov, zato jih registracija ne more nastaviti.
@@ -66,6 +66,10 @@ export class UserStore {
 
   setMustChangePassword(id: string, value: boolean): void {
     this.db.prepare('UPDATE user_access SET must_change_password = ? WHERE user_id = ?').run(+value, id);
+  }
+
+  setReminders(id: string, value: boolean): void {
+    this.db.prepare('UPDATE user_access SET reminders = ? WHERE user_id = ?').run(+value, id);
   }
 
   endSessions(id: string): void { this.db.prepare('DELETE FROM session WHERE userId = ?').run(id); }

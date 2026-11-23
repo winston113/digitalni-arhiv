@@ -10,6 +10,8 @@ import { createAuth } from './auth.js';
 import { loadConfig } from './config.js';
 import { ContractStore } from './contracts.js';
 import { migrate, openDb } from './db.js';
+import { Mail } from './mail.js';
+import { Settings } from './settings.js';
 import { UserStore } from './users.js';
 
 function fail(message: string, code = 1): never {
@@ -24,7 +26,7 @@ const config = loadConfig();
 const db = openDb(config.dataDir);
 migrate(db);
 const users = new UserStore(db);
-const ctx = await createAuth(config, db, null).$context;
+const ctx = await createAuth(config, db, new Mail(config, new Settings(db, config.secret))).$context;
 const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), { includeAccounts: true });
 if (!found) fail('Uporabnik s to e-pošto ne obstaja.');
 const userId = found.user.id;

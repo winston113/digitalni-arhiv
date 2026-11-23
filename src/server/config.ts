@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { MAIL_SECURITY, type MailSecurity } from '../shared/mail.js';
+import type { Smtp } from './mail.js';
 
 export interface Config {
   port: number;
@@ -12,7 +14,7 @@ export interface Config {
   registration: boolean;
   localLogin: boolean;
   oidc: { issuer: string; clientId: string; clientSecret?: string; name: string; registration: boolean } | null;
-  smtp: { host: string; port: number; user?: string; password?: string; from: string } | null;
+  smtp: Smtp | null;
 }
 
 function flag(env: NodeJS.ProcessEnv, name: string, fallback: boolean): boolean {
@@ -27,6 +29,12 @@ function positive(value: string): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) throw new Error('STORAGE_LIMIT_MB mora biti pozitivno število.');
   return n;
+}
+
+function smtpSecurity(env: NodeJS.ProcessEnv, port: number): MailSecurity {
+  const value = env.SMTP_SECURITY || (port === 465 ? 'tls' : 'starttls');
+  if (!(MAIL_SECURITY as readonly string[]).includes(value)) throw new Error('SMTP_SECURITY mora biti starttls, tls ali none.');
+  return value as MailSecurity;
 }
 
 // Skrivnost za seje: iz okolja ali samodejno ustvarjena v podatkovni mapi.
@@ -49,6 +57,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   const { OIDC_ISSUER: issuer, OIDC_CLIENT_ID: clientId } = env;
   if (Boolean(issuer) !== Boolean(clientId)) throw new Error('OIDC_ISSUER in OIDC_CLIENT_ID morata biti nastavljena skupaj.');
+  const smtpPort = Number(env.SMTP_PORT || 587);
   const { SMTP_HOST: host, SMTP_FROM: from } = env;
   if (Boolean(host) !== Boolean(from)) throw new Error('SMTP_HOST in SMTP_FROM morata biti nastavljena skupaj.');
 
@@ -63,7 +72,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       ? { issuer: issuer.replace(/\/+$/, ''), clientId, clientSecret: env.OIDC_CLIENT_SECRET || undefined, name: env.OIDC_NAME || 'OpenID Connect', registration: flag(env, 'OIDC_REGISTRATION', true) }
       : null,
     smtp: host && from
-      ? { host, port: Number(env.SMTP_PORT || 587), user: env.SMTP_USER || undefined, password: env.SMTP_PASSWORD || undefined, from }
+      ? { host, port: smtpPort, security: smtpSecurity(env, smtpPort), user: env.SMTP_USER ?? '', password: env.SMTP_PASSWORD ?? '', from, fromName: env.SMTP_FROM_NAME ?? '' }
       : null,
   };
   if (!config.localLogin && !config.oidc) throw new Error('Če je LOCAL_LOGIN=false, mora biti nastavljen OIDC.');

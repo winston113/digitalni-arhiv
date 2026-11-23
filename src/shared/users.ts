@@ -20,6 +20,8 @@ export interface Me extends Access {
   name: string;
   email: string;
   hasPassword: boolean;
+  emailVerified: boolean;
+  reminders: boolean;
 }
 
 export interface ManagedUser extends Me {

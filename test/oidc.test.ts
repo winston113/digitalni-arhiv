@@ -94,6 +94,13 @@ describe('OpenID Connect', () => {
     expect((await t.request('/api/contracts', { cookie: r.cookie })).status).toBe(401);
   });
 
+  it('tudi potrjen lokalni naslov se ne poveže samodejno', async () => {
+    const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv' });
+    await t.register('maja@primer.si');
+    t.db.prepare('UPDATE user SET emailVerified = 1').run();
+    expect((await signIn(t)).location).toContain('/prijava?error=');
+  });
+
   it('nove uporabnike je mogoče zavrniti', async () => {
     const t = await setup({ OIDC_ISSUER: issuer, OIDC_CLIENT_ID: 'arhiv', OIDC_REGISTRATION: 'false' });
     expect((await signIn(t)).location).toContain('error=');

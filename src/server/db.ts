@@ -38,6 +38,15 @@ const MIGRATIONS = [
   );
   INSERT INTO user_access (user_id, role)
     SELECT id, CASE WHEN id = (SELECT id FROM user ORDER BY createdAt, rowid LIMIT 1) THEN 'admin' ELSE 'user' END FROM user;`,
+  `CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+  ALTER TABLE user_access ADD COLUMN reminders INTEGER NOT NULL DEFAULT 1;
+  CREATE TABLE reminders (
+    contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    end_date TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    sent_at TEXT NOT NULL,
+    PRIMARY KEY (contract_id, end_date, stage)
+  );`,
 ];
 
 export function openDb(dataDir: string): Db {

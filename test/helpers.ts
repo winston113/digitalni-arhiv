@@ -4,6 +4,10 @@ import { join } from 'node:path';
 import { createApp } from '../src/server/app.js';
 import { createAuth, migrateAuth } from '../src/server/auth.js';
 import { loadConfig } from '../src/server/config.js';
+import { ContractStore } from '../src/server/contracts.js';
+import { Mail, type Message, type Smtp } from '../src/server/mail.js';
+import { Reminders } from '../src/server/reminders.js';
+import { Settings } from '../src/server/settings.js';
 import { migrate, openDb } from '../src/server/db.js';
 import { UserStore } from '../src/server/users.js';
 
@@ -18,12 +22,19 @@ export async function setup(env: Record<string, string> = {}) {
   const dataDir = mkdtempSync(join(tmpdir(), 'arhiv-'));
   const config = loadConfig({ DATA_DIR: dataDir, BASE_URL: ORIGIN, TRUST_PROXY: 'true', ...env });
   const db = openDb(dataDir);
-  const mails: { to: string; text: string }[] = [];
-  const auth = createAuth(config, db, config.smtp ? async (to, _s, text) => { mails.push({ to, text }); } : null);
+  const mails: (Message & { smtp: Smtp })[] = [];
+  const control = { fail: null as unknown };
+  const settings = new Settings(db, config.secret);
+  const mail = new Mail(config, settings, async (smtp, message) => {
+    if (control.fail) throw control.fail;
+    mails.push({ ...message, smtp });
+  });
+  const auth = createAuth(config, db, mail);
   await migrateAuth(auth);
   migrate(db);
   new UserStore(db).ensureTrigger();
-  const app = createApp(config, db, auth);
+  const reminders = new Reminders(config, db, new ContractStore(db, dataDir), mail, settings);
+  const app = createApp(config, db, auth, mail, reminders);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
     const headers = new Headers(init.headers);
@@ -40,7 +51,7 @@ export async function setup(env: Record<string, string> = {}) {
     if (r.status !== 200) throw new Error(await r.text());
     return cookies(r);
   };
-  return { app, db, users: new UserStore(db), dataDir, request, json, register, mails };
+  return { app, db, users: new UserStore(db), dataDir, request, json, register, mails, mail, reminders, settings, control };
 }
 
 export const cookies = (r: Response) => r.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');

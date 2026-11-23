@@ -9,11 +9,13 @@ import { z } from 'zod';
 import { contractInput, fieldErrors, MAX_FILE_SIZE, toView } from '../shared/contracts.js';
 import { isIsoDate, today } from '../shared/dates.js';
 import { password, type Access, type Me, type Permission } from '../shared/users.js';
-import { createAdminApi } from './admin.js';
+import { createAdminApi, createMailApi } from './admin.js';
 import { CLIENT_IP_HEADER, type Auth } from './auth.js';
 import type { Config } from './config.js';
 import { ContractStore, type Upload } from './contracts.js';
 import type { Db } from './db.js';
+import type { Mail } from './mail.js';
+import type { Reminders } from './reminders.js';
 import { UserStore } from './users.js';
 
 type Env = { Variables: { userId: string; access: Access } };
@@ -54,7 +56,7 @@ async function readForm(c: Context): Promise<{ data: unknown; upload: Upload | n
   return { data, upload: { name: cleanFileName(file.name), bytes }, fileError: null };
 }
 
-export function createApp(config: Config, db: Db, auth: Auth, webDir: string | null = null) {
+export function createApp(config: Config, db: Db, auth: Auth, mail: Mail, reminders: Reminders, webDir: string | null = null) {
   const store = new ContractStore(db, config.dataDir);
   const users = new UserStore(db);
   const app = new Hono<Env>();
@@ -83,7 +85,8 @@ export function createApp(config: Config, db: Db, auth: Auth, webDir: string | n
   app.get('/api/config', (c) => c.json({
     localLogin: config.localLogin,
     registration: { local: config.localLogin && config.registration, oidc: config.oidc?.registration ?? false },
-    passwordReset: config.localLogin && config.smtp !== null,
+    passwordReset: mail.canReset,
+    reminders: mail.canRemind,
     oidc: config.oidc ? { name: config.oidc.name } : null,
   }));
 
@@ -120,8 +123,8 @@ export function createApp(config: Config, db: Db, auth: Auth, webDir: string | n
     const user = session && users.get(session.user.id);
     c.header('Cache-Control', 'no-store');
     if (!user || user.disabled) return c.json(null);
-    const { id, name, email, hasPassword, role, disabled, mustChangePassword, permissions } = user;
-    return c.json({ id, name, email, hasPassword, role, disabled, mustChangePassword, permissions } satisfies Me);
+    const { id, name, email, hasPassword, emailVerified, reminders: wants, role, disabled, mustChangePassword, permissions } = user;
+    return c.json({ id, name, email, hasPassword, emailVerified, reminders: wants, role, disabled, mustChangePassword, permissions } satisfies Me);
   });
 
   app.post('/api/password', guard, async (c) => {
@@ -143,6 +146,13 @@ export function createApp(config: Config, db: Db, auth: Auth, webDir: string | n
     }
     if (response.status === 429) return response;
     return c.json({ error: 'Preverite označena polja.', fields: { currentPassword: 'Sedanje geslo ni pravilno.' } }, 400);
+  });
+
+  app.put('/api/me/reminders', guard, async (c) => {
+    const parsed = z.object({ enabled: z.boolean() }).safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Neveljavna zahteva.' }, 400);
+    users.setReminders(c.get('userId'), parsed.data.enabled);
+    return c.body(null, 204);
   });
 
   const api = new Hono<Env>();
@@ -222,7 +232,13 @@ export function createApp(config: Config, db: Db, auth: Auth, webDir: string | n
     if (c.get('access').role !== 'admin') throw new HTTPException(403, { message: 'Ta del je namenjen skrbnikom.' });
     await next();
   });
-  admin.route('/users', createAdminApi(config, auth, users, store));
+  admin.route('/users', createAdminApi(config, auth, mail, users, store));
+  admin.route('/mail', createMailApi(config, mail, reminders, users));
+  admin.get('/oidc', (c) => c.json({
+    issuer: config.oidc?.issuer ?? null, clientId: config.oidc?.clientId ?? null, name: config.oidc?.name ?? null,
+    hasSecret: Boolean(config.oidc?.clientSecret), registration: config.oidc?.registration ?? false,
+    redirectUri: `${config.baseUrl}/api/auth/callback/oidc`,
+  }));
   app.route('/api/admin', admin);
   app.all('/api/*', (c) => c.json({ error: 'Naslov ne obstaja.' }, 404));
 
