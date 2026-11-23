@@ -43,4 +43,4 @@ Od 900 px širine je levo `sidebar-width`, desno vsebina do `content-width` z ro
 
 ## Ikone in znak
 
-Ikone so iz nabora Lucide, glejte komponento Ikone. Logotipa ni; ime je izpisano v `section-title`.
+Ikone so iz nabora Lucide, glejte komponento Ikone. Znak je zajec, ki drži list pogodbe, glejte komponento Znak. Ob njem je ime v `section-title`.
