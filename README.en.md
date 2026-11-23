@@ -66,9 +66,25 @@ docker compose exec arhiv node dist/server/cli.js skrbnik user@example.com   # m
 docker compose exec arhiv node dist/server/cli.js demo user@example.com      # sample contracts
 ```
 
-### Backup
+### Backup and restore
 
-Stop the container, copy the whole `podatki` volume, start it again. The copy holds the database, the PDFs and the session secret.
+A backup holds the database, the PDFs and the secret that encrypts the mail and provider passwords. Keep it somewhere safe.
+
+```sh
+docker compose stop
+docker run --rm -v arhiv_podatki:/data alpine tar czf - -C /data . > arhiv-backup.tgz
+docker compose start
+```
+
+Restoring into an empty volume (`docker compose down -v` deletes existing data):
+
+```sh
+docker compose create
+docker run --rm -i -v arhiv_podatki:/data alpine sh -c 'rm -rf /data/* && tar xzf - -C /data && chown -R 1000:1000 /data' < arhiv-backup.tgz
+docker compose start
+```
+
+Take a backup before every upgrade, and try a restore once before you rely on it.
 
 ### Public demo
 

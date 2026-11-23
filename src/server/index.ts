@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { AuthHolder, createAuth, migrateAuth } from './auth.js';
-import { loadConfig } from './config.js';
+import { loadConfigOrExit } from './config.js';
 import { migrate, openDb } from './db.js';
 import { ContractStore } from './contracts.js';
 import { Mail } from './mail.js';
@@ -12,7 +12,7 @@ import { Reminders } from './reminders.js';
 import { Settings } from './settings.js';
 import { UserStore } from './users.js';
 
-const config = loadConfig();
+const config = loadConfigOrExit();
 const db = openDb(config.dataDir);
 const settings = new Settings(db, config.secret);
 const mail = new Mail(config, settings);

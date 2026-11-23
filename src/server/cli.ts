@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { contractInput } from '../shared/contracts.js';
 import { createAuth } from './auth.js';
-import { loadConfig } from './config.js';
+import { loadConfigOrExit } from './config.js';
 import { ContractStore } from './contracts.js';
 import { migrate, openDb } from './db.js';
 import { Mail } from './mail.js';
@@ -22,7 +22,7 @@ function fail(message: string, code = 1): never {
 const [command, email] = process.argv.slice(2);
 if (!['geslo', 'skrbnik', 'demo'].includes(command ?? '') || !email) fail('Uporaba: node dist/server/cli.js geslo|skrbnik|demo <e-pošta>', 2);
 
-const config = loadConfig();
+const config = loadConfigOrExit();
 const db = openDb(config.dataDir);
 migrate(db);
 const users = new UserStore(db);

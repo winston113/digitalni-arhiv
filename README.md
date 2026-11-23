@@ -126,9 +126,25 @@ docker compose exec arhiv node dist/server/cli.js skrbnik uporabnik@primer.si # 
 docker compose exec arhiv node dist/server/cli.js demo uporabnik@primer.si    # vzorčne pogodbe v prazen arhiv
 ```
 
-### Varnostna kopija
+### Varnostna kopija in obnova
 
-Ustavite vsebnik (`docker compose stop`), kopirajte celoten nosilec `podatki` in ga znova zaženite. Kopija vsebuje bazo, datoteke PDF in skrivnost za seje.
+Kopija vsebuje bazo, datoteke PDF in skrivnost, s katero so šifrirana gesla za pošto in ponudnika prijave. Hranite jo na varnem mestu.
+
+```sh
+docker compose stop
+docker run --rm -v arhiv_podatki:/data alpine tar czf - -C /data . > arhiv-kopija.tgz
+docker compose start
+```
+
+Obnova v prazen nosilec (`docker compose down -v` izbriše obstoječe podatke):
+
+```sh
+docker compose create
+docker run --rm -i -v arhiv_podatki:/data alpine sh -c 'rm -rf /data/* && tar xzf - -C /data && chown -R 1000:1000 /data' < arhiv-kopija.tgz
+docker compose start
+```
+
+Pred vsako nadgradnjo naredite kopijo. Obnovo enkrat preizkusite, preden se nanjo zanesete.
 
 Če namesto nosilca uporabite mapo na gostitelju, mora vanjo lahko pisati uporabnik 1000 oziroma uporabnik, ki ga nastavite z `user:` v `compose.yaml` (na Unraidu običajno `99:100`).
 
