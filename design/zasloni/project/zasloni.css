@@ -71,6 +71,8 @@
  .screen .appbar{padding-left:var(--space-4);padding-right:var(--space-4)}
  .screen .appbar .brand,.screen .appbar .brand-app{display:inline-flex;font-size:16px;line-height:20px}
  .screen .appbar-user,.screen .only-wide{display:none}
+ .screen .appbar .brand-app .brand-name{display:none}
+ .screen .appbar-actions>.btn:not(.btn-lang){width:var(--control-height);padding:0}
  .screen .only-phone{display:inline}
  .screen .cols{grid-template-columns:minmax(0,1fr)}
  .screen .filters{grid-template-columns:minmax(0,1fr)}
