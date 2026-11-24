@@ -15,6 +15,8 @@
   "Uporabniki.dc.html": {"x": 9520, "y": 0, "w": 1280, "h": 820, "title": "8 Uporabniki, skrbnik", "page": "zasloni", "expand": "fill", "is_interactive": true},
   "Uporabnik.dc.html": {"x": 10880, "y": 0, "w": 1280, "h": 900, "title": "9 Urejanje uporabnika, skrbnik", "page": "zasloni", "expand": "fill", "is_interactive": true},
   "Posta.dc.html": {"x": 12240, "y": 0, "w": 1280, "h": 1250, "title": "10 E-pošta, skrbnik", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "Iskanje.dc.html": {"x": 13600, "y": 0, "w": 1280, "h": 900, "title": "11 Iskanje po vsebini", "page": "zasloni", "expand": "fill", "is_interactive": true},
+  "TelefonIskanje.dc.html": {"x": 3760, "y": 2000, "w": 390, "h": 1200, "title": "11 Iskanje po vsebini, telefon", "page": "zasloni", "is_interactive": true},
   "TelefonUporabniki.dc.html": {"x": 3290, "y": 2000, "w": 390, "h": 900, "title": "8 Uporabniki, telefon", "page": "zasloni", "is_interactive": true},
   "TelefonMain.dc.html": {"x": 0, "y": 2000, "w": 390, "h": 844, "title": "1 Prijava, telefon", "page": "zasloni", "is_interactive": true},
   "TelefonRegistracija.dc.html": {"x": 470, "y": 2000, "w": 390, "h": 900, "title": "2 Registracija, telefon", "page": "zasloni", "is_interactive": true},
@@ -34,7 +36,7 @@
   "Oznaka.dc.html": {"x": 980, "y": 0, "w": 200, "h": 60, "title": "Statusna oznaka", "page": "deli"},
   "Znak.dc.html": {"x": 1260, "y": 0, "w": 120, "h": 120, "title": "Znak", "page": "deli"}
  },
- "order": ["Main.dc.html", "Registracija.dc.html", "NadzornaPlosca.dc.html", "Pogodbe.dc.html", "NovaPogodba.dc.html", "PodrobnostiPogodbe.dc.html", "Opozorila.dc.html", "Uporabniki.dc.html", "Uporabnik.dc.html", "Posta.dc.html", "TelefonMain.dc.html", "TelefonRegistracija.dc.html", "TelefonNadzornaPlosca.dc.html", "TelefonPogodbe.dc.html", "TelefonNovaPogodba.dc.html", "TelefonPodrobnostiPogodbe.dc.html", "TelefonOpozorila.dc.html", "TelefonUporabniki.dc.html", "TemnaNadzornaPlosca.dc.html", "PogodbePrazno.dc.html", "PogodbeNalaganje.dc.html", "RegistracijaNapake.dc.html", "PodrobnostiOkno.dc.html", "Glava.dc.html", "Navigacija.dc.html", "Seznam.dc.html", "Oznaka.dc.html", "Znak.dc.html"],
+ "order": ["Main.dc.html", "Registracija.dc.html", "NadzornaPlosca.dc.html", "Pogodbe.dc.html", "NovaPogodba.dc.html", "PodrobnostiPogodbe.dc.html", "Opozorila.dc.html", "Uporabniki.dc.html", "Uporabnik.dc.html", "Posta.dc.html", "Iskanje.dc.html", "TelefonMain.dc.html", "TelefonRegistracija.dc.html", "TelefonNadzornaPlosca.dc.html", "TelefonPogodbe.dc.html", "TelefonNovaPogodba.dc.html", "TelefonPodrobnostiPogodbe.dc.html", "TelefonOpozorila.dc.html", "TelefonUporabniki.dc.html", "TelefonIskanje.dc.html", "TemnaNadzornaPlosca.dc.html", "PogodbePrazno.dc.html", "PogodbeNalaganje.dc.html", "RegistracijaNapake.dc.html", "PodrobnostiOkno.dc.html", "Glava.dc.html", "Navigacija.dc.html", "Seznam.dc.html", "Oznaka.dc.html", "Znak.dc.html"],
  "notes": {
   "n1": {"x": 0, "y": -300, "text": "Računalnik", "kind": "title1", "maxW": 4000, "page": "zasloni"},
   "n2": {"x": 0, "y": 1700, "text": "Telefon", "kind": "title1", "maxW": 3200, "page": "zasloni"},

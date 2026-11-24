@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Iskanje po vsebini</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" telefon="{{ telefon }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="{{ pot.pogodbe }}"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na pogodbe</a>
+<div class="page-head"><h1>Iskanje po vsebini</h1></div>
+<form class="search-form" onSubmit="{{ ustavi }}">
+<div class="field"><label class="field-label" for="is-q">Iskani izraz</label><span class="search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input class="input" id="is-q" type="search" value="{{ q }}" onChange="{{ vnos }}"></span><span class="field-hint">Najde tudi druge oblike besed. Točno zvezo zapišite v narekovaje, pred izključeno besedo dajte minus.</span></div>
+<div class="field"><label class="field-label" for="is-n">Način iskanja</label><span class="select"><select class="input" id="is-n" value="{{ nacin }}" onChange="{{ izberi }}"><option value="k">Ključne besede</option><option value="r">Regularni izraz</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div>
+<div class="form-actions"><button class="btn btn-primary" type="submit"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>Išči</button></div>
+</form>
+<p class="filter-result">Najdenih pogodb: 2</p>
+<section class="panel"><div class="panel-body result"><div class="head-title"><h2>Vzdrževanje računalniške opreme</h2><dc-import name="Oznaka" status="kmalu" hint-size="130px,24px"></dc-import></div><p class="muted">Sistemi Koren, d.&nbsp;o.&nbsp;o., Storitve</p><div class="excerpt"><p>…Pogodba velja od 15. 1. 2026 do 15. 1. 2027. <mark>Odpovedni</mark> <mark>rok</mark> je 30 dni…</p><a class="link" href="#dokument">pogodba-vzdrzevanje-2026.pdf, stran 1</a></div></div></section>
+<section class="panel"><div class="panel-body result"><div class="head-title"><h2>Najem poslovnih prostorov</h2><dc-import name="Oznaka" status="aktivna" hint-size="100px,24px"></dc-import></div><p class="muted">Nepremičnine Javor, d.&nbsp;o.&nbsp;o., Najem</p><div class="excerpt"><p>…<mark>Odpovedni</mark> <mark>rok</mark> je 90 dni, odpoved mora biti pisna…</p><a class="link" href="#dokument">najem-poslovnih-prostorov.pdf, stran 2</a></div></div></section>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" telefon="{{ telefon }}" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"telefon":{"editor":null},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const tema = this.state?.tema ?? this.props.tema ?? 'system';
+    return {
+      tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }),
+      telefon: !!this.props.telefon, da: true,
+      q: this.state?.q ?? 'odpovedni rok', nacin: this.state?.nacin ?? 'k',
+      vnos: (e) => this.setState({ q: e.target.value }), izberi: (e) => this.setState({ nacin: e.target.value }),
+      ustavi: (e) => e.preventDefault(), pot: { pogodbe: (this.props.telefon ? 'Telefon' : '') + 'Pogodbe.dc.html' }
+    };
+  }
+}
+</script>
+</body>
+</html>

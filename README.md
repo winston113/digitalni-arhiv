@@ -133,11 +133,18 @@ Pošta se uporablja za:
 
 Uporabnik opozorila izklopi na strani Moj račun.
 
+### Iskanje po vsebini in OCR
+
+Besedilo vsake datoteke PDF se po nalaganju prebere v ozadju; skenirane strani prepozna Tesseract (slovenščina in angleščina). Iskanje po ključnih besedah ne loči šumnikov in najde tudi druge oblike besed, narekovaji pomenijo točno zvezo, minus izključitev. Regularni izrazi tečejo v ločeni niti z omejenim časom.
+
+OCR izklopite z `OCR=false`, jezike določa `OCR_LANGUAGES`. Vse dokumente znova preberete z ukazom `indeks`.
+
 ### Skrbniški ukazi
 
 ```sh
 docker compose exec arhiv node dist/server/cli.js geslo uporabnik@primer.si   # novo geslo
 docker compose exec arhiv node dist/server/cli.js skrbnik uporabnik@primer.si # vloga skrbnika
+docker compose exec arhiv node dist/server/cli.js indeks                        # znova prebere vse dokumente
 docker compose exec arhiv node dist/server/cli.js demo uporabnik@primer.si    # vzorčne pogodbe v prazen arhiv
 ```
 
@@ -195,4 +202,4 @@ Pri razvoju strežnik zaženite z `BASE_URL=http://localhost:5173`.
 
 ## Licenca
 
-Projekt je odprtokoden pod [licenco MIT](LICENSE). Licence uporabljenih knjižnic so v [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Pisava IBM Plex Sans je pod licenco SIL OFL 1.1.
+Projekt je odprtokoden pod [licenco MIT](LICENSE). Licence uporabljenih knjižnic so v [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Pisava IBM Plex Sans je pod licenco SIL OFL 1.1. Slika vsebnika vsebuje še ločena programa Poppler (GPL-2.0-or-later) in Tesseract (Apache-2.0) iz distribucije Alpine.

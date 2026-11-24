@@ -56,6 +56,12 @@
 .screen .tabs a[aria-current=page]{color:var(--primary);border-bottom-color:var(--primary)}
 .btn-lang{gap:var(--space-1);padding:0 var(--space-2)}
 .screen .disclosure{align-self:flex-start;min-height:var(--control-height);padding:0;border:0;background:none;color:var(--primary);text-decoration:underline;text-underline-offset:3px;text-align:left;cursor:pointer}
+.screen .search-form{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:var(--space-4) var(--space-3);align-items:start}
+.screen .search-form .form-actions{grid-column:1/-1}
+.screen .result{display:flex;flex-direction:column;gap:var(--space-2)}
+.screen .result h2{font:600 18px/26px var(--font-sans)}
+.screen .excerpt{padding-top:var(--space-3);border-top:1px solid var(--line)}
+.screen mark{background:var(--primary-tint);color:var(--ink);font-weight:600;border-radius:2px}
 .screen .fieldset{display:flex;flex-direction:column;margin:0;padding:0;border:0;min-width:0}
 .screen .fieldset legend{padding:0}
 .screen .separator{display:flex;align-items:center;gap:var(--space-3);color:var(--ink-muted)}
@@ -75,6 +81,7 @@
  .screen .appbar-actions>.btn:not(.btn-lang){width:var(--control-height);padding:0}
  .screen .only-phone{display:inline}
  .screen .cols{grid-template-columns:minmax(0,1fr)}
+ .screen .search-form{grid-template-columns:minmax(0,1fr)}
  .screen .filters{grid-template-columns:minmax(0,1fr)}
  .screen .counts{grid-template-columns:repeat(2,minmax(0,1fr))}
  .screen .count{padding:var(--space-3) var(--space-4)}

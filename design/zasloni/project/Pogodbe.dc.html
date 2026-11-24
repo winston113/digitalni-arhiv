@@ -28,7 +28,7 @@
 </div>
 </sc-if>
 <sc-if value="{{ jeSeznam }}" hint-placeholder-val="{{ true }}">
-<div class="filter-line"><span class="filter-result" role="status">{{ stevec }}</span><sc-if value="{{ filtrirano }}" hint-placeholder-val="{{ false }}"><button class="btn btn-text" type="button" onClick="{{ pocisti }}">Počisti filtre</button></sc-if></div>
+<div class="filter-line"><span class="filter-result" role="status">{{ stevec }}</span><a class="btn btn-text" href="{{ pot.iskanje }}">Iskanje po vsebini</a><sc-if value="{{ filtrirano }}" hint-placeholder-val="{{ false }}"><button class="btn btn-text" type="button" onClick="{{ pocisti }}">Počisti filtre</button></sc-if></div>
 <dc-import name="Seznam" pogodbe="{{ pogodbe }}" telefon="{{ telefon }}" hint-size="100%,960px"></dc-import>
 </sc-if>
 <sc-if value="{{ niZadetkov }}" hint-placeholder-val="{{ false }}">
@@ -84,7 +84,7 @@ class Component extends DCLogic {
       stevec: 'Prikazanih ' + pogodbe.length + ' od ' + vse.length + ' pogodb',
       vnos: (e) => this.setState({ f: { ...f, [e.target.name]: e.target.value } }),
       pocisti: () => this.setState({ f: { q: '', kategorija: '', status: '' } }),
-      pot: { nova: s + 'NovaPogodba.dc.html' }
+      pot: { nova: s + 'NovaPogodba.dc.html', iskanje: s + 'Iskanje.dc.html' }
     };
   }
 }

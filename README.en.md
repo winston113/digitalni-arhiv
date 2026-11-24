@@ -11,6 +11,7 @@ The interface is in Slovenian (default) and English. Choose the language in the 
 - Contracts with PDF upload, preview and download, search and filters
 - Annexes and attachments, up to 30 PDFs per contract
 - Export of everything as a ZIP with the PDFs and an Excel spreadsheet
+- Search inside documents by keyword or regular expression, with OCR for scans
 - Action deadlines that take the notice period into account, shown in the app and sent by email
 - Light, dark and system theme; works on desktop and phone
 - Password sign-in, always available, plus any OpenID Connect provider (Zitadel, Keycloak, Authentik and others)
@@ -75,11 +76,18 @@ Password sign-in stays available behind "Unable to sign in with …?". People wh
 
 Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTTLS, API key and secret key). It is used for expiry reminders, password resets and confirming addresses. Reminders go only to confirmed addresses.
 
+### Content search and OCR
+
+The text of every PDF is read in the background after upload; scanned pages are recognised with Tesseract (Slovenian and English). Keyword search ignores accents and finds other forms of Slovenian words, quotes mean an exact phrase and a minus excludes a word. Regular expressions run in a separate thread with a time limit.
+
+Turn OCR off with `OCR=false`; `OCR_LANGUAGES` sets the languages. The `indeks` command reads all documents again.
+
 ### Administration commands
 
 ```sh
 docker compose exec arhiv node dist/server/cli.js geslo user@example.com     # set a new password
 docker compose exec arhiv node dist/server/cli.js skrbnik user@example.com   # make administrator
+docker compose exec arhiv node dist/server/cli.js indeks                     # read all documents again
 docker compose exec arhiv node dist/server/cli.js demo user@example.com      # sample contracts
 ```
 
@@ -122,4 +130,4 @@ Start the server with `BASE_URL=http://localhost:5173` while developing. Sloveni
 
 ## Licence
 
-[MIT](LICENSE). Licences of the libraries used are in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). The IBM Plex Sans font is licensed under SIL OFL 1.1.
+[MIT](LICENSE). Licences of the libraries used are in [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). The IBM Plex Sans font is licensed under SIL OFL 1.1. The container image also includes the separate programs Poppler (GPL-2.0-or-later) and Tesseract (Apache-2.0) from Alpine.

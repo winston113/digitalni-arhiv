@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Iskanje po vsebini, telefon</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="max-width: 390px; margin: 0 auto"><dc-import name="Iskanje" telefon="{{ da }}" hint-size="390px,1200px"></dc-import></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() { return { da: true }; }
+}
+</script>
+</body>
+</html>
