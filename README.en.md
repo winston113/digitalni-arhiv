@@ -9,6 +9,8 @@ The interface is in Slovenian (default) and English. Choose the language in the 
 ## Features
 
 - Contracts with PDF upload, preview and download, search and filters
+- Annexes and attachments, up to 30 PDFs per contract
+- Export of everything as a ZIP with the PDFs and an Excel spreadsheet
 - Action deadlines that take the notice period into account, shown in the app and sent by email
 - Light, dark and system theme; works on desktop and phone
 - Password sign-in, always available, plus any OpenID Connect provider (Zitadel, Keycloak, Authentik and others)

@@ -38,6 +38,7 @@ Oseba, ki v manjšem podjetju skrbi za pogodbe: vodja pisarne, računovodja ali 
 | Številka pogodbe | ne | |
 | Odpovedni rok | ne | v dneh, privzeto 0 |
 | Opozorilo | da | število dni pred rokom za ukrepanje, privzeto 30 |
+| Priloge in aneksi | ne | do 30 datotek PDF, vsaka največ 10 MB |
 | Vrednost | ne | v evrih; enkratno, mesečno ali letno |
 | Opombe | ne | |
 
@@ -60,6 +61,6 @@ Podaljšanje pomeni vnos novega datuma poteka. Pogodba se s tem vrne med aktivne
 
 ## Obseg prve različice
 
-Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, slovenski in angleški vmesnik, skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
+Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, slovenski in angleški vmesnik, priloge in aneksi, izvoz arhiva (ZIP s PDF in preglednico), skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
 
 Ni vključeno: elektronski podpis, potrjevanje pogodb, skupna raba pogodb, zgodovina različic, funkcije umetne inteligence.
