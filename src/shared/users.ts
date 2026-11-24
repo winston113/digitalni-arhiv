@@ -1,11 +1,12 @@
 import { z } from 'zod';
+import type { AiInfo } from './ai.js';
 import type { Lang } from './i18n.js';
 
 export const ROLES = ['user', 'admin'] as const;
 export type Role = (typeof ROLES)[number];
 
 // Dovoljenja veljajo za uporabnikove lastne pogodbe; tujih ne vidi nihče, tudi skrbnik ne.
-export const PERMISSIONS = ['create', 'edit', 'remove'] as const;
+export const PERMISSIONS = ['create', 'edit', 'remove', 'ai'] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 export type Permissions = Record<Permission, boolean>;
 
@@ -26,6 +27,9 @@ export interface Me extends Access {
   language: Lang;
 }
 
+// Prijavljeni uporabnik; ai je nastavljen samo, če ga sme uporabljati.
+export interface CurrentUser extends Me { ai: AiInfo | null }
+
 export interface ManagedUser extends Me {
   hasOidc: boolean;
   contracts: number;
@@ -33,7 +37,7 @@ export interface ManagedUser extends Me {
 }
 
 const name = z.string({ error: 'Vnesite ime in priimek.' }).trim().min(1, { error: 'Vnesite ime in priimek.' }).max(100, { error: 'Ime je predolgo. Največ 100 znakov.' });
-const permissions = z.object({ create: z.boolean(), edit: z.boolean(), remove: z.boolean() });
+const permissions = z.object({ create: z.boolean(), edit: z.boolean(), remove: z.boolean(), ai: z.boolean() });
 
 export const password = z.string({ error: 'Vnesite geslo.' })
   .min(8, { error: 'Geslo je prekratko. Vnesite najmanj 8 znakov.' })

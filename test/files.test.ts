@@ -99,7 +99,7 @@ describe('priloge', () => {
     const id = await create(bor);
     const [a] = (await (await attach(id, bor)).json()) as Attachment[];
     const user = t.db.prepare("SELECT id FROM user WHERE email = 'bor@primer.si'").get() as { id: string };
-    await t.json(`/api/admin/users/${user.id}`, { name: 'B', role: 'user', disabled: false, permissions: { create: true, edit: false, remove: true } }, { method: 'PUT', cookie: ana });
+    await t.json(`/api/admin/users/${user.id}`, { name: 'B', role: 'user', disabled: false, permissions: { create: true, edit: false, remove: true, ai: false } }, { method: 'PUT', cookie: ana });
     expect((await attach(id, bor)).status).toBe(403);
     expect((await t.request(`/api/contracts/${id}/attachments/${a!.id}`, { method: 'DELETE', cookie: bor })).status).toBe(403);
     expect((await t.request(`/api/contracts/${id}/attachments/${a!.id}/file`, { cookie: bor })).status).toBe(200);

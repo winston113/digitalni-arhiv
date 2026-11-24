@@ -7,6 +7,7 @@ export function AdminTabs() {
       <NavLink to="/skrbnistvo/uporabniki">{t('Uporabniki')}</NavLink>
       <NavLink to="/skrbnistvo/posta">{t('E-pošta')}</NavLink>
       <NavLink to="/skrbnistvo/prijava">{t('Zunanja prijava')}</NavLink>
+      <NavLink to="/skrbnistvo/ui">{t('Umetna inteligenca')}</NavLink>
     </nav>
   );
 }

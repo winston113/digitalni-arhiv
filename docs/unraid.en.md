@@ -94,7 +94,7 @@ If someone else registered first, make yourself an administrator with `... exec 
 
 ### Keep the demo away from your network
 
-The demo needs no outgoing connections unless you use email or OpenID Connect on it. Block them, so that it cannot reach your home network even if it were compromised:
+The demo needs no outgoing connections unless you use email, OpenID Connect or AI on it. Block them, so that it cannot reach your home network even if it were compromised:
 
 ```sh
 iptables -I DOCKER-USER -i br-arhivdemo -m conntrack --ctstate NEW -j DROP

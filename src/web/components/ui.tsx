@@ -37,8 +37,8 @@ export function Submit({ busy, busyLabel, children, className = 'btn btn-primary
   );
 }
 
-export function Field({ id, label, optional, hint, error, full, children }: {
-  id: string; label: string; optional?: boolean; hint?: string; error?: string; full?: boolean;
+export function Field({ id, label, optional, hint, error, full, note, children }: {
+  id: string; label: string; optional?: boolean; hint?: string; error?: string; full?: boolean; note?: ReactNode;
   children: (aria: { id: string; 'aria-invalid': boolean; 'aria-describedby': string | undefined }) => ReactNode;
 }) {
   const describedBy = error || hint ? `${id}-opis` : undefined;
@@ -49,6 +49,7 @@ export function Field({ id, label, optional, hint, error, full, children }: {
       {error
         ? <span className="field-error" id={describedBy}><Icon of={CircleAlert} size="sm" />{tr(error)}</span>
         : hint && <span className="field-hint" id={describedBy}>{hint}</span>}
+      {note}
     </div>
   );
 }

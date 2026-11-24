@@ -29,16 +29,6 @@ export function deadline(c: ContractView): { date: string; note: string } {
   return { date: formatDate(c.actionDate), note };
 }
 
-// Sprejme 480, 480,5, 1.250,00, 1,250.00 in 1250.00. Vrne null za prazno in NaN za neveljavno.
-export function parseAmount(text: string): number | null {
-  const v = text.replace(/[\s €]/g, '');
-  if (!v) return null;
-  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(/\./g, '').replace(',', '.')) * 100);
-  if (/^\d{1,3}(,\d{3})+(\.\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(/,/g, '')) * 100);
-  if (/^\d+([.,]\d{1,2})?$/.test(v)) return Math.round(Number(v.replace(',', '.')) * 100);
-  return NaN;
-}
-
 export function shownOf(shown: number, total: number): string {
   if (getLang() === 'en') return `Showing ${shown} of ${total} ${total === 1 ? 'contract' : 'contracts'}`;
   return `Prikazanih ${shown} od ${total} ${total % 100 === 1 ? 'pogodbe' : 'pogodb'}`;

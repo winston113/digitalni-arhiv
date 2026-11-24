@@ -6,7 +6,8 @@ import { promisify } from 'node:util';
 import { eachLimited, Limiter } from './limiter.js';
 
 export interface Extracted { pages: string[]; method: 'text' | 'ocr' | 'empty' }
-export type Extract = (path: string) => Promise<Extracted>;
+// maxScans omeji število strani, ki se berejo s slike.
+export type Extract = (path: string, maxScans?: number) => Promise<Extracted>;
 
 export class ToolsMissing extends Error {}
 
@@ -60,13 +61,13 @@ export function createExtract({ ocr, languages, workers }: ExtractOptions): Extr
     }
   };
 
-  return async (path) => {
+  return async (path, maxScans = MAX_OCR_PAGES) => {
     const raw = await tool('pdftotext', ['-q', '-enc', 'UTF-8', '-eol', 'unix', path, '-'], 120_000);
     const pages = raw.split('\f').slice(0, MAX_PAGES).map(cleanText);
     if (pages.length > 1 && pages.at(-1) === '') pages.pop();
 
     let recognised = false;
-    const scans = ocr ? pages.flatMap((text, i) => (letters(text) < MIN_LETTERS ? [i] : [])).slice(0, MAX_OCR_PAGES) : [];
+    const scans = ocr ? pages.flatMap((text, i) => (letters(text) < MIN_LETTERS ? [i] : [])).slice(0, maxScans) : [];
     if (scans.length > 0) {
       const dir = await mkdtemp(join(tmpdir(), 'ocr-'));
       try {

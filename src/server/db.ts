@@ -95,6 +95,14 @@ const MIGRATIONS = [
   END;
   INSERT INTO documents (file_id, contract_id) SELECT file_id, id FROM contracts;
   INSERT INTO documents (file_id, contract_id, attachment_id) SELECT file_id, contract_id, id FROM attachments;`,
+  // Uporaba umetne inteligence ni dovoljena nikomur, dokler je skrbnik ne dovoli.
+  `ALTER TABLE user_access ADD COLUMN can_use_ai INTEGER NOT NULL DEFAULT 0;
+  CREATE TABLE ai_usage (
+    user_id TEXT NOT NULL REFERENCES user(id) ON DELETE CASCADE,
+    day TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (user_id, day)
+  );`,
 ];
 
 export function openDb(dataDir: string): Db {

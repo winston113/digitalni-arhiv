@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
+import { Ai } from './ai.js';
 import { AuthHolder, createAuth, migrateAuth } from './auth.js';
 import { loadConfigOrExit } from './config.js';
 import { migrate, openDb } from './db.js';
@@ -28,11 +29,12 @@ const auth = new AuthHolder(() => createAuth(config, db, mail, oidc.current));
 
 const reminders = new Reminders(config, db, new ContractStore(db, config.dataDir), mail, settings);
 reminders.start();
-const indexer = new Indexer(db, config.dataDir, createExtract({ ocr: config.ocr, languages: config.ocrLanguages, workers: config.ocrWorkers }), config.ocrWorkers);
+const extract = createExtract({ ocr: config.ocr, languages: config.ocrLanguages, workers: config.ocrWorkers });
+const indexer = new Indexer(db, config.dataDir, extract, config.ocrWorkers);
 indexer.start();
 
 const webDir = fileURLToPath(new URL('../web', import.meta.url));
-const app = createApp(config, db, auth, mail, oidc, reminders, indexer, existsSync(webDir) ? webDir : null);
+const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings), extract, existsSync(webDir) ? webDir : null);
 const server = serve({ fetch: app.fetch, port: config.port }, () => {
   console.log(`Digitalni arhiv pogodb: ${config.baseUrl} (vrata ${config.port})`);
   console.log(`OCR: ${config.ocr ? `vklopljen, sočasnih obdelav: ${config.ocrWorkers}` : 'izklopljen'}`);

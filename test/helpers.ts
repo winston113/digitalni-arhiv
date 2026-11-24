@@ -2,6 +2,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/server/app.js';
+import { Ai } from '../src/server/ai.js';
 import { AuthHolder, createAuth, migrateAuth } from '../src/server/auth.js';
 import { loadConfig } from '../src/server/config.js';
 import { ContractStore } from '../src/server/contracts.js';
@@ -45,7 +46,7 @@ export async function setup(env: Record<string, string> = {}) {
     return { pages: text.split('\f'), method: text ? 'text' : 'empty' };
   };
   const indexer = new Indexer(db, dataDir, extract, 4);
-  const app = createApp(config, db, auth, mail, oidc, reminders, indexer);
+  const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings, env.ANTHROPIC_TEST_URL), extract);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
     const headers = new Headers(init.headers);

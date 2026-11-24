@@ -2,14 +2,14 @@ import { toLang, type Lang } from '../shared/i18n.js';
 import type { Access, ManagedUser, UserUpdate } from '../shared/users.js';
 import type { Db } from './db.js';
 
-interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; must_change_password: number; reminders: number; language: string }
+interface AccessRow { role: string; disabled: number; can_create: number; can_edit: number; can_remove: number; can_use_ai: number; must_change_password: number; reminders: number; language: string }
 interface UserRow extends AccessRow { id: string; name: string; email: string; createdAt: string | number; emailVerified: number; has_password: number; has_oidc: number; contracts: number }
 
 const toAccess = (r: AccessRow): Access => ({
   role: r.role === 'admin' ? 'admin' : 'user',
   disabled: r.disabled !== 0,
   mustChangePassword: r.must_change_password !== 0,
-  permissions: { create: r.can_create !== 0, edit: r.can_edit !== 0, remove: r.can_remove !== 0 },
+  permissions: { create: r.can_create !== 0, edit: r.can_edit !== 0, remove: r.can_remove !== 0, ai: r.can_use_ai !== 0 },
 });
 
 const USERS = `SELECT u.id, u.name, u.email, u.createdAt, u.emailVerified, a.*,
@@ -59,8 +59,8 @@ export class UserStore {
     this.db.transaction(() => {
       if (input.name) this.db.prepare('UPDATE user SET name = ? WHERE id = ?').run(input.name, id);
       const p = input.permissions;
-      this.db.prepare('UPDATE user_access SET role = ?, disabled = ?, can_create = ?, can_edit = ?, can_remove = ? WHERE user_id = ?')
-        .run(input.role, +input.disabled, +p.create, +p.edit, +p.remove, id);
+      this.db.prepare('UPDATE user_access SET role = ?, disabled = ?, can_create = ?, can_edit = ?, can_remove = ?, can_use_ai = ? WHERE user_id = ?')
+        .run(input.role, +input.disabled, +p.create, +p.edit, +p.remove, +p.ai, id);
       if (input.disabled) this.endSessions(id);
     })();
   }

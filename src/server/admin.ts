@@ -6,9 +6,11 @@ import { passwordReset, userCreate, userUpdate, type Access } from '../shared/us
 import type { AuthHolder } from './auth.js';
 import type { Config } from './config.js';
 import { translate } from '../shared/i18n.js';
+import { aiConnection, aiInput } from '../shared/ai.js';
 import { issuer, oidcInput } from '../shared/oidc.js';
 import { mailInput, mailUses } from '../shared/mail.js';
 import type { ContractStore } from './contracts.js';
+import { AiError, type Ai } from './ai.js';
 import { mailError, type Mail } from './mail.js';
 import { checkIssuer, type Oidc } from './oidc.js';
 import type { Reminders } from './reminders.js';
@@ -191,6 +193,38 @@ export function createOidcApi(config: Config, auth: AuthHolder, oidc: Oidc) {
     const checked = await checkIssuer(parsed.data.issuer);
     if (typeof checked === 'string') return c.json({ error: 'Preverite označena polja.', fields: { issuer: checked } }, 400);
     return c.json(checked);
+  });
+
+  return app;
+}
+
+export function createAiApi(ai: Ai) {
+  const app = new Hono<Env>();
+
+  app.get('/', (c) => c.json(ai.view()));
+
+  app.put('/', async (c) => {
+    const parsed = await body(c, aiInput);
+    if (!parsed.success) return c.json(invalid(parsed.error), 400);
+    if (!ai.save(parsed.data)) return c.json({ error: 'Preverite označena polja.', fields: { apiKey: 'Vnesite ključ.' } }, 400);
+    return c.json(ai.view());
+  });
+
+  app.delete('/', (c) => {
+    ai.clear();
+    return c.json(ai.view());
+  });
+
+  // Preveri povezavo in vrne modele, ki so na voljo.
+  app.post('/models', async (c) => {
+    const parsed = await body(c, aiConnection);
+    if (!parsed.success) return c.json(invalid(parsed.error), 400);
+    try {
+      return c.json(await ai.models(parsed.data));
+    } catch (error) {
+      if (error instanceof AiError) return c.json({ error: error.message }, error.status);
+      throw error;
+    }
   });
 
   return app;

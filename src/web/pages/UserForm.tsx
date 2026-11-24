@@ -12,7 +12,7 @@ import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
 import { t } from '../i18n.js';
 
-const ALL = { create: true, edit: true, remove: true };
+const ALL = { create: true, edit: true, remove: true, ai: false };
 const Back = () => <Link className="back" to="/skrbnistvo/uporabniki"><Icon of={ArrowLeft} />{t('Nazaj na uporabnike')}</Link>;
 
 export function NewUser() {

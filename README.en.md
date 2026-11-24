@@ -11,6 +11,7 @@ The interface is in Slovenian (default) and English. Choose the language in the 
 - Contracts with PDF upload, preview and download, search and filters
 - Annexes and attachments, up to 30 PDFs per contract
 - Export of everything as a ZIP with the PDFs and an Excel spreadsheet
+- Optional: fill in the form from the PDF with AI (Ollama, OpenAI-compatible or Anthropic), allowed per user by an administrator
 - Search inside documents by keyword or regular expression, with OCR for scans
 - Action deadlines that take the notice period into account, shown in the app and sent by email
 - Light, dark and system theme; works on desktop and phone
@@ -75,6 +76,17 @@ Password sign-in stays available behind "Unable to sign in with …?". People wh
 ### Email
 
 Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTTLS, API key and secret key). It is used for expiry reminders, password resets and confirming addresses. Reminders go only to confirmed addresses.
+
+### Reading contract details (AI)
+
+When adding a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default.
+
+1. Under Admin, Artificial intelligence, choose a provider (Ollama, OpenAI or a compatible server, Anthropic), check the connection and pick a model.
+2. On a user's page, turn on "Read details from PDFs with AI". Nobody has it by default, not even the administrator. Reads per user per day are limited.
+
+Suggestions are never saved on their own and never overwrite what the user typed. The party, number, dates, notice period and value appear only if confirmed by a quote that is literally in the document. Title and category are suggested without a quote. Each detail shows its page and quote. The model can still be wrong, for example by picking the wrong date, so check the details.
+
+Only the text of the contract is sent, not the file. With your own Ollama server the text stays on your network. The key is encrypted and never shown again. For contracts longer than about 25 pages, whole pages from the beginning and end are read, and the app says how many. Connect a model directly rather than an agent with tools (such as Hermes Agent).
 
 ### Content search and OCR
 

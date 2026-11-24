@@ -10,7 +10,7 @@ let t: Awaited<ReturnType<typeof setup>>;
 let admin: string;
 let ana: string;
 let ids: Record<string, string>;
-const all = { create: true, edit: true, remove: true };
+const all = { create: true, edit: true, remove: true, ai: false };
 const me = async (cookie: string) => (await (await t.request('/api/me', { cookie })).json()) as Me | null;
 const send = (method: string, path: string, body: unknown, cookie = admin) =>
   t.json(`/api/admin/users${path}`, body, { method, cookie });
@@ -128,14 +128,14 @@ describe('dovoljenja in blokiranje', () => {
       terminate: () => t.json(`/api/contracts/${id}/terminate`, {}, { cookie: ana }),
       remove: () => t.request(`/api/contracts/${id}`, { method: 'DELETE', cookie: ana }),
     };
-    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: false, remove: false } }));
+    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: false, remove: false, ai: false } }));
     for (const [name, run] of Object.entries(attempts)) expect((await run()).status, name).toBe(403);
     expect((await t.request(`/api/contracts/${id}/file`, { cookie: ana })).status).toBe(200);
-    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: true, remove: false } }));
+    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: true, remove: false, ai: false } }));
     expect((await attempts.extend()).status).toBe(200);
     expect((await attempts.create()).status).toBe(403);
     expect((await attempts.remove()).status).toBe(403);
-    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: false, remove: true } }));
+    await send('PUT', `/${ids.ana}`, edit({ permissions: { create: false, edit: false, remove: true, ai: false } }));
     expect((await attempts.remove()).status).toBe(204);
   });
 

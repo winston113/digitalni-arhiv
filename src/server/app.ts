@@ -8,8 +8,8 @@ import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
 import { contractInput, fieldErrors, MAX_ATTACHMENTS, MAX_FILE_SIZE, toView, type Contract, type ContractDetails } from '../shared/contracts.js';
 import { isIsoDate, today } from '../shared/dates.js';
-import { password, type Access, type Me, type Permission } from '../shared/users.js';
-import { createAdminApi, createMailApi, createOidcApi } from './admin.js';
+import { password, type Access, type CurrentUser, type Permission } from '../shared/users.js';
+import { createAdminApi, createAiApi, createMailApi, createOidcApi } from './admin.js';
 import { CLIENT_IP_HEADER, type AuthHolder } from './auth.js';
 import type { Config } from './config.js';
 import { ContractStore, type StoredFile, type Upload } from './contracts.js';
@@ -22,6 +22,9 @@ import type { Indexer } from './indexer.js';
 import type { Reminders } from './reminders.js';
 import { searchInput } from '../shared/search.js';
 import { Search, SearchError } from './search.js';
+import { AiError, type Ai } from './ai.js';
+import type { Extract } from './extract.js';
+import { Suggester } from './suggest.js';
 import { UserStore } from './users.js';
 
 type Env = { Variables: { userId: string; access: Access } };
@@ -76,10 +79,11 @@ async function readForm(c: Context): Promise<{ data: unknown; upload: Upload | n
   return { data, upload: { name: cleanFileName(file.name), bytes }, fileError: null };
 }
 
-export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, indexer: Indexer, webDir: string | null = null) {
+export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, indexer: Indexer, ai: Ai, extract: Extract, webDir: string | null = null) {
   const store = new ContractStore(db, config.dataDir);
   const search = new Search(db, config.dataDir, store);
   const users = new UserStore(db);
+  const suggester = new Suggester(ai, extract);
   const app = new Hono<Env>();
   const https = config.baseUrl.startsWith('https://');
 
@@ -144,7 +148,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     c.header('Cache-Control', 'no-store');
     if (!user || user.disabled) return c.json(null);
     const { id, name, email, hasPassword, emailVerified, reminders: wants, language, role, disabled, mustChangePassword, permissions } = user;
-    return c.json({ id, name, email, hasPassword, emailVerified, reminders: wants, language, role, disabled, mustChangePassword, permissions } satisfies Me);
+    return c.json({ id, name, email, hasPassword, emailVerified, reminders: wants, language, role, disabled, mustChangePassword, permissions, ai: permissions.ai ? ai.info : null } satisfies CurrentUser);
   });
 
   app.post('/api/password', guard, async (c) => {
@@ -287,6 +291,20 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   app.route('/api/contracts', api);
 
+  // Predlogi za obrazec; datoteka se ne shrani.
+  app.post('/api/suggestions', guard, passwordChanged, allow('ai'), limit, async (c) => {
+    const { create, edit } = c.get('access').permissions;
+    if (!create && !edit) throw new HTTPException(403, { message: 'Za to dejanje nimate dovoljenja. Obrnite se na skrbnika.' });
+    const { upload, fileError } = await readForm(c);
+    if (!upload) return c.json({ error: fileError ?? 'Izberite datoteko PDF.' }, 400);
+    try {
+      return c.json(await suggester.run(c.get('userId'), upload.bytes, today(), c.req.raw.signal));
+    } catch (error) {
+      if (error instanceof AiError) return c.json({ error: error.message }, error.status);
+      throw error;
+    }
+  });
+
   // POST, da iskani izrazi ne pridejo v dnevnike posrednikov.
   app.post('/api/search', guard, passwordChanged, async (c) => {
     const parsed = searchInput.safeParse(await c.req.json().catch(() => null));
@@ -325,6 +343,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
   admin.route('/users', createAdminApi(auth, mail, users, store));
   admin.route('/mail', createMailApi(config, mail, reminders, users));
   admin.route('/oidc', createOidcApi(config, auth, oidc));
+  admin.route('/ai', createAiApi(ai));
   app.route('/api/admin', admin);
   app.all('/api/*', (c) => c.json({ error: 'Naslov ne obstaja.' }, 404));
 

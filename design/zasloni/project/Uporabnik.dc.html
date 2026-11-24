@@ -30,6 +30,7 @@
 <label class="check" for="up-dod"><input type="checkbox" id="up-dod" checked="{{ dodajanje }}" onChange="{{ preklopiDodajanje }}">Dodajanje pogodb</label>
 <label class="check" for="up-ure"><input type="checkbox" id="up-ure" checked="{{ urejanje }}" onChange="{{ preklopiUrejanje }}">Urejanje, podaljšanje in prekinitev</label>
 <label class="check" for="up-bri"><input type="checkbox" id="up-bri" checked="{{ brisanje }}" onChange="{{ preklopiBrisanje }}">Brisanje pogodb</label>
+<label class="check" for="up-ui"><input type="checkbox" id="up-ui" checked="{{ branje }}" onChange="{{ preklopiBranje }}">Branje podatkov iz PDF z umetno inteligenco</label>
 <span class="field-hint">Ogled in prenos lastnih pogodb sta vedno mogoča.</span></fieldset>
 <div class="form-actions full"><a class="btn btn-primary" href="Uporabniki.dc.html">Shrani uporabnika</a></div>
 </form>
@@ -41,13 +42,14 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"$preview":{"width":1280,"height":900}}'>
 class Component extends DCLogic {
-  state = { ime: 'Nina Novak', vloga: 'user', dodajanje: true, urejanje: true, brisanje: false };
+  state = { ime: 'Nina Novak', vloga: 'user', dodajanje: true, urejanje: true, brisanje: false, branje: false };
   renderVals() {
     const tema = this.state.tema ?? this.props.tema ?? 'system';
-    const { ime, vloga, dodajanje, urejanje, brisanje } = this.state;
+    const { ime, vloga, dodajanje, urejanje, brisanje, branje } = this.state;
     return {
       tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }), da: true,
-      ime, vloga, dodajanje, urejanje, brisanje,
+      ime, vloga, dodajanje, urejanje, brisanje, branje,
+      preklopiBranje: () => this.setState({ branje: !branje }),
       vnos: (e) => this.setState({ ime: e.target.value }),
       izberiVlogo: (e) => this.setState({ vloga: e.target.value }),
       preklopiDodajanje: () => this.setState({ dodajanje: !dodajanje }),

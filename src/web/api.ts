@@ -1,10 +1,11 @@
 import { msg } from './i18n.js';
+import type { AiConnection, AiInput, AiView, SuggestResult } from '../shared/ai.js';
 import type { Attachment, ContractDetails, ContractView } from '../shared/contracts.js';
 import type { MailInput, MailUses, MailView } from '../shared/mail.js';
 import type { Key, Lang } from '../shared/i18n.js';
 import type { OidcCheck, OidcInput, OidcView } from '../shared/oidc.js';
 import type { SearchInput, SearchResult } from '../shared/search.js';
-import type { ManagedUser, Me, UserCreate, UserUpdate } from '../shared/users.js';
+import type { CurrentUser, ManagedUser, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
   registration: { local: boolean; oidc: boolean };
@@ -59,7 +60,7 @@ function formData(data: unknown, file: File | null): FormData {
 
 export const api = {
   config: async () => (await send('/api/config')).json() as Promise<AppConfig>,
-  me: async () => (await send('/api/me')).json() as Promise<Me | null>,
+  me: async () => (await send('/api/me')).json() as Promise<CurrentUser | null>,
   signIn: (email: string, password: string) => post('/api/auth/sign-in/email', { email, password }),
   signUp: (name: string, email: string, password: string) => post('/api/auth/sign-up/email', { name, email, password }),
   signOut: () => post('/api/auth/sign-out', {}),
@@ -100,6 +101,11 @@ export const api = {
   saveOidc: async (data: OidcInput) => (await put('/api/admin/oidc', data)).json() as Promise<OidcView>,
   clearOidc: async () => (await withBody('DELETE')('/api/admin/oidc', {})).json() as Promise<OidcView>,
   checkOidc: async (issuer: string) => (await post('/api/admin/oidc/check', { issuer })).json() as Promise<OidcCheck>,
+  ai: async () => (await send('/api/admin/ai')).json() as Promise<AiView>,
+  saveAi: async (data: AiInput) => (await put('/api/admin/ai', data)).json() as Promise<AiView>,
+  clearAi: async () => (await withBody('DELETE')('/api/admin/ai', {})).json() as Promise<AiView>,
+  aiModels: async (data: AiConnection) => (await post('/api/admin/ai/models', data)).json() as Promise<string[]>,
+  suggest: async (file: File, signal: AbortSignal) => (await send('/api/suggestions', { method: 'POST', body: formData(null, file), signal })).json() as Promise<SuggestResult>,
   setLanguage: (language: Lang) => put('/api/me/language', { language }),
   firstPassword: (newPassword: string) => post('/api/password/first', { newPassword }),
   oidc: async () => (await send('/api/admin/oidc')).json() as Promise<OidcView>,

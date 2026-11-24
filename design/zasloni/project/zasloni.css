@@ -64,6 +64,9 @@
 .screen mark{background:var(--primary-tint);color:var(--ink);font-weight:600;border-radius:2px}
 .screen .fieldset{display:flex;flex-direction:column;margin:0;padding:0;border:0;min-width:0}
 .screen .fieldset legend{padding:0}
+.screen .field-note{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font:400 14px/20px var(--font-sans);color:var(--ink-muted);overflow-wrap:anywhere}
+.screen .read{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-4);margin:var(--space-2) 0}
+.screen .read .field-hint{flex:1 1 260px}
 .screen .separator{display:flex;align-items:center;gap:var(--space-3);color:var(--ink-muted)}
 .screen .separator::before,.screen .separator::after{content:"";flex:1;border-top:1px solid var(--line)}
 .screen .overlay{position:absolute;inset:0;z-index:30;align-items:flex-start;padding-top:160px}

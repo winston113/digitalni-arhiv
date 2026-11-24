@@ -1,12 +1,13 @@
 import { CircleCheck } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
-import type { Me } from '../shared/users.js';
+import type { CurrentUser } from '../shared/users.js';
 import type { Lang } from '../shared/i18n.js';
 import { applyLang, getLang, storedLang, t } from './i18n.js';
 import { api, type ApiError, type AppConfig } from './api.js';
 import { AuthShell, Shell } from './components/Shell.js';
 import { ErrorNotice, Icon, Skeleton } from './components/ui.js';
+import { AiSettings } from './pages/AiSettings.js';
 import { Alerts } from './pages/Alerts.js';
 import { Account } from './pages/Account.js';
 import { ChangePasswordForm } from './pages/ChangePassword.js';
@@ -27,7 +28,7 @@ import { AppContext } from './state.js';
 
 export function App() {
   const [boot, setBoot] = useState<{ config: AppConfig } | null>(null);
-  const [user, setUser] = useState<Me | null>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [toasts, setToasts] = useState<{ id: number; message: string }[]>([]);
   const [alerts, setAlerts] = useState(0);
@@ -88,6 +89,7 @@ export function App() {
                 <Route path="uporabniki/nov" element={<NewUser />} />
                 <Route path="uporabniki/:id" element={<EditUser />} />
                 <Route path="posta" element={<MailSettings />} />
+                <Route path="ui" element={<AiSettings />} />
                 <Route path="prijava" element={<OidcSettings />} />
               </Route>
             )}

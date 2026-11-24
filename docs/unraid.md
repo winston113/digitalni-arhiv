@@ -94,7 +94,7 @@ arhiv-demo.primer.si {
 
 ### Ločitev od domačega omrežja
 
-Predstavitvena različica ne potrebuje izhodnih povezav, razen če na njej uporabljate pošto ali OpenID Connect. Preprečite jih, da tudi ob morebitnem vdoru ne doseže domačega omrežja:
+Predstavitvena različica ne potrebuje izhodnih povezav, razen če na njej uporabljate pošto, OpenID Connect ali umetno inteligenco. Preprečite jih, da tudi ob morebitnem vdoru ne doseže domačega omrežja:
 
 ```sh
 iptables -I DOCKER-USER -i br-arhivdemo -m conntrack --ctstate NEW -j DROP

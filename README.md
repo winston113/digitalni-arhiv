@@ -35,6 +35,7 @@ Vmesnik je v slovenščini in angleščini. Jezik izberete v glavi poleg teme; p
 | Podatkovna baza | SQLite |
 | Prijava | e-pošta in geslo, neobvezno OpenID Connect (npr. Zitadel) |
 | Pošta | SMTP (npr. Mailjet) |
+| Branje podatkov (neobvezno) | Ollama, OpenAI in združljivi strežniki ali Anthropic |
 | Objava | vsebnik (Docker ali Podman) za povratnim posrednikom Caddy |
 
 ## Navodila za zagon
@@ -132,6 +133,17 @@ Pošta se uporablja za:
 - **potrditev e-poštnega naslova**, ki je pogoj za prejemanje opozoril.
 
 Uporabnik opozorila izklopi na strani Moj račun.
+
+### Branje podatkov iz pogodb (umetna inteligenca)
+
+Pri dodajanju pogodbe gumb »Izpolni iz PDF« predlaga naziv, stranko, kategorijo, številko, datume, odpovedni rok in vrednost. Privzeto je izklopljeno.
+
+1. V razdelku Skrbništvo, Umetna inteligenca, izberite ponudnika (Ollama, OpenAI ali združljiv strežnik, Anthropic), preverite povezavo in izberite model.
+2. Na strani uporabnika vklopite dovoljenje »Branje podatkov iz PDF z umetno inteligenco«. Privzeto ga nima nihče, tudi skrbnik ne. Dnevno število branj na uporabnika je omejeno.
+
+Predlogi se nikoli ne shranijo sami in ne prepišejo že vnesenih podatkov. Stranka, številka, datumi, odpovedni rok in vrednost se prikažejo samo, če jih potrjuje navedek, ki je dobesedno v dokumentu. Naziv in kategorija sta predloga brez navedka. Pri vsakem podatku sta navedena stran in besedilo. Model se kljub temu lahko zmoti, na primer pri izbiri napačnega datuma, zato podatke preverite.
+
+Ponudniku se pošlje samo besedilo pogodbe, ne datoteka. Pri lastnem strežniku Ollama besedilo ostane v vašem omrežju. Ključ je šifriran in se ne prikaže več. Pri pogodbah, daljših od približno 25 strani, se preberejo cele strani z začetka in konca, aplikacija pa pove, koliko jih je prebrala. Namesto agentov z orodji (npr. Hermes Agent) povežite neposredno model.
 
 ### Iskanje po vsebini in OCR
 

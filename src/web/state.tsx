@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Lang } from '../shared/i18n.js';
-import type { Me } from '../shared/users.js';
+import type { CurrentUser } from '../shared/users.js';
 import { t } from './i18n.js';
 import { ApiError, type AppConfig } from './api.js';
 
@@ -8,8 +8,8 @@ interface AppState {
   config: AppConfig;
   lang: Lang;
   setLang: (lang: Lang) => void;
-  user: Me | null;
-  setUser: (user: Me | null) => void;
+  user: CurrentUser | null;
+  setUser: (user: CurrentUser | null) => void;
   refreshUser: () => Promise<void>;
   refreshConfig: () => Promise<void>;
   toast: (message: string) => void;
