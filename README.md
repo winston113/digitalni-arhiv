@@ -52,6 +52,21 @@ docker compose up -d --build
 
 Vse nastavitve so opisane v [.env.example](.env.example).
 
+### Prevzem slike iz zasebnega registra
+
+Dokler je paket na GitHubu zaseben, se na strežniku enkrat prijavite z osebnim žetonom (classic) s pravico `read:packages`:
+
+```sh
+docker login ghcr.io -u <uporabnik-github>
+docker compose pull
+```
+
+Na Unraidu se prijava shrani v pomnilnik in po ponovnem zagonu izgine. Namesto prevzema lahko sliko zgradite iz izvorne kode (`docker compose up -d --build`) ali jo prenesete z drugega računalnika:
+
+```sh
+docker save ghcr.io/winston113/digitalni-arhiv:latest | ssh strežnik docker load
+```
+
 ### Prvi skrbnik
 
 Prvi ustvarjeni račun samodejno postane skrbnik, ne glede na način registracije. Zato se registrirajte, **preden aplikacijo odprete drugim**, nato po potrebi nastavite `REGISTRATION=false` in znova zaženite vsebnik.
