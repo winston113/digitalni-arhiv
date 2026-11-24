@@ -21,6 +21,11 @@ const MIN_LETTERS = 20;
 // Daljša stranica slike; približno 220 pik na palec pri A4, velikost pa je omejena tudi pri nenavadnih straneh.
 const OCR_PIXELS = 2600;
 
+// Samo nevronska prepoznava: privzeta mešanica s starejšo na slabih skenih izgubi cele vrstice.
+const ENGINE = ['--oem', '1'];
+// Povečajte ob spremembi, po kateri je treba skenirane dokumente prebrati znova.
+export const OCR_VERSION = 2;
+
 const run = promisify(execFile);
 
 // Datoteke niso zaupanja vredne, zato orodja tečejo ločeno, z omejenim časom in pomnilnikom ter nizko prednostjo.
@@ -55,7 +60,7 @@ export function createExtract({ ocr, languages, workers }: ExtractOptions): Extr
     const image = join(dir, `s${page}`);
     await tool('pdftoppm', ['-q', '-gray', '-png', '-singlefile', '-scale-to', String(OCR_PIXELS), '-f', String(page), '-l', String(page), path, image], 60_000);
     try {
-      return cleanText(await tool('tesseract', [`${image}.png`, 'stdout', '-l', languages, '--psm', '3'], 120_000));
+      return cleanText(await tool('tesseract', [`${image}.png`, 'stdout', '-l', languages, '--psm', '3', ...ENGINE], 120_000));
     } finally {
       await rm(`${image}.png`, { force: true });
     }

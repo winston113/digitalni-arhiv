@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import type { TextState } from '../shared/search.js';
 import type { Db } from './db.js';
+import type { Settings } from './settings.js';
 import { ToolsMissing, type Extract } from './extract.js';
 
 const MAX_ATTEMPTS = 2;
@@ -80,6 +81,15 @@ export class Indexer {
   retry(contractId: string): void {
     this.db.prepare("UPDATE documents SET status = 'pending', attempts = 0 WHERE contract_id = ? AND status = 'failed'").run(contractId);
     this.kick();
+  }
+
+  // Po izboljšavi prepoznave enkrat znova prebere skenirane dokumente; dosedanje besedilo ostane v iskanju do zamenjave.
+  static rereadScans(db: Db, settings: Settings, version: number): number {
+    if (settings.get<number>('ocr-version') === version) return 0;
+    return db.transaction(() => {
+      settings.set('ocr-version', version);
+      return db.prepare("UPDATE documents SET status = 'pending', attempts = 0 WHERE status IN ('ocr', 'empty')").run().changes;
+    })();
   }
 
   static reset(db: Db): number {

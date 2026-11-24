@@ -9,7 +9,7 @@ import { migrate, openDb } from './db.js';
 import { ContractStore } from './contracts.js';
 import { Mail } from './mail.js';
 import { Oidc } from './oidc.js';
-import { createExtract } from './extract.js';
+import { createExtract, OCR_VERSION } from './extract.js';
 import { Indexer } from './indexer.js';
 import { tooManyWorkers } from './limiter.js';
 import { Reminders } from './reminders.js';
@@ -31,6 +31,8 @@ const reminders = new Reminders(config, db, new ContractStore(db, config.dataDir
 reminders.start();
 const extract = createExtract({ ocr: config.ocr, languages: config.ocrLanguages, workers: config.ocrWorkers });
 const indexer = new Indexer(db, config.dataDir, extract, config.ocrWorkers);
+const reread = config.ocr ? Indexer.rereadScans(db, settings, OCR_VERSION) : 0;
+if (reread) console.log(`Skenirani dokumenti, ki bodo znova prebrani: ${reread}`);
 indexer.start();
 
 const webDir = fileURLToPath(new URL('../web', import.meta.url));

@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { migrate } from '../src/server/db.js';
 import { cleanText } from '../src/server/extract.js';
+import { Indexer } from '../src/server/indexer.js';
 import { parseTerms } from '../src/server/search.js';
 import type { Attachment, ContractDetails } from '../src/shared/contracts.js';
 import type { SearchResult } from '../src/shared/search.js';
@@ -192,5 +193,23 @@ describe('kazalo', () => {
   it('počisti besedilo iz PDF', () => {
     expect(cleanText('najem-\nnina­  je\u0001 tu\n\n\n\nkonec ')).toBe('najemnina je tu\n\nkonec');
     expect(cleanText('S-2026 -\nNaslov')).toBe('S-2026 -\nNaslov');
+  });
+});
+
+describe('ponovno branje skenov po izboljšavi', () => {
+  it('poteka enkrat, samo za skenirane dokumente, iskanje pa medtem deluje', async () => {
+    await create('skenirana beseda', { title: 'Sken' });
+    await create('navadna beseda', { title: 'Besedilo' });
+    await t.indexer.drain();
+    t.db.prepare("UPDATE documents SET status = 'ocr' WHERE contract_id = (SELECT id FROM contracts WHERE title = 'Sken')").run();
+    const pending = () => (t.db.prepare("SELECT COUNT(*) n FROM documents WHERE status = 'pending'").get() as { n: number }).n;
+    expect(Indexer.rereadScans(t.db, t.settings, 2)).toBe(1);
+    expect(pending()).toBe(1);
+    const during = (await (await raw('skenirana')).json()) as SearchResult;
+    expect(during.hits.map((h) => h.contract.title)).toEqual(['Sken']);
+    expect(await titles('beseda')).toEqual(['Besedilo', 'Sken']);
+    expect(Indexer.rereadScans(t.db, t.settings, 2)).toBe(0);
+    expect(pending()).toBe(0);
+    expect(Indexer.rereadScans(t.db, t.settings, 3)).toBe(0);
   });
 });
