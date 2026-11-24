@@ -4,7 +4,7 @@ name: arhiv-demo
 
 services:
   arhiv:
-    image: ghcr.io/winston113/digitalni-arhiv:latest
+    image: ghcr.io/winston113/digitalni-arhiv:1.0.0
     build: .
     restart: unless-stopped
     environment:

@@ -64,7 +64,7 @@ docker compose pull
 Na Unraidu se prijava shrani v pomnilnik in po ponovnem zagonu izgine. Namesto prevzema lahko sliko zgradite iz izvorne kode (`docker compose up -d --build`) ali jo prenesete z drugega računalnika:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:latest | ssh strežnik docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.0.0 | ssh strežnik docker load
 ```
 
 ### Prvi skrbnik
@@ -159,7 +159,7 @@ docker run --rm -i -v arhiv_podatki:/data alpine sh -c 'rm -rf /data/* && tar xz
 docker compose start
 ```
 
-Pred vsako nadgradnjo naredite kopijo. Obnovo enkrat preizkusite, preden se nanjo zanesete.
+Datoteki Compose sta vezani na točno različico. Za nadgradnjo spremenite številko različice slike in zaženite `docker compose up -d`. Pred vsako nadgradnjo naredite kopijo. Obnovo enkrat preizkusite, preden se nanjo zanesete.
 
 Če namesto nosilca uporabite mapo na gostitelju, mora vanjo lahko pisati uporabnik 1000 oziroma uporabnik, ki ga nastavite z `user:` v `compose.yaml` (na Unraidu običajno `99:100`).
 
