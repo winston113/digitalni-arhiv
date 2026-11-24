@@ -4,8 +4,9 @@ name: arhiv-demo
 
 services:
   arhiv:
-    image: ghcr.io/winston113/digitalni-arhiv:1.1.0
+    image: ghcr.io/winston113/digitalni-arhiv:1.2.0
     build: .
+    user: "${DEMO_PUID:-1000}:${DEMO_PGID:-1000}"
     restart: unless-stopped
     environment:
       BASE_URL: ${DEMO_BASE_URL:?Nastavite DEMO_BASE_URL v .env.demo}
@@ -23,7 +24,7 @@ services:
     ports:
       - "${DEMO_BIND:-127.0.0.1:3100}:3000"
     volumes:
-      - podatki:/data
+      - ${DEMO_DATA:-podatki}:/data
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
@@ -34,3 +35,9 @@ services:
 
 volumes:
   podatki:
+
+# Stalno ime omrežnega mostu omogoča pravilo požarnega zidu, ki vsebniku prepreči nove povezave navzven.
+networks:
+  default:
+    driver_opts:
+      com.docker.network.bridge.name: br-arhivdemo

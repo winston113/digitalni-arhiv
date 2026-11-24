@@ -53,7 +53,7 @@ docker compose pull
 On Unraid the login is kept in memory and is lost on reboot. Instead of pulling, you can build from source (`docker compose up -d --build`) or copy the image from another machine:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.1.0 | ssh server docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.2.0 | ssh server docker load
 ```
 
 ### Reverse proxy (Caddy)
@@ -112,6 +112,8 @@ docker compose start
 ```
 
 The Compose files are pinned to an exact version. To upgrade, change the image version and run `docker compose up -d`. Take a backup before every upgrade, and try a restore once before you rely on it.
+
+To use a host folder instead of a volume, set `DATA`, `PUID` and `PGID` in `.env`. For Unraid see [docs/unraid.en.md](docs/unraid.en.md).
 
 ### Public demo
 

@@ -3,8 +3,9 @@ name: arhiv
 
 services:
   arhiv:
-    image: ghcr.io/winston113/digitalni-arhiv:1.1.0
+    image: ghcr.io/winston113/digitalni-arhiv:1.2.0
     build: .
+    user: "${PUID:-1000}:${PGID:-1000}"
     restart: unless-stopped
     env_file: .env
     environment:
@@ -13,7 +14,7 @@ services:
     ports:
       - "${BIND:-127.0.0.1:3000}:3000"
     volumes:
-      - podatki:/data
+      - ${DATA:-podatki}:/data
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
