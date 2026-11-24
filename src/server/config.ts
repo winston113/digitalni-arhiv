@@ -3,6 +3,7 @@ import { accessSync, constants, existsSync, mkdirSync, readFileSync, writeFileSy
 import { join } from 'node:path';
 import { MAIL_SECURITY, type MailSecurity } from '../shared/mail.js';
 import { normalizeIssuer, OIDC_METHODS, type OidcMethod } from '../shared/oidc.js';
+import { autoWorkers } from './limiter.js';
 import type { Smtp } from './mail.js';
 import type { OidcConfig } from './oidc.js';
 
@@ -18,6 +19,7 @@ export interface Config {
   storageLimit: number | null;
   ocr: boolean;
   ocrLanguages: string;
+  ocrWorkers: number;
   registration: boolean;
   oidc: OidcConfig | null;
   smtp: Smtp | null;
@@ -41,6 +43,13 @@ function checkWritable(dataDir: string): void {
   } catch {
     throw new StartupError(`V podatkovno mapo ${dataDir} ni mogoče pisati. Lastnik mape in datotek mora biti uporabnik ${process.getuid?.()}:${process.getgid?.()} (chown -R).`);
   }
+}
+
+function ocrWorkers(value: string): number {
+  if (value === 'auto') return autoWorkers();
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 64) throw new StartupError('OCR_WORKERS mora biti auto ali število od 1 do 64.');
+  return n;
 }
 
 function ocrLanguages(value: string): string {
@@ -97,6 +106,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     trustProxy: flag(env, 'TRUST_PROXY', false),
     ocr: flag(env, 'OCR', true),
     ocrLanguages: ocrLanguages(env.OCR_LANGUAGES || 'slv+eng'),
+    ocrWorkers: ocrWorkers(env.OCR_WORKERS || 'auto'),
     storageLimit: env.STORAGE_LIMIT_MB ? positive(env.STORAGE_LIMIT_MB) * 1024 * 1024 : null,
     registration: flag(env, 'REGISTRATION', true),
     oidc: issuer && clientId

@@ -3,13 +3,14 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { eachLimited, Limiter } from './limiter.js';
 
 export interface Extracted { pages: string[]; method: 'text' | 'ocr' | 'empty' }
 export type Extract = (path: string) => Promise<Extracted>;
 
 export class ToolsMissing extends Error {}
 
-export interface ExtractOptions { ocr: boolean; languages: string }
+export interface ExtractOptions { ocr: boolean; languages: string; workers: number }
 
 const MAX_PAGES = 3000;
 const MAX_OCR_PAGES = 200;
@@ -21,10 +22,11 @@ const OCR_PIXELS = 2600;
 
 const run = promisify(execFile);
 
-// Datoteke niso zaupanja vredne, zato orodja tečejo ločeno, z omejenim časom in pomnilnikom.
+// Datoteke niso zaupanja vredne, zato orodja tečejo ločeno, z omejenim časom in pomnilnikom ter nizko prednostjo.
+// Ena stran uporablja eno nit: več vzporednih procesov je hitrejših od več niti na isti strani.
 async function tool(name: string, args: string[], timeout: number): Promise<string> {
   try {
-    const { stdout } = await run('/bin/sh', ['-c', 'ulimit -v 1500000 2>/dev/null; exec "$0" "$@"', name, ...args], {
+    const { stdout } = await run('/bin/sh', ['-c', 'ulimit -v 1500000 2>/dev/null; exec nice -n 10 "$0" "$@"', name, ...args], {
       timeout, killSignal: 'SIGKILL', maxBuffer: 64 * 1024 * 1024, encoding: 'utf8',
       env: { PATH: process.env.PATH, LANG: 'C.UTF-8', OMP_THREAD_LIMIT: '1', HOME: tmpdir() },
     });
@@ -45,7 +47,9 @@ export function cleanText(text: string): string {
 
 const letters = (text: string) => text.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
 
-export function createExtract({ ocr, languages }: ExtractOptions): Extract {
+export function createExtract({ ocr, languages, workers }: ExtractOptions): Extract {
+  // Omejitev je skupna vsem dokumentom, zato število procesov nikoli ne preseže števila delavcev.
+  const limiter = new Limiter(workers);
   const readPage = async (path: string, page: number, dir: string): Promise<string> => {
     const image = join(dir, `s${page}`);
     await tool('pdftoppm', ['-q', '-gray', '-png', '-singlefile', '-scale-to', String(OCR_PIXELS), '-f', String(page), '-l', String(page), path, image], 60_000);
@@ -61,18 +65,17 @@ export function createExtract({ ocr, languages }: ExtractOptions): Extract {
     const pages = raw.split('\f').slice(0, MAX_PAGES).map(cleanText);
     if (pages.length > 1 && pages.at(-1) === '') pages.pop();
 
-    let scanned = 0;
     let recognised = false;
-    if (ocr) {
+    const scans = ocr ? pages.flatMap((text, i) => (letters(text) < MIN_LETTERS ? [i] : [])).slice(0, MAX_OCR_PAGES) : [];
+    if (scans.length > 0) {
       const dir = await mkdtemp(join(tmpdir(), 'ocr-'));
       try {
-        for (const [i, text] of pages.entries()) {
-          if (letters(text) >= MIN_LETTERS || scanned >= MAX_OCR_PAGES) continue;
-          scanned++;
+        // Vsak dokument odda največ toliko strani naenkrat, kolikor je delavcev, da velik dokument ne zadrži majhnih.
+        await eachLimited(scans, workers, async (i) => {
           // Ena neberljiva stran ne sme pokvariti celotnega dokumenta.
-          const found = await readPage(path, i + 1, dir).catch((error: unknown) => { if (error instanceof ToolsMissing) throw error; return ''; });
-          if (letters(found) > letters(text)) { pages[i] = found; recognised = true; }
-        }
+          const found = await limiter.run(() => readPage(path, i + 1, dir)).catch((error: unknown) => { if (error instanceof ToolsMissing) throw error; return ''; });
+          if (letters(found) > letters(pages[i]!)) { pages[i] = found; recognised = true; }
+        });
       } finally {
         await rm(dir, { recursive: true, force: true });
       }

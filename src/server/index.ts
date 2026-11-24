@@ -27,13 +27,14 @@ const auth = new AuthHolder(() => createAuth(config, db, mail, oidc.current));
 
 const reminders = new Reminders(config, db, new ContractStore(db, config.dataDir), mail, settings);
 reminders.start();
-const indexer = new Indexer(db, config.dataDir, createExtract({ ocr: config.ocr, languages: config.ocrLanguages }));
+const indexer = new Indexer(db, config.dataDir, createExtract({ ocr: config.ocr, languages: config.ocrLanguages, workers: config.ocrWorkers }), config.ocrWorkers);
 indexer.start();
 
 const webDir = fileURLToPath(new URL('../web', import.meta.url));
 const app = createApp(config, db, auth, mail, oidc, reminders, indexer, existsSync(webDir) ? webDir : null);
 const server = serve({ fetch: app.fetch, port: config.port }, () => {
   console.log(`Digitalni arhiv pogodb: ${config.baseUrl} (vrata ${config.port})`);
+  console.log(`OCR: ${config.ocr ? `vklopljen, sočasnih obdelav: ${config.ocrWorkers}` : 'izklopljen'}`);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

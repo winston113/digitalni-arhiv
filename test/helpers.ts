@@ -44,7 +44,7 @@ export async function setup(env: Record<string, string> = {}) {
     if (text.startsWith('!')) throw new Error('pokvarjena');
     return { pages: text.split('\f'), method: text ? 'text' : 'empty' };
   };
-  const indexer = new Indexer(db, dataDir, extract);
+  const indexer = new Indexer(db, dataDir, extract, 4);
   const app = createApp(config, db, auth, mail, oidc, reminders, indexer);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
