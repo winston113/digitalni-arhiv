@@ -23,7 +23,7 @@ V to mapo kopirajte `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.exa
 Dokler je paket zaseben, je najpreprosteje poslati sliko z računalnika, na katerem je zgrajena:
 
 ```sh
-podman save ghcr.io/winston113/digitalni-arhiv:1.3.0 | ssh root@UNRAID docker load
+podman save ghcr.io/winston113/digitalni-arhiv:1.3.1 | ssh root@UNRAID docker load
 ```
 
 Compose uporabi lokalno sliko in je ne prenaša znova. Če je paket javen, ta korak izpustite.
