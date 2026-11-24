@@ -1,10 +1,12 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/server/app.js';
 import { AuthHolder, createAuth, migrateAuth } from '../src/server/auth.js';
 import { loadConfig } from '../src/server/config.js';
 import { ContractStore } from '../src/server/contracts.js';
+import type { Extract } from '../src/server/extract.js';
+import { Indexer } from '../src/server/indexer.js';
 import { Mail, type Message, type Smtp } from '../src/server/mail.js';
 import { Oidc } from '../src/server/oidc.js';
 import { Reminders } from '../src/server/reminders.js';
@@ -36,7 +38,14 @@ export async function setup(env: Record<string, string> = {}) {
   const oidc = new Oidc(config, settings);
   const auth = new AuthHolder(() => createAuth(config, db, mail, oidc.current));
   const reminders = new Reminders(config, db, new ContractStore(db, dataDir), mail, settings);
-  const app = createApp(config, db, auth, mail, oidc, reminders);
+  // Vsebina preizkusne datoteke po glavi je njeno besedilo; \f loči strani, ! pomeni pokvarjeno datoteko.
+  const extract: Extract = async (path) => {
+    const text = readFileSync(path, 'utf8').replace(/^%PDF-1\.4\n?/, '');
+    if (text.startsWith('!')) throw new Error('pokvarjena');
+    return { pages: text.split('\f'), method: text ? 'text' : 'empty' };
+  };
+  const indexer = new Indexer(db, dataDir, extract);
+  const app = createApp(config, db, auth, mail, oidc, reminders, indexer);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
     const headers = new Headers(init.headers);
@@ -53,7 +62,7 @@ export async function setup(env: Record<string, string> = {}) {
     if (r.status !== 200) throw new Error(await r.text());
     return cookies(r);
   };
-  return { app, db, users: new UserStore(db), dataDir, request, json, register, mails, mail, reminders, settings, control };
+  return { app, db, users: new UserStore(db), dataDir, request, json, register, mails, mail, reminders, indexer, settings, control };
 }
 
 export const cookies = (r: Response) => r.headers.getSetCookie().map((c) => c.split(';')[0]).join('; ');

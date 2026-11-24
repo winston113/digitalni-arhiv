@@ -8,6 +8,8 @@ import { migrate, openDb } from './db.js';
 import { ContractStore } from './contracts.js';
 import { Mail } from './mail.js';
 import { Oidc } from './oidc.js';
+import { createExtract } from './extract.js';
+import { Indexer } from './indexer.js';
 import { Reminders } from './reminders.js';
 import { Settings } from './settings.js';
 import { UserStore } from './users.js';
@@ -25,15 +27,18 @@ const auth = new AuthHolder(() => createAuth(config, db, mail, oidc.current));
 
 const reminders = new Reminders(config, db, new ContractStore(db, config.dataDir), mail, settings);
 reminders.start();
+const indexer = new Indexer(db, config.dataDir, createExtract({ ocr: config.ocr, languages: config.ocrLanguages }));
+indexer.start();
 
 const webDir = fileURLToPath(new URL('../web', import.meta.url));
-const app = createApp(config, db, auth, mail, oidc, reminders, existsSync(webDir) ? webDir : null);
+const app = createApp(config, db, auth, mail, oidc, reminders, indexer, existsSync(webDir) ? webDir : null);
 const server = serve({ fetch: app.fetch, port: config.port }, () => {
   console.log(`Digitalni arhiv pogodb: ${config.baseUrl} (vrata ${config.port})`);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
+    indexer.stop();
     server.close(() => { db.close(); process.exit(0); });
     setTimeout(() => process.exit(0), 5000).unref();
   });

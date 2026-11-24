@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Key } from './i18n.js';
+import type { TextState } from './search.js';
 import { addDays, daysBetween, isIsoDate } from './dates.js';
 
 export const CATEGORIES = [
@@ -56,10 +57,10 @@ export interface ContractView extends Contract {
   daysLeft: number | null;
 }
 
-export interface Attachment { id: string; name: string; size: number; createdAt: string }
+export interface Attachment { id: string; name: string; size: number; createdAt: string; textState: TextState }
 
 // Ena pogodba s prilogami; seznam prilog ne vsebuje.
-export interface ContractDetails extends ContractView { attachments: Attachment[] }
+export interface ContractDetails extends ContractView { attachments: Attachment[]; textState: TextState }
 
 export const MAX_ATTACHMENTS = 30;
 

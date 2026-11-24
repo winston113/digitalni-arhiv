@@ -16,6 +16,8 @@ export interface Config {
   secret: string;
   trustProxy: boolean;
   storageLimit: number | null;
+  ocr: boolean;
+  ocrLanguages: string;
   registration: boolean;
   oidc: OidcConfig | null;
   smtp: Smtp | null;
@@ -39,6 +41,11 @@ function checkWritable(dataDir: string): void {
   } catch {
     throw new StartupError(`V podatkovno mapo ${dataDir} ni mogoče pisati. Lastnik mape in datotek mora biti uporabnik ${process.getuid?.()}:${process.getgid?.()} (chown -R).`);
   }
+}
+
+function ocrLanguages(value: string): string {
+  if (!/^[a-z_]+(\+[a-z_]+)*$/.test(value)) throw new StartupError('OCR_LANGUAGES mora biti seznam jezikov, na primer slv+eng.');
+  return value;
 }
 
 function positive(value: string): number {
@@ -88,6 +95,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port, baseUrl, dataDir,
     secret: loadSecret(env, dataDir),
     trustProxy: flag(env, 'TRUST_PROXY', false),
+    ocr: flag(env, 'OCR', true),
+    ocrLanguages: ocrLanguages(env.OCR_LANGUAGES || 'slv+eng'),
     storageLimit: env.STORAGE_LIMIT_MB ? positive(env.STORAGE_LIMIT_MB) * 1024 * 1024 : null,
     registration: flag(env, 'REGISTRATION', true),
     oidc: issuer && clientId

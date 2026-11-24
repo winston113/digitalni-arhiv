@@ -18,7 +18,10 @@ import { exportStream, MAX_EXPORT, planExport } from './export.js';
 import { LANGS, translate } from '../shared/i18n.js';
 import type { Mail } from './mail.js';
 import type { Oidc } from './oidc.js';
+import type { Indexer } from './indexer.js';
 import type { Reminders } from './reminders.js';
+import { searchInput } from '../shared/search.js';
+import { Search, SearchError } from './search.js';
 import { UserStore } from './users.js';
 
 type Env = { Variables: { userId: string; access: Access } };
@@ -73,8 +76,9 @@ async function readForm(c: Context): Promise<{ data: unknown; upload: Upload | n
   return { data, upload: { name: cleanFileName(file.name), bytes }, fileError: null };
 }
 
-export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, webDir: string | null = null) {
+export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, indexer: Indexer, webDir: string | null = null) {
   const store = new ContractStore(db, config.dataDir);
+  const search = new Search(db, config.dataDir, store);
   const users = new UserStore(db);
   const app = new Hono<Env>();
   const https = config.baseUrl.startsWith('https://');
@@ -193,7 +197,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   const isFull = (upload: Upload) => config.storageLimit !== null && store.usedSpace() + upload.bytes.length > config.storageLimit;
 
-  const details = (userId: string, contract: Contract): ContractDetails => ({ ...toView(contract, today()), attachments: store.attachments(userId, contract.id) });
+  const details = (userId: string, contract: Contract): ContractDetails => ({ ...toView(contract, today()), attachments: store.attachments(userId, contract.id), textState: store.textState(userId, contract.id) });
 
   api.get('/', (c) => c.json(store.list(c.get('userId')).map((x) => toView(x, today()))));
 
@@ -205,7 +209,9 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
       return c.json({ error: 'Preverite označena polja.', fields: { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(file ? { file } : {}) } }, 400);
     }
     if (isFull(upload)) return c.json({ error: NO_SPACE, fields: { file: NO_SPACE } }, 507);
-    return c.json(details(c.get('userId'), await store.create(c.get('userId'), parsed.data, upload)), 201);
+    const created = await store.create(c.get('userId'), parsed.data, upload);
+    indexer.kick();
+    return c.json(details(c.get('userId'), created), 201);
   });
 
   api.get('/:id', (c) => {
@@ -221,6 +227,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     }
     if (upload && isFull(upload)) return c.json({ error: NO_SPACE, fields: { file: NO_SPACE } }, 507);
     const updated = await store.update(c.get('userId'), c.req.param('id'), parsed.data, upload);
+    indexer.kick();
     return updated ? c.json(details(c.get('userId'), updated)) : c.json(NOT_FOUND, 404);
   });
 
@@ -257,6 +264,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     if (isFull(upload)) return c.json({ error: NO_SPACE }, 507);
     if (store.attachments(c.get('userId'), id).length >= MAX_ATTACHMENTS) return c.json({ error: 'Pogodba ima lahko največ 30 prilog.' }, 409);
     if (!(await store.addAttachment(c.get('userId'), id, upload))) return c.json(NOT_FOUND, 404);
+    indexer.kick();
     return c.json(store.attachments(c.get('userId'), id), 201);
   });
 
@@ -270,7 +278,26 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     return (await store.removeAttachment(c.get('userId'), id, c.req.param('attachment'))) ? c.json(store.attachments(c.get('userId'), id)) : c.json(NO_ATTACHMENT, 404);
   });
 
+  api.post('/:id/reindex', allow('edit'), (c) => {
+    const found = store.get(c.get('userId'), c.req.param('id'));
+    if (!found) return c.json(NOT_FOUND, 404);
+    indexer.retry(found.id);
+    return c.json(details(c.get('userId'), found));
+  });
+
   app.route('/api/contracts', api);
+
+  // POST, da iskani izrazi ne pridejo v dnevnike posrednikov.
+  app.post('/api/search', guard, passwordChanged, async (c) => {
+    const parsed = searchInput.safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({ error: 'Preverite označena polja.', fields: fieldErrors(parsed.error) }, 400);
+    try {
+      return c.json(await search.run(c.get('userId'), parsed.data));
+    } catch (error) {
+      if (error instanceof SearchError) return c.json({ error: error.message, fields: error.status === 409 ? {} : { query: error.message } }, error.status);
+      throw error;
+    }
+  });
 
   // Hkrati teče največ en izvoz na uporabnika.
   const exporting = new Set<string>();

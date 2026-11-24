@@ -27,7 +27,7 @@ describe('prevodi', () => {
 
   it('nima odvečnih vnosov', () => {
     const text = source(['src']).replace(/\\'/g, "'");
-    const unused = Object.keys(EN).filter((k) => !text.includes(`'${k.replace(/\n/g, '\\n')}'`));
+    const unused = Object.keys(EN).filter((k) => !text.includes(`'${k.replace(/\\/g, '\\\\').replace(/\n/g, '\\n')}'`));
     expect(unused).toEqual([]);
   });
 

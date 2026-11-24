@@ -1,6 +1,7 @@
 // Ukazi za skrbnika:
 //   node dist/server/cli.js geslo <e-pošta>   novo geslo (prebere se s standardnega vhoda)
 //   node dist/server/cli.js skrbnik <e-pošta> podeli vlogo skrbnika in odblokira račun
+//   node dist/server/cli.js indeks            znova prebere besedilo vseh dokumentov (za iskanje)
 //   node dist/server/cli.js demo <e-pošta>    doda vzorčne pogodbe uporabniku brez pogodb
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -10,6 +11,7 @@ import { createAuth } from './auth.js';
 import { loadConfigOrExit } from './config.js';
 import { ContractStore } from './contracts.js';
 import { migrate, openDb } from './db.js';
+import { Indexer } from './indexer.js';
 import { Mail } from './mail.js';
 import { Settings } from './settings.js';
 import { UserStore } from './users.js';
@@ -20,12 +22,19 @@ function fail(message: string, code = 1): never {
 }
 
 const [command, email] = process.argv.slice(2);
-if (!['geslo', 'skrbnik', 'demo'].includes(command ?? '') || !email) fail('Uporaba: node dist/server/cli.js geslo|skrbnik|demo <e-pošta>', 2);
+if (command !== 'indeks' && (!['geslo', 'skrbnik', 'demo'].includes(command ?? '') || !email)) fail('Uporaba: node dist/server/cli.js geslo|skrbnik|demo <e-pošta> ali indeks', 2);
 
 const config = loadConfigOrExit();
 const db = openDb(config.dataDir);
 migrate(db);
 const users = new UserStore(db);
+if (command === 'indeks') {
+  console.log(`Dokumentov v vrsti: ${Indexer.reset(db)}`);
+  db.close();
+  process.exit(0);
+}
+if (!email) fail('Manjka e-pošta.', 2);
+
 const ctx = await createAuth(config, db, new Mail(config, new Settings(db, config.secret)), null).$context;
 const found = await ctx.internalAdapter.findUserByEmail(email.toLowerCase(), { includeAccounts: true });
 if (!found) fail('Uporabnik s to e-pošto ne obstaja.');

@@ -4,6 +4,7 @@ import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { MAX_ATTACHMENTS, type Attachment, type Contract, type ContractInput } from '../shared/contracts.js';
+import type { TextState } from '../shared/search.js';
 import type { Db } from './db.js';
 
 interface Row {
@@ -21,9 +22,11 @@ const toContract = (r: Row): Contract => ({
   fileName: r.file_name, fileSize: r.file_size, terminatedAt: r.terminated_at, createdAt: r.created_at,
 });
 
-interface AttachmentRow { id: string; contract_id: string; file_id: string; name: string; size: number; created_at: string }
+interface AttachmentRow { id: string; contract_id: string; file_id: string; name: string; size: number; created_at: string; status: string | null }
 
-const toAttachment = (r: AttachmentRow): Attachment => ({ id: r.id, name: r.name, size: r.size, createdAt: r.created_at });
+const toState = (status: string | null | undefined): TextState => (status === 'text' || status === 'ocr' || status === 'empty' || status === 'failed' ? status : 'pending');
+
+const toAttachment = (r: AttachmentRow): Attachment => ({ id: r.id, name: r.name, size: r.size, createdAt: r.created_at, textState: toState(r.status) });
 
 export interface StoredFile { stream: () => ReadableStream; name: string; size: number }
 
@@ -124,6 +127,11 @@ export class ContractStore {
     return row ? { stream: () => this.stream(row.file_id), name: row.file_name, size: row.file_size } : null;
   }
 
+  textState(userId: string, id: string): TextState {
+    const row = this.row(userId, id);
+    return toState(row && (this.db.prepare('SELECT status FROM documents WHERE file_id = ?').get(row.file_id) as { status: string } | undefined)?.status);
+  }
+
   mainPath(userId: string, id: string): string | null {
     const row = this.row(userId, id);
     return row ? this.path(row.file_id) : null;
@@ -131,7 +139,7 @@ export class ContractStore {
 
   // Priloge: lastništvo se vedno preveri prek pogodbe.
   private attachmentRows(userId: string, contractId: string): AttachmentRow[] {
-    return this.db.prepare('SELECT a.* FROM attachments a JOIN contracts c ON c.id = a.contract_id WHERE c.id = ? AND c.user_id = ? ORDER BY a.created_at, a.rowid').all(contractId, userId) as AttachmentRow[];
+    return this.db.prepare('SELECT a.*, d.status FROM attachments a LEFT JOIN documents d ON d.file_id = a.file_id JOIN contracts c ON c.id = a.contract_id WHERE c.id = ? AND c.user_id = ? ORDER BY a.created_at, a.rowid').all(contractId, userId) as AttachmentRow[];
   }
 
   private attachmentRow(userId: string, contractId: string, id: string): AttachmentRow | undefined {
@@ -141,7 +149,7 @@ export class ContractStore {
   attachments(userId: string, contractId: string): Attachment[] { return this.attachmentRows(userId, contractId).map(toAttachment); }
 
   allAttachments(userId: string): Map<string, Attachment[]> {
-    const rows = this.db.prepare('SELECT a.* FROM attachments a JOIN contracts c ON c.id = a.contract_id WHERE c.user_id = ? ORDER BY a.created_at, a.rowid').all(userId) as AttachmentRow[];
+    const rows = this.db.prepare('SELECT a.*, d.status FROM attachments a LEFT JOIN documents d ON d.file_id = a.file_id JOIN contracts c ON c.id = a.contract_id WHERE c.user_id = ? ORDER BY a.created_at, a.rowid').all(userId) as AttachmentRow[];
     const result = new Map<string, Attachment[]>();
     for (const row of rows) result.set(row.contract_id, [...(result.get(row.contract_id) ?? []), toAttachment(row)]);
     return result;
