@@ -64,7 +64,7 @@ docker compose pull
 Na Unraidu se prijava shrani v pomnilnik in po ponovnem zagonu izgine. Namesto prevzema lahko sliko zgradite iz izvorne kode (`docker compose up -d --build`) ali jo prenesete z drugega računalnika:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.0.0 | ssh strežnik docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.1.0 | ssh strežnik docker load
 ```
 
 ### Prvi skrbnik

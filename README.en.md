@@ -53,7 +53,7 @@ docker compose pull
 On Unraid the login is kept in memory and is lost on reboot. Instead of pulling, you can build from source (`docker compose up -d --build`) or copy the image from another machine:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.0.0 | ssh server docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.1.0 | ssh server docker load
 ```
 
 ### Reverse proxy (Caddy)

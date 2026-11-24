@@ -3,7 +3,7 @@ name: arhiv
 
 services:
   arhiv:
-    image: ghcr.io/winston113/digitalni-arhiv:1.0.0
+    image: ghcr.io/winston113/digitalni-arhiv:1.1.0
     build: .
     restart: unless-stopped
     env_file: .env
