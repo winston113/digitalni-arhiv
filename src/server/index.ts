@@ -10,6 +10,7 @@ import { Mail } from './mail.js';
 import { Oidc } from './oidc.js';
 import { createExtract } from './extract.js';
 import { Indexer } from './indexer.js';
+import { tooManyWorkers } from './limiter.js';
 import { Reminders } from './reminders.js';
 import { Settings } from './settings.js';
 import { UserStore } from './users.js';
@@ -35,6 +36,7 @@ const app = createApp(config, db, auth, mail, oidc, reminders, indexer, existsSy
 const server = serve({ fetch: app.fetch, port: config.port }, () => {
   console.log(`Digitalni arhiv pogodb: ${config.baseUrl} (vrata ${config.port})`);
   console.log(`OCR: ${config.ocr ? `vklopljen, sočasnih obdelav: ${config.ocrWorkers}` : 'izklopljen'}`);
+  if (config.ocr && tooManyWorkers(config.ocrWorkers)) console.warn('OCR_WORKERS je visok za razpoložljivi pomnilnik; aplikacija je lahko počasna.');
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {

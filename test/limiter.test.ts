@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { migrate, openDb } from '../src/server/db.js';
 import { ToolsMissing, type Extract } from '../src/server/extract.js';
 import { Indexer } from '../src/server/indexer.js';
-import { autoWorkers, eachLimited, Limiter } from '../src/server/limiter.js';
+import { autoWorkers, eachLimited, Limiter, tooManyWorkers } from '../src/server/limiter.js';
 
 const GB = 1024 ** 3;
 const tick = (ms = 2) => new Promise((r) => setTimeout(r, ms));
@@ -16,7 +16,8 @@ describe('število delavcev', () => {
     expect(autoWorkers(4, 32 * GB)).toBe(3);
     expect(autoWorkers(1, 32 * GB)).toBe(1);
     expect(autoWorkers(20, 0.5 * GB)).toBe(1);
-    expect(autoWorkers(20, 2 * GB)).toBe(6);
+    expect(autoWorkers(20, 1 * GB)).toBe(4);
+    expect([tooManyWorkers(8, 0.5 * GB), tooManyWorkers(8, 2 * GB), tooManyWorkers(1, 0.1 * GB)]).toEqual([true, false, false]);
     expect(autoWorkers(1, 0.1 * GB)).toBe(1);
   });
 });

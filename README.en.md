@@ -80,6 +80,8 @@ Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTT
 
 The text of every PDF is read in the background after upload; scanned pages are recognised with Tesseract (Slovenian and English). Keyword search ignores accents and finds other forms of Slovenian words, quotes mean an exact phrase and a minus excludes a word. Regular expressions run in a separate thread with a time limit.
 
+Pages are recognised in parallel. `OCR_WORKERS=auto` follows the CPU cores and memory available to the container (up to 8); each worker uses about 110 MB. Eight workers are roughly six times faster than one. Tesseract does not use a GPU.
+
 Turn OCR off with `OCR=false`; `OCR_LANGUAGES` sets the languages. The `indeks` command reads all documents again.
 
 ### Administration commands

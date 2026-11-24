@@ -137,6 +137,8 @@ Uporabnik opozorila izklopi na strani Moj račun.
 
 Besedilo vsake datoteke PDF se po nalaganju prebere v ozadju; skenirane strani prepozna Tesseract (slovenščina in angleščina). Iskanje po ključnih besedah ne loči šumnikov in najde tudi druge oblike besed, narekovaji pomenijo točno zvezo, minus izključitev. Regularni izrazi tečejo v ločeni niti z omejenim časom.
 
+Strani se prepoznavajo vzporedno. `OCR_WORKERS=auto` upošteva procesorska jedra in pomnilnik vsebnika (največ 8); vsaka obdelava porabi približno 110 MB. Na osmih obdelavah je prepoznava približno šestkrat hitrejša kot na eni. Grafične kartice Tesseract ne uporablja.
+
 OCR izklopite z `OCR=false`, jezike določa `OCR_LANGUAGES`. Vse dokumente znova preberete z ukazom `indeks`.
 
 ### Skrbniški ukazi

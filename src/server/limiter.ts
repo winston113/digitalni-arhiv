@@ -1,12 +1,17 @@
 import { availableParallelism, totalmem } from 'node:os';
 
-// Poraba ene obdelave strani (Tesseract s slovenščino in angleščino) z rezervo.
-const WORKER_MEMORY = 300 * 1024 ** 2;
+// Izmerjena poraba ene obdelave strani je približno 110 MB; z rezervo.
+const WORKER_MEMORY = 180 * 1024 ** 2;
 const APP_MEMORY = 200 * 1024 ** 2;
 const MAX_AUTO = 8;
 
+const availableMemory = () => Math.min(process.constrainedMemory() || Infinity, totalmem());
+
+// Ali bi toliko sočasnih obdelav lahko porabilo ves pomnilnik vsebnika.
+export const tooManyWorkers = (workers: number, memory = availableMemory()) => workers > 1 && APP_MEMORY + workers * WORKER_MEMORY > memory;
+
 // Privzeto število sočasnih obdelav: eno jedro ostane aplikaciji, upoštevana je omejitev pomnilnika vsebnika.
-export function autoWorkers(cpus = availableParallelism(), memory = Math.min(process.constrainedMemory() || Infinity, totalmem())): number {
+export function autoWorkers(cpus = availableParallelism(), memory = availableMemory()): number {
   return Math.max(1, Math.min(MAX_AUTO, cpus - 1, Math.floor((memory - APP_MEMORY) / WORKER_MEMORY)));
 }
 
