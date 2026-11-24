@@ -6,15 +6,16 @@ import { createMiddleware } from 'hono/factory';
 import { HTTPException } from 'hono/http-exception';
 import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
-import { contractInput, fieldErrors, MAX_FILE_SIZE, toView } from '../shared/contracts.js';
+import { contractInput, fieldErrors, MAX_ATTACHMENTS, MAX_FILE_SIZE, toView, type Contract, type ContractDetails } from '../shared/contracts.js';
 import { isIsoDate, today } from '../shared/dates.js';
 import { password, type Access, type Me, type Permission } from '../shared/users.js';
 import { createAdminApi, createMailApi, createOidcApi } from './admin.js';
 import { CLIENT_IP_HEADER, type AuthHolder } from './auth.js';
 import type { Config } from './config.js';
-import { ContractStore, type Upload } from './contracts.js';
+import { ContractStore, type StoredFile, type Upload } from './contracts.js';
 import type { Db } from './db.js';
-import { LANGS } from '../shared/i18n.js';
+import { exportStream, MAX_EXPORT, planExport } from './export.js';
+import { LANGS, translate } from '../shared/i18n.js';
 import type { Mail } from './mail.js';
 import type { Oidc } from './oidc.js';
 import type { Reminders } from './reminders.js';
@@ -25,6 +26,7 @@ type Env = { Variables: { userId: string; access: Access } };
 const TOO_LARGE = 'Datoteka je prevelika. Izberite datoteko PDF, manjšo od 10 MB.';
 const NOT_PDF = 'Datoteka ni v obliki PDF. Izberite datoteko PDF.';
 const NO_SPACE = 'V arhivu ni več prostora. Obrnite se na skrbnika.';
+const NO_ATTACHMENT = { error: 'Priloga ne obstaja.' };
 const NOT_FOUND = { error: 'Pogodba ne obstaja.' };
 
 // Zadnji naslov v X-Forwarded-For je dodal naš posrednik, prejšnje lahko ponaredi odjemalec.
@@ -38,6 +40,19 @@ function clientIp(c: Context, trustProxy: boolean): string {
   } catch {
     return '127.0.0.1';
   }
+}
+
+function sendPdf(c: Context, file: StoredFile) {
+  const kind = c.req.query('prenos') === undefined ? 'inline' : 'attachment';
+  return c.body(file.stream(), 200, {
+    'Content-Type': 'application/pdf',
+    'Content-Length': String(file.size),
+    'Content-Disposition': `${kind}; filename*=UTF-8''${encodeURIComponent(file.name)}`,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Content-Security-Policy': "frame-ancestors 'self'",
+    'Cache-Control': 'private, no-store',
+  });
 }
 
 function cleanFileName(name: string): string {
@@ -65,7 +80,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
   const https = config.baseUrl.startsWith('https://');
 
   app.use(async (c, next) => {
-    if (/^\/api\/contracts\/[^/]+\/file$/.test(c.req.path)) return next();
+    if (/^\/api\/contracts\/[^/]+\/(attachments\/[^/]+\/)?file$/.test(c.req.path)) return next();
     return secureHeaders({
       contentSecurityPolicy: {
         defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:'],
@@ -178,6 +193,8 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   const isFull = (upload: Upload) => config.storageLimit !== null && store.usedSpace() + upload.bytes.length > config.storageLimit;
 
+  const details = (userId: string, contract: Contract): ContractDetails => ({ ...toView(contract, today()), attachments: store.attachments(userId, contract.id) });
+
   api.get('/', (c) => c.json(store.list(c.get('userId')).map((x) => toView(x, today()))));
 
   api.post('/', allow('create'), limit, async (c) => {
@@ -188,12 +205,12 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
       return c.json({ error: 'Preverite označena polja.', fields: { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(file ? { file } : {}) } }, 400);
     }
     if (isFull(upload)) return c.json({ error: NO_SPACE, fields: { file: NO_SPACE } }, 507);
-    return c.json(toView(await store.create(c.get('userId'), parsed.data, upload), today()), 201);
+    return c.json(details(c.get('userId'), await store.create(c.get('userId'), parsed.data, upload)), 201);
   });
 
   api.get('/:id', (c) => {
     const found = store.get(c.get('userId'), c.req.param('id'));
-    return found ? c.json(toView(found, today())) : c.json(NOT_FOUND, 404);
+    return found ? c.json(details(c.get('userId'), found)) : c.json(NOT_FOUND, 404);
   });
 
   api.put('/:id', allow('edit'), limit, async (c) => {
@@ -204,7 +221,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     }
     if (upload && isFull(upload)) return c.json({ error: NO_SPACE, fields: { file: NO_SPACE } }, 507);
     const updated = await store.update(c.get('userId'), c.req.param('id'), parsed.data, upload);
-    return updated ? c.json(toView(updated, today())) : c.json(NOT_FOUND, 404);
+    return updated ? c.json(details(c.get('userId'), updated)) : c.json(NOT_FOUND, 404);
   });
 
   api.delete('/:id', allow('remove'), async (c) =>
@@ -217,32 +234,61 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     const parsed = z.object({ endDate: z.string().refine(isIsoDate) }).safeParse(await c.req.json().catch(() => null));
     if (!parsed.success) return c.json({ error: 'Preverite označena polja.', fields: { endDate: 'Vnesite nov datum poteka.' } }, 400);
     if (parsed.data.endDate <= found.endDate) return c.json({ error: 'Preverite označena polja.', fields: { endDate: 'Nov datum mora biti po sedanjem datumu poteka.' } }, 400);
-    return c.json(toView(store.extend(c.get('userId'), found.id, parsed.data.endDate)!, today()));
+    return c.json(details(c.get('userId'), store.extend(c.get('userId'), found.id, parsed.data.endDate)!));
   });
 
   api.post('/:id/terminate', allow('edit'), (c) => {
     const found = store.get(c.get('userId'), c.req.param('id'));
     if (!found) return c.json(NOT_FOUND, 404);
     if (found.terminatedAt) return c.json({ error: 'Pogodba je že prekinjena.' }, 409);
-    return c.json(toView(store.terminate(c.get('userId'), found.id)!, today()));
+    return c.json(details(c.get('userId'), store.terminate(c.get('userId'), found.id)!));
   });
 
   api.get('/:id/file', (c) => {
     const file = store.file(c.get('userId'), c.req.param('id'));
-    if (!file) return c.json(NOT_FOUND, 404);
-    const kind = c.req.query('prenos') === undefined ? 'inline' : 'attachment';
-    return c.body(file.stream, 200, {
-      'Content-Type': 'application/pdf',
-      'Content-Length': String(file.size),
-      'Content-Disposition': `${kind}; filename*=UTF-8''${encodeURIComponent(file.name)}`,
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'SAMEORIGIN',
-      'Content-Security-Policy': "frame-ancestors 'self'",
-      'Cache-Control': 'private, no-store',
-    });
+    return file ? sendPdf(c, file) : c.json(NOT_FOUND, 404);
+  });
+
+  api.post('/:id/attachments', allow('edit'), limit, async (c) => {
+    const id = c.req.param('id');
+    if (!store.get(c.get('userId'), id)) return c.json(NOT_FOUND, 404);
+    const { upload, fileError } = await readForm(c);
+    if (!upload) return c.json({ error: fileError ?? 'Izberite datoteko PDF.' }, 400);
+    if (isFull(upload)) return c.json({ error: NO_SPACE }, 507);
+    if (store.attachments(c.get('userId'), id).length >= MAX_ATTACHMENTS) return c.json({ error: 'Pogodba ima lahko največ 30 prilog.' }, 409);
+    if (!(await store.addAttachment(c.get('userId'), id, upload))) return c.json(NOT_FOUND, 404);
+    return c.json(store.attachments(c.get('userId'), id), 201);
+  });
+
+  api.get('/:id/attachments/:attachment/file', (c) => {
+    const file = store.attachmentFile(c.get('userId'), c.req.param('id'), c.req.param('attachment'));
+    return file ? sendPdf(c, file) : c.json(NO_ATTACHMENT, 404);
+  });
+
+  api.delete('/:id/attachments/:attachment', allow('edit'), async (c) => {
+    const id = c.req.param('id');
+    return (await store.removeAttachment(c.get('userId'), id, c.req.param('attachment'))) ? c.json(store.attachments(c.get('userId'), id)) : c.json(NO_ATTACHMENT, 404);
   });
 
   app.route('/api/contracts', api);
+
+  // Hkrati teče največ en izvoz na uporabnika.
+  const exporting = new Set<string>();
+  app.get('/api/export', guard, passwordChanged, (c) => {
+    const userId = c.get('userId');
+    if (exporting.has(userId)) return c.json({ error: 'Izvoz že poteka. Počakajte, da se konča.' }, 409);
+    const lang = users.language(userId);
+    const { sheet, entries, size } = planExport(store, userId, lang);
+    if (size > MAX_EXPORT) return c.json({ error: 'Arhiv je prevelik za izvoz v eni datoteki. Obrnite se na skrbnika.' }, 413);
+    exporting.add(userId);
+    const name = `${translate(lang, 'pogodbe')}-${today()}`;
+    return c.body(exportStream(`${name}.xlsx`, sheet, entries, () => exporting.delete(userId)), 200, {
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${name}.zip"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Cache-Control': 'private, no-store',
+    });
+  });
 
   const admin = new Hono<Env>();
   admin.use(guard, passwordChanged, async (c, next) => {

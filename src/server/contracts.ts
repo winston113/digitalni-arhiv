@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
-import type { Contract, ContractInput } from '../shared/contracts.js';
+import { MAX_ATTACHMENTS, type Attachment, type Contract, type ContractInput } from '../shared/contracts.js';
 import type { Db } from './db.js';
 
 interface Row {
@@ -20,6 +20,12 @@ const toContract = (r: Row): Contract => ({
   valueCents: r.value_cents, valuePeriod: r.value_period as Contract['valuePeriod'], notes: r.notes,
   fileName: r.file_name, fileSize: r.file_size, terminatedAt: r.terminated_at, createdAt: r.created_at,
 });
+
+interface AttachmentRow { id: string; contract_id: string; file_id: string; name: string; size: number; created_at: string }
+
+const toAttachment = (r: AttachmentRow): Attachment => ({ id: r.id, name: r.name, size: r.size, createdAt: r.created_at });
+
+export interface StoredFile { stream: () => ReadableStream; name: string; size: number }
 
 export interface Upload { name: string; bytes: Uint8Array }
 
@@ -43,7 +49,7 @@ export class ContractStore {
 
   // Skupna velikost vseh datotek, za omejitev prostora.
   usedSpace(): number {
-    return (this.db.prepare('SELECT COALESCE(SUM(file_size), 0) AS n FROM contracts').get() as { n: number }).n;
+    return (this.db.prepare('SELECT (SELECT COALESCE(SUM(file_size), 0) FROM contracts) + (SELECT COALESCE(SUM(size), 0) FROM attachments) AS n').get() as { n: number }).n;
   }
 
   list(userId: string): Contract[] {
@@ -99,20 +105,79 @@ export class ContractStore {
   async remove(userId: string, id: string): Promise<boolean> {
     const row = this.row(userId, id);
     if (!row) return false;
+    const files = this.attachmentRows(userId, id).map((a) => a.file_id);
     this.db.prepare('DELETE FROM contracts WHERE id = ? AND user_id = ?').run(id, userId);
-    await this.removeFile(row.file_id);
+    await Promise.all([row.file_id, ...files].map((f) => this.removeFile(f)));
     return true;
   }
 
   async removeAll(userId: string): Promise<void> {
-    const rows = this.db.prepare('SELECT file_id FROM contracts WHERE user_id = ?').all(userId) as { file_id: string }[];
+    const rows = this.db.prepare('SELECT file_id FROM contracts WHERE user_id = ? UNION ALL SELECT a.file_id FROM attachments a JOIN contracts c ON c.id = a.contract_id WHERE c.user_id = ?').all(userId, userId) as { file_id: string }[];
     this.db.prepare('DELETE FROM contracts WHERE user_id = ?').run(userId);
     await Promise.all(rows.map((r) => this.removeFile(r.file_id)));
   }
 
-  file(userId: string, id: string): { stream: ReadableStream; name: string; size: number } | null {
+  private stream(fileId: string): ReadableStream { return Readable.toWeb(createReadStream(this.path(fileId))) as ReadableStream; }
+
+  file(userId: string, id: string): StoredFile | null {
     const row = this.row(userId, id);
-    if (!row) return null;
-    return { stream: Readable.toWeb(createReadStream(this.path(row.file_id))) as ReadableStream, name: row.file_name, size: row.file_size };
+    return row ? { stream: () => this.stream(row.file_id), name: row.file_name, size: row.file_size } : null;
+  }
+
+  mainPath(userId: string, id: string): string | null {
+    const row = this.row(userId, id);
+    return row ? this.path(row.file_id) : null;
+  }
+
+  // Priloge: lastništvo se vedno preveri prek pogodbe.
+  private attachmentRows(userId: string, contractId: string): AttachmentRow[] {
+    return this.db.prepare('SELECT a.* FROM attachments a JOIN contracts c ON c.id = a.contract_id WHERE c.id = ? AND c.user_id = ? ORDER BY a.created_at, a.rowid').all(contractId, userId) as AttachmentRow[];
+  }
+
+  private attachmentRow(userId: string, contractId: string, id: string): AttachmentRow | undefined {
+    return this.attachmentRows(userId, contractId).find((a) => a.id === id);
+  }
+
+  attachments(userId: string, contractId: string): Attachment[] { return this.attachmentRows(userId, contractId).map(toAttachment); }
+
+  allAttachments(userId: string): Map<string, Attachment[]> {
+    const rows = this.db.prepare('SELECT a.* FROM attachments a JOIN contracts c ON c.id = a.contract_id WHERE c.user_id = ? ORDER BY a.created_at, a.rowid').all(userId) as AttachmentRow[];
+    const result = new Map<string, Attachment[]>();
+    for (const row of rows) result.set(row.contract_id, [...(result.get(row.contract_id) ?? []), toAttachment(row)]);
+    return result;
+  }
+
+  // Vrne false, če je priloga odveč ali je bila pogodba med nalaganjem izbrisana.
+  async addAttachment(userId: string, contractId: string, file: Upload): Promise<boolean> {
+    const fileId = await this.saveFile(file);
+    try {
+      const added = this.db.prepare(`INSERT INTO attachments (id, contract_id, file_id, name, size, created_at)
+        SELECT ?, c.id, ?, ?, ?, ? FROM contracts c WHERE c.id = ? AND c.user_id = ? AND (SELECT COUNT(*) FROM attachments x WHERE x.contract_id = c.id) < ?`)
+        .run(randomUUID(), fileId, file.name, file.bytes.length, new Date().toISOString(), contractId, userId, MAX_ATTACHMENTS);
+      if (added.changes === 1) return true;
+      await this.removeFile(fileId);
+      return false;
+    } catch (error) {
+      await this.removeFile(fileId);
+      throw error;
+    }
+  }
+
+  async removeAttachment(userId: string, contractId: string, id: string): Promise<boolean> {
+    const row = this.attachmentRow(userId, contractId, id);
+    if (!row) return false;
+    this.db.prepare('DELETE FROM attachments WHERE id = ?').run(id);
+    await this.removeFile(row.file_id);
+    return true;
+  }
+
+  attachmentFile(userId: string, contractId: string, id: string): StoredFile | null {
+    const row = this.attachmentRow(userId, contractId, id);
+    return row ? { stream: () => this.stream(row.file_id), name: row.name, size: row.size } : null;
+  }
+
+  attachmentPath(userId: string, contractId: string, id: string): string | null {
+    const row = this.attachmentRow(userId, contractId, id);
+    return row ? this.path(row.file_id) : null;
   }
 }

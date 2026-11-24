@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Key } from './i18n.js';
 import { addDays, daysBetween, isIsoDate } from './dates.js';
 
 export const CATEGORIES = [
@@ -54,6 +55,16 @@ export interface ContractView extends Contract {
   actionDate: string | null;
   daysLeft: number | null;
 }
+
+export interface Attachment { id: string; name: string; size: number; createdAt: string }
+
+// Ena pogodba s prilogami; seznam prilog ne vsebuje.
+export interface ContractDetails extends ContractView { attachments: Attachment[] }
+
+export const MAX_ATTACHMENTS = 30;
+
+export const STATUS_LABELS: Record<Status, Key> = { aktivna: 'Aktivna', kmalu: 'Kmalu poteče', potekla: 'Potekla', prekinjena: 'Prekinjena' };
+export const VALUE_PERIOD_LABELS: Record<ValuePeriod, Key> = { enkratno: 'Enkratno', mesecno: 'Mesečno', letno: 'Letno' };
 
 export function fieldErrors(error: z.ZodError): Record<string, string> {
   const result: Record<string, string> = {};

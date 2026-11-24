@@ -48,6 +48,15 @@ const MIGRATIONS = [
     PRIMARY KEY (contract_id, end_date, stage)
   );`,
   `ALTER TABLE user_access ADD COLUMN language TEXT NOT NULL DEFAULT 'sl';`,
+  `CREATE TABLE attachments (
+    id TEXT PRIMARY KEY,
+    contract_id TEXT NOT NULL REFERENCES contracts(id) ON DELETE CASCADE,
+    file_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX attachments_contract ON attachments(contract_id);`,
 ];
 
 export function openDb(dataDir: string): Db {
