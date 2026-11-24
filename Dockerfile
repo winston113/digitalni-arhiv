@@ -11,7 +11,11 @@ LABEL org.opencontainers.image.title="Digitalni arhiv pogodb" \
       org.opencontainers.image.source="https://github.com/winston113/digitalni-arhiv" \
       org.opencontainers.image.licenses="MIT"
 # Npm in yarn pri zagonu nista potrebna.
-RUN apk upgrade --no-cache && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* /usr/local/bin/yarn*
+# Poppler in Tesseract prebereta besedilo iz PDF in s skeniranih strani.
+# hadolint ignore=DL3018
+RUN apk upgrade --no-cache \
+  && apk add --no-cache poppler-utils tesseract-ocr tesseract-ocr-data-slv tesseract-ocr-data-eng \
+  && rm -rf /usr/local/lib/node_modules /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /opt/yarn* /usr/local/bin/yarn*
 ENV NODE_ENV=production DATA_DIR=/data PORT=3000 TZ=Europe/Ljubljana
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules

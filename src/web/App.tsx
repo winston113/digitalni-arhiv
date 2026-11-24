@@ -18,6 +18,7 @@ import { ForgotPassword, NewPassword } from './pages/Password.js';
 import { MailSettings } from './pages/MailSettings.js';
 import { NotFound } from './pages/NotFound.js';
 import { OidcSettings } from './pages/OidcSettings.js';
+import { SearchPage } from './pages/SearchPage.js';
 import { SignIn } from './pages/SignIn.js';
 import { SignUp } from './pages/SignUp.js';
 import { EditUser, NewUser } from './pages/UserForm.js';
@@ -75,6 +76,7 @@ export function App() {
             <Route index element={<Dashboard />} />
             <Route path="pogodbe" element={<Contracts />} />
             {user.permissions.create && <Route path="pogodbe/nova" element={<ContractForm key="nova" />} />}
+            <Route path="pogodbe/iskanje" element={<SearchPage />} />
             <Route path="pogodbe/:id" element={<ContractDetails />} />
             {user.permissions.edit && <Route path="pogodbe/:id/uredi" element={<ContractForm key="uredi" />} />}
             <Route path="opozorila" element={<Alerts />} />

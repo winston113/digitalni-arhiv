@@ -38,6 +38,17 @@ a.appbar-user:hover{color:var(--primary);text-decoration:underline;text-underlin
 .nav-bottom-4{grid-template-columns:repeat(4,1fr)}
 .panel-head{flex-wrap:wrap}
 a.btn-icon{color:var(--ink)}
+.search-form{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:var(--space-4) var(--space-3);align-items:start}
+.search-form .check,.search-form .form-actions{grid-column:1/-1}
+.results{display:flex;flex-direction:column;gap:var(--space-4)}
+.result{display:flex;flex-direction:column;gap:var(--space-2)}
+.result h2{font:600 18px/26px var(--font-sans);overflow-wrap:anywhere}
+.result h2 a{color:var(--ink);text-decoration:none}
+.result h2 a:hover{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.excerpt{padding-top:var(--space-3);border-top:1px solid var(--line)}
+.excerpt p{overflow-wrap:anywhere}
+.excerpt-source{display:inline-flex;align-items:center;gap:var(--space-1);min-height:32px;font:400 14px/20px var(--font-sans);overflow-wrap:anywhere}
+mark{background:var(--primary-tint);color:var(--ink);font-weight:600;border-radius:2px}
 .file-list{display:flex;flex-direction:column;gap:var(--space-2)}
 .file .btn-icon{flex:none;margin-block:calc(-1*var(--space-1))}
 .notes{white-space:pre-line}
@@ -81,7 +92,7 @@ dialog.dialog::backdrop{background:var(--overlay)}
  .appbar-actions>.btn{width:var(--control-height);padding:0}
  .appbar .btn-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
  .cols{grid-template-columns:minmax(0,1fr)}
- .filters{grid-template-columns:minmax(0,1fr)}
+ .filters,.search-form{grid-template-columns:minmax(0,1fr)}
  .actions .btn{flex:1 1 100%}
  .pdf{display:none}
  .toasts{left:var(--space-4);right:var(--space-4);bottom:calc(64px + var(--space-4) + env(safe-area-inset-bottom,0px))}

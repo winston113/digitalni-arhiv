@@ -1,29 +1,34 @@
 import { ArrowLeft, Ban, CalendarPlus, Clock, CircleX, Download, FileText, Pencil, Trash2 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { Attachment, ContractDetails as Contract } from '../../shared/contracts.js';
 import { isIsoDate } from '../../shared/dates.js';
 import { api, ApiError } from '../api.js';
 import { Attachments } from '../components/Attachments.js';
+import { TextStatus } from '../components/TextStatus.js';
 import { DateInput } from '../components/DateInput.js';
 import { Badge, ConfirmDialog, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { deadline, formatDate, formatSize, formatValue, pluralDays } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
-import { msg, t } from '../i18n.js';
+import { msg, t, tr } from '../i18n.js';
 
 type Action = 'extend' | 'terminate' | 'remove';
 
 export function ContractDetails() {
   const { id = '' } = useParams();
   const { data, setData, error, retry } = useLoad(() => api.get(id), [id]);
+  const onTexts = useCallback((next: Contract) => setData((prev) => (prev?.id !== next.id ? prev : {
+    ...prev, textState: next.textState,
+    attachments: prev.attachments.map((a) => ({ ...a, textState: next.attachments.find((n) => n.id === a.id)?.textState ?? a.textState })),
+  })), [setData]);
   if (error?.status === 404) return <NotFound title={t('Pogodba ne obstaja')} text={t('Morda je bila izbrisana.')} />;
   if (error) return <ErrorNotice message={error.message} retry={retry} />;
   if (!data || data.id !== id) return <Skeleton label={t('Nalaganje pogodbe')} />;
-  return <Details key={data.id} c={data} onChange={setData} onAttachments={(attachments) => setData((prev) => (prev?.id === id ? { ...prev, attachments } : prev))} />;
+  return <Details key={data.id} c={data} onChange={setData} onTexts={onTexts} onAttachments={(attachments) => setData((prev) => (prev?.id === id ? { ...prev, attachments } : prev))} />;
 }
 
-function Details({ c, onChange, onAttachments }: { c: Contract; onChange: (c: Contract) => void; onAttachments: (a: Attachment[]) => void }) {
+function Details({ c, onChange, onAttachments, onTexts }: { c: Contract; onChange: (c: Contract) => void; onAttachments: (a: Attachment[]) => void; onTexts: (c: Contract) => void }) {
   usePageTitle(c.title);
   const { user, toast, refreshAlerts } = useApp();
   const may = user!.permissions;
@@ -31,6 +36,15 @@ function Details({ c, onChange, onAttachments }: { c: Contract; onChange: (c: Co
   const { date, note } = deadline(c);
   const file = `/api/contracts/${c.id}/file`;
   const open = may.edit && c.status !== 'prekinjena';
+  const states = [c.textState, ...c.attachments.map((a) => a.textState)];
+  const waiting = states.includes('pending');
+  // Med pripravo besedila občasno osveži samo stanje dokumentov.
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => { api.get(c.id).then(onTexts, () => {}); }, 4000);
+    return () => clearInterval(timer);
+  }, [waiting, c.id, onTexts]);
+  const retry = () => { api.reindex(c.id).then(onTexts, (err: ApiError) => toast(tr(err.message))); };
   const changed = (next: Contract, message: string) => { onChange(next); setAction(null); toast(message); refreshAlerts(); };
 
   const rows: [string, string][] = [
@@ -69,9 +83,10 @@ function Details({ c, onChange, onAttachments }: { c: Contract; onChange: (c: Co
           <div className="panel-head"><h2>{t('Dokument')}</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />{t('Prenesi PDF')}</a></div>
           <div className="panel-body stack">
             <iframe className="pdf" src={file} title={t('Predogled dokumenta {name}', { name: c.fileName })} loading="lazy" />
-            <div className="file"><Icon of={FileText} /><div className="file-body"><a className="link file-name" href={file} target="_blank" rel="noreferrer">{c.fileName}</a><div className="file-meta num">{formatSize(c.fileSize)}</div></div></div>
+            <div className="file"><Icon of={FileText} /><div className="file-body"><a className="link file-name" href={file} target="_blank" rel="noreferrer">{c.fileName}</a><div className="file-meta num">{formatSize(c.fileSize)}<TextStatus state={c.textState} /></div></div></div>
           </div>
         </section>
+        {may.edit && states.includes('failed') && <div className="notice notice-warning"><div>{t('Besedila nekaterih dokumentov ni bilo mogoče prebrati, zato jih iskanje po vsebini ne zajame.')} <button type="button" className="btn btn-text" onClick={retry}>{t('Poskusi znova')}</button></div></div>}
         <Attachments contractId={c.id} attachments={c.attachments} onChange={onAttachments} />
         </div>
       </div>

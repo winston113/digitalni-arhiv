@@ -3,6 +3,7 @@ import type { Attachment, ContractDetails, ContractView } from '../shared/contra
 import type { MailInput, MailUses, MailView } from '../shared/mail.js';
 import type { Key, Lang } from '../shared/i18n.js';
 import type { OidcCheck, OidcInput, OidcView } from '../shared/oidc.js';
+import type { SearchInput, SearchResult } from '../shared/search.js';
 import type { ManagedUser, Me, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
@@ -79,6 +80,8 @@ export const api = {
   remove: (id: string) => send(`/api/contracts/${id}`, { method: 'DELETE' }),
   addAttachment: async (id: string, file: File) => (await send(`/api/contracts/${id}/attachments`, { method: 'POST', body: formData(null, file) })).json() as Promise<Attachment[]>,
   removeAttachment: async (id: string, attachment: string) => (await withBody('DELETE')(`/api/contracts/${id}/attachments/${attachment}`, {})).json() as Promise<Attachment[]>,
+  search: async (data: SearchInput) => (await post('/api/search', data)).json() as Promise<SearchResult>,
+  reindex: async (id: string) => (await post(`/api/contracts/${id}/reindex`, {})).json() as Promise<ContractDetails>,
   changePassword: (currentPassword: string, newPassword: string) => post('/api/password', { currentPassword, newPassword }),
   users: async () => (await send('/api/admin/users')).json() as Promise<ManagedUser[]>,
   user: async (id: string) => (await send(`/api/admin/users/${id}`)).json() as Promise<ManagedUser>,

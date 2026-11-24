@@ -5,6 +5,7 @@ import { api, ApiError } from '../api.js';
 import { formatSize } from '../format.js';
 import { msg, t, tr } from '../i18n.js';
 import { useApp } from '../state.js';
+import { TextStatus } from './TextStatus.js';
 import { ConfirmDialog, ErrorNotice, Icon } from './ui.js';
 
 export function Attachments({ contractId, attachments, onChange }: { contractId: string; attachments: Attachment[]; onChange: (a: Attachment[]) => void }) {
@@ -61,7 +62,7 @@ export function Attachments({ contractId, attachments, onChange }: { contractId:
             {attachments.map((a) => (
               <li key={a.id} className="file">
                 <Icon of={FileText} />
-                <div className="file-body"><a className="link file-name" href={`${base}/${a.id}/file`} target="_blank" rel="noreferrer">{a.name}</a><div className="file-meta num">{formatSize(a.size)}</div></div>
+                <div className="file-body"><a className="link file-name" href={`${base}/${a.id}/file`} target="_blank" rel="noreferrer">{a.name}</a><div className="file-meta num">{formatSize(a.size)}<TextStatus state={a.textState} /></div></div>
                 <a className="btn btn-icon" href={`${base}/${a.id}/file?prenos`} download aria-label={t('Prenesi {name}', { name: a.name })}><Icon of={Download} /></a>
                 {mayEdit && <button type="button" className="btn btn-icon btn-text-danger" aria-label={t('Izbriši {name}', { name: a.name })} onClick={() => setRemoving(a)}><Icon of={Trash2} /></button>}
               </li>

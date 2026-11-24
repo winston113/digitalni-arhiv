@@ -1,4 +1,4 @@
-import { ChevronDown, Download, Plus, Search } from 'lucide-react';
+import { ChevronDown, Download, FileSearch, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { CATEGORIES, sortByDeadline, STATUSES } from '../../shared/contracts.js';
@@ -65,6 +65,7 @@ export function Contracts() {
           </div>
           <div className="filter-line">
             <span className="filter-result" role="status">{shownOf(shown.length, data.length)}</span>
+            <Link className="btn btn-text" to="/pogodbe/iskanje" state={{ form: { query: q } }}><Icon of={FileSearch} />{t('Iskanje po vsebini')}</Link>
             {(q || category || status) && <button type="button" className="btn btn-text" onClick={clear}>{t('Počisti filtre')}</button>}
           </div>
           {shown.length > 0 ? <ContractTable contracts={shown} />
