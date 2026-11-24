@@ -1,4 +1,4 @@
-import { ChevronDown, Plus, Search } from 'lucide-react';
+import { ChevronDown, Download, Plus, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { CATEGORIES, sortByDeadline, STATUSES } from '../../shared/contracts.js';
@@ -52,7 +52,7 @@ export function Contracts() {
 
   return (
     <>
-      <div className="page-head"><h1>{t('Pogodbe')}</h1>{data && data.length > 0 && add}</div>
+      <div className="page-head"><h1>{t('Pogodbe')}</h1>{data && data.length > 0 && <div className="actions"><a className="btn btn-secondary" href="/api/export" download><Icon of={Download} />{t('Izvozi vse')}</a>{add}</div>}</div>
       {error && <ErrorNotice message={error.message} retry={retry} />}
       {!data && !error && <Skeleton label={t('Nalaganje pogodb')} />}
       {data?.length === 0 && <Empty title={t('V arhivu še ni pogodb')} text={create ? t('Dodajte prvo pogodbo in aplikacija bo spremljala njene roke.') : t('Za dodajanje pogodb nimate dovoljenja. Obrnite se na skrbnika.')}>{add}</Empty>}

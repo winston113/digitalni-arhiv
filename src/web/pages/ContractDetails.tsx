@@ -1,9 +1,10 @@
 import { ArrowLeft, Ban, CalendarPlus, Clock, CircleX, Download, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import type { ContractView } from '../../shared/contracts.js';
+import type { Attachment, ContractDetails as Contract } from '../../shared/contracts.js';
 import { isIsoDate } from '../../shared/dates.js';
 import { api, ApiError } from '../api.js';
+import { Attachments } from '../components/Attachments.js';
 import { DateInput } from '../components/DateInput.js';
 import { Badge, ConfirmDialog, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { deadline, formatDate, formatSize, formatValue, pluralDays } from '../format.js';
@@ -19,10 +20,10 @@ export function ContractDetails() {
   if (error?.status === 404) return <NotFound title={t('Pogodba ne obstaja')} text={t('Morda je bila izbrisana.')} />;
   if (error) return <ErrorNotice message={error.message} retry={retry} />;
   if (!data || data.id !== id) return <Skeleton label={t('Nalaganje pogodbe')} />;
-  return <Details c={data} onChange={setData} />;
+  return <Details key={data.id} c={data} onChange={setData} onAttachments={(attachments) => setData((prev) => (prev?.id === id ? { ...prev, attachments } : prev))} />;
 }
 
-function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView) => void }) {
+function Details({ c, onChange, onAttachments }: { c: Contract; onChange: (c: Contract) => void; onAttachments: (a: Attachment[]) => void }) {
   usePageTitle(c.title);
   const { user, toast, refreshAlerts } = useApp();
   const may = user!.permissions;
@@ -30,7 +31,7 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
   const { date, note } = deadline(c);
   const file = `/api/contracts/${c.id}/file`;
   const open = may.edit && c.status !== 'prekinjena';
-  const changed = (next: ContractView, message: string) => { onChange(next); setAction(null); toast(message); refreshAlerts(); };
+  const changed = (next: Contract, message: string) => { onChange(next); setAction(null); toast(message); refreshAlerts(); };
 
   const rows: [string, string][] = [
     [t('Pogodbena stranka'), c.party],
@@ -63,6 +64,7 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
             {c.notes && <div style={{ gridColumn: '1 / -1' }}><dt>{t('Opombe')}</dt><dd className="notes">{c.notes}</dd></div>}
           </dl></div>
         </section>
+        <div className="stack">
         <section className="panel">
           <div className="panel-head"><h2>{t('Dokument')}</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />{t('Prenesi PDF')}</a></div>
           <div className="panel-body stack">
@@ -70,6 +72,8 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
             <div className="file"><Icon of={FileText} /><div className="file-body"><a className="link file-name" href={file} target="_blank" rel="noreferrer">{c.fileName}</a><div className="file-meta num">{formatSize(c.fileSize)}</div></div></div>
           </div>
         </section>
+        <Attachments contractId={c.id} attachments={c.attachments} onChange={onAttachments} />
+        </div>
       </div>
       {action === 'extend' && <ExtendDialog c={c} close={() => setAction(null)} done={(n) => changed(n, t('Pogodba je podaljšana.'))} />}
       {action === 'terminate' && (
@@ -82,7 +86,7 @@ function Details({ c, onChange }: { c: ContractView; onChange: (c: ContractView)
   );
 }
 
-function ExtendDialog({ c, close, done }: { c: ContractView; close: () => void; done: (c: ContractView) => void }) {
+function ExtendDialog({ c, close, done }: { c: Contract; close: () => void; done: (c: Contract) => void }) {
   const [endDate, setEndDate] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -108,7 +112,7 @@ function ExtendDialog({ c, close, done }: { c: ContractView; close: () => void; 
   );
 }
 
-function RemoveDialog({ c, close }: { c: ContractView; close: () => void }) {
+function RemoveDialog({ c, close }: { c: Contract; close: () => void }) {
   const navigate = useNavigate();
   const { toast } = useApp();
   return (

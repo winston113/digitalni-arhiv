@@ -36,6 +36,8 @@ a.appbar-user{text-decoration:none}
 a.appbar-user:hover{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
 .account-phone{display:none}
 .nav-bottom-4{grid-template-columns:repeat(4,1fr)}
+.file-list{display:flex;flex-direction:column;gap:var(--space-2)}
+.file .btn-icon{flex:none;margin-block:calc(-1*var(--space-1))}
 .notes{white-space:pre-line}
 .auth-page{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 .auth{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:var(--space-7) var(--space-4)}

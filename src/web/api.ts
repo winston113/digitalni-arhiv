@@ -1,5 +1,5 @@
 import { msg } from './i18n.js';
-import type { ContractView } from '../shared/contracts.js';
+import type { Attachment, ContractDetails, ContractView } from '../shared/contracts.js';
 import type { MailInput, MailUses, MailView } from '../shared/mail.js';
 import type { Key, Lang } from '../shared/i18n.js';
 import type { OidcCheck, OidcInput, OidcView } from '../shared/oidc.js';
@@ -69,14 +69,16 @@ export const api = {
     window.location.assign(((await r.json()) as { url: string }).url);
   },
   list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
-  get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractView>,
+  get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractDetails>,
   create: async (data: unknown, file: File | null) =>
-    (await send('/api/contracts', { method: 'POST', body: formData(data, file) })).json() as Promise<ContractView>,
+    (await send('/api/contracts', { method: 'POST', body: formData(data, file) })).json() as Promise<ContractDetails>,
   update: async (id: string, data: unknown, file: File | null) =>
-    (await send(`/api/contracts/${id}`, { method: 'PUT', body: formData(data, file) })).json() as Promise<ContractView>,
-  extend: async (id: string, endDate: string) => (await post(`/api/contracts/${id}/extend`, { endDate })).json() as Promise<ContractView>,
-  terminate: async (id: string) => (await post(`/api/contracts/${id}/terminate`, {})).json() as Promise<ContractView>,
+    (await send(`/api/contracts/${id}`, { method: 'PUT', body: formData(data, file) })).json() as Promise<ContractDetails>,
+  extend: async (id: string, endDate: string) => (await post(`/api/contracts/${id}/extend`, { endDate })).json() as Promise<ContractDetails>,
+  terminate: async (id: string) => (await post(`/api/contracts/${id}/terminate`, {})).json() as Promise<ContractDetails>,
   remove: (id: string) => send(`/api/contracts/${id}`, { method: 'DELETE' }),
+  addAttachment: async (id: string, file: File) => (await send(`/api/contracts/${id}/attachments`, { method: 'POST', body: formData(null, file) })).json() as Promise<Attachment[]>,
+  removeAttachment: async (id: string, attachment: string) => (await withBody('DELETE')(`/api/contracts/${id}/attachments/${attachment}`, {})).json() as Promise<Attachment[]>,
   changePassword: (currentPassword: string, newPassword: string) => post('/api/password', { currentPassword, newPassword }),
   users: async () => (await send('/api/admin/users')).json() as Promise<ManagedUser[]>,
   user: async (id: string) => (await send(`/api/admin/users/${id}`)).json() as Promise<ManagedUser>,
