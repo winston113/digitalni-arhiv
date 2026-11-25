@@ -43,16 +43,23 @@ export function pluralDays(n: number, lang: Lang = 'sl'): string {
   return `${n} dni`;
 }
 
-// Prebere 15. 1. 2027, 15.1.2027, 15 Jan 2027, 15 January 2027 ali 2027-01-15; sicer vrne null.
+const MONTH_PREFIXES: Record<string, number> = { jan: 1, feb: 2, mar: 3, apr: 4, maj: 5, may: 5, jun: 6, jul: 7, avg: 8, aug: 8, sep: 9, okt: 10, oct: 10, nov: 11, dec: 12 };
+
+// Sprejme običajne zapise: 15. 1. 2027, 15/1/2027, 15-01-27, 15. januar 2027, January 15, 2027 in 2027-01-15.
+// Dan je vedno pred mesecem, razen pri zapisu z imenom meseca. Za vse drugo vrne null.
 export function parseDate(text: string): string | null {
-  const t = text.replace(/\s/g, '');
-  const en = /^(\d{1,2})([A-Za-z]{3,9}),?(\d{4})$/.exec(t);
-  if (en) {
-    const month = MONTHS.findIndex((name) => name.toLowerCase() === en[2]!.slice(0, 3).toLowerCase());
-    const date = `${en[3]}-${String(month + 1).padStart(2, '0')}-${en[1]!.padStart(2, '0')}`;
-    return month >= 0 && isIsoDate(date) ? date : null;
-  }
-  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?$/.exec(t);
-  const iso = m ? `${m[3]}-${m[2]!.padStart(2, '0')}-${m[1]!.padStart(2, '0')}` : t;
-  return isIsoDate(iso) ? iso : null;
+  const t = text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const iso = (day: string, month: number | string | undefined, year: string): string | null => {
+    // Letnica z dvema števkama: do 69 v tem stoletju, sicer v prejšnjem.
+    const full = year.length === 2 ? `${Number(year) < 70 ? '20' : '19'}${year}` : year;
+    const date = `${full}-${String(month).padStart(2, '0')}-${day.padStart(2, '0')}`;
+    return isIsoDate(date) ? date : null;
+  };
+  const numbers = /^(\d{1,2}) ?[./-] ?(\d{1,2}) ?[./-] ?(\d{4}|\d{2})\.?$/.exec(t);
+  if (numbers) return iso(numbers[1]!, numbers[2]!, numbers[3]!);
+  const dayFirst = /^(\d{1,2})(?:st|nd|rd|th|\.)? ?([a-z]{3,9})\.?,? ?(\d{4})\.?$/.exec(t);
+  if (dayFirst) return iso(dayFirst[1]!, MONTH_PREFIXES[dayFirst[2]!.slice(0, 3)], dayFirst[3]!);
+  const monthFirst = /^([a-z]{3,9})\.? (\d{1,2})(?:st|nd|rd|th)?,? (\d{4})$/.exec(t);
+  if (monthFirst) return iso(monthFirst[2]!, MONTH_PREFIXES[monthFirst[1]!.slice(0, 3)], monthFirst[3]!);
+  return isIsoDate(t) ? t : null;
 }
