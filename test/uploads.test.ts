@@ -106,7 +106,7 @@ describe('nalaganje', () => {
   });
 
   it('ime datoteke ne more zapustiti mape ali vriniti glave', async () => {
-    for (const [name, expected] of [['../../etc/x.pdf', 'x.pdf'], ['a"\r\nX: y.pdf', 'aX: y.pdf'], ['', 'pogodba.pdf']] as const) {
+    for (const [name, expected] of [['../../etc/x.pdf', 'x.pdf'], ['a"\r\nX: y.pdf', 'aX: y.pdf'], ['', 'pogodba.pdf'], ['ime.docx', 'ime.pdf']] as const) {
       expect(((await (await raw(bytes('x'), ana, { 'x-file-name': encodeURIComponent(name) })).json()) as Upload).name).toBe(expected);
     }
     expect((await raw(bytes('x'), ana, { 'x-file-name': '%E0%A4%A' })).status).toBe(201);

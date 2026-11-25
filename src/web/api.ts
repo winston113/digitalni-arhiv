@@ -59,7 +59,7 @@ function sendFile(file: File, onProgress?: (percent: number) => void): Promise<U
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open('POST', '/api/uploads');
-    request.setRequestHeader('Content-Type', 'application/pdf');
+    request.setRequestHeader('Content-Type', 'application/octet-stream');
     request.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
     request.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(Math.floor((e.loaded / e.total) * 100)); };
     request.onerror = () => reject(new ApiError(OFFLINE, 0));
@@ -67,7 +67,7 @@ function sendFile(file: File, onProgress?: (percent: number) => void): Promise<U
       let body: { error?: string } = {};
       try { body = JSON.parse(request.responseText) as typeof body; } catch { /* posrednik lahko vrne kaj drugega */ }
       if (request.status === 201) resolve(body as Upload);
-      else reject(new ApiError(body.error ?? (request.status === 413 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : msg('Dejanje ni uspelo. Poskusite znova.')), request.status, body.error ? { file: body.error } : {}));
+      else reject(new ApiError(body.error ?? (request.status === 413 ? msg('Datoteka je prevelika. Izberite manjšo.') : msg('Dejanje ni uspelo. Poskusite znova.')), request.status, body.error ? { file: body.error } : {}));
     };
     request.send(file);
   });
@@ -87,9 +87,9 @@ export const api = {
   },
   list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
   get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractDetails>,
-  file: async (id: string, name: string) => new File([await (await send(`/api/contracts/${id}/file`)).blob()], name, { type: 'application/pdf' }),
+  file: async (id: string, name: string) => new File([await (await send(`/api/contracts/${id}/file`)).blob()], name),
   upload: sendFile,
-  uploadFile: async (id: string, name: string) => new File([await (await send(`/api/uploads/${id}/file`)).blob()], name, { type: 'application/pdf' }),
+  uploadFile: async (id: string, name: string) => new File([await (await send(`/api/uploads/${id}/file`)).blob()], name),
   removeUpload: (id: string) => withBody('DELETE')(`/api/uploads/${id}`, {}),
   outline: async (id: string, signal: AbortSignal) => (await send(`/api/uploads/${id}/outline`, { method: 'POST', signal })).json() as Promise<Outline>,
   split: async (id: string, parts: SplitPart[]) => (await post(`/api/uploads/${id}/split`, { parts })).json() as Promise<Upload[]>,

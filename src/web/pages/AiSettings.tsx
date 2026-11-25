@@ -77,7 +77,7 @@ function Provider({ view, onChange }: { view: AiView; onChange: (v: AiView) => v
     <section className="panel">
       <div className="panel-head"><h2>{t('Branje podatkov iz pogodb')}</h2></div>
       <div className="panel-body stack">
-        <p className="muted">{t('Pri dodajanju pogodbe lahko uporabnik z enim klikom izpolni obrazec s podatki iz PDF. Ponudniku se pošlje besedilo pogodbe. Uporabo dovolite vsakemu uporabniku posebej na strani Uporabniki.')}</p>
+        <p className="muted">{t('Pri dodajanju pogodbe lahko uporabnik z enim klikom izpolni obrazec s podatki iz datoteke. Ponudniku se pošlje besedilo pogodbe. Uporabo dovolite vsakemu uporabniku posebej na strani Uporabniki.')}</p>
         {view.unreadableKey && <ErrorNotice message={t('Shranjenega ključa ni mogoče prebrati. Vnesite ga znova.')} />}
         {error && <ErrorNotice message={error} />}
         <form className="form" onSubmit={submit} noValidate>

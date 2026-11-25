@@ -3,6 +3,8 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { fileKind } from '../shared/files.js';
+import { readDocx } from './docx.js';
 import { eachLimited, Limiter } from './limiter.js';
 import { parseBbox, parseTsv, type Word } from './locate.js';
 
@@ -98,7 +100,7 @@ export function createExtract({ ocr, languages, workers }: ExtractOptions): Extr
     }
   };
 
-  return async (path, { maxScans = MAX_OCR_PAGES, words: withWords = false } = {}) => {
+  const readPdf: Extract = async (path, { maxScans = MAX_OCR_PAGES, words: withWords = false } = {}) => {
     const raw = await tool('pdftotext', ['-q', '-enc', 'UTF-8', '-eol', 'unix', path, '-'], 120_000);
     const pages = raw.split('\f').slice(0, MAX_PAGES).map(cleanText);
     if (pages.length > 1 && pages.at(-1) === '') pages.pop();
@@ -120,5 +122,11 @@ export function createExtract({ ocr, languages, workers }: ExtractOptions): Extr
       }
     }
     return { pages, method: recognised ? 'ocr' : pages.some((p) => letters(p) > 0) ? 'text' : 'empty', ...(withWords && { words }) };
+  };
+
+  return async (path, options) => {
+    if (fileKind(path) === 'pdf') return readPdf(path, options);
+    const pages = (await readDocx(path)).map(cleanText).filter(Boolean);
+    return { pages: pages.length ? pages : [''], method: pages.some((p) => letters(p) > 0) ? 'text' : 'empty' };
   };
 }

@@ -1,7 +1,7 @@
-import { join } from 'node:path';
 import type { TextState } from '../shared/search.js';
 import type { Db } from './db.js';
 import type { Settings } from './settings.js';
+import { filePath } from './files.js';
 import { ToolsMissing, type Extract } from './extract.js';
 
 const MAX_ATTEMPTS = 2;
@@ -51,7 +51,7 @@ export class Indexer {
 
   private async process(doc: { file_id: string; attempts: number }): Promise<void> {
     try {
-      const { pages, method } = await this.extract(join(this.dataDir, 'files', `${doc.file_id}.pdf`));
+      const { pages, method } = await this.extract(filePath(this.dataDir, doc.file_id));
       this.save(doc.file_id, pages, method);
     } catch (error) {
       if (error instanceof ToolsMissing) {

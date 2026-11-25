@@ -92,10 +92,10 @@ describe('pogodbe', () => {
     };
     t = await setup({ MAX_FILE_MB: '1' });
     ana = await t.register('ana@primer.si');
-    expect(await send()).toEqual([400, 'Izberite datoteko PDF.']);
+    expect(await send()).toEqual([400, 'Izberite datoteko PDF ali DOCX.']);
     expect((await send(new TextEncoder().encode('<html>')))[1]).toMatch(/ni v obliki PDF/);
     expect((await send(new TextEncoder().encode('%PD')))[1]).toMatch(/ni v obliki PDF/);
-    expect(await send(new Uint8Array(0))).toEqual([400, 'Izberite datoteko PDF.']);
+    expect(await send(new Uint8Array(0))).toEqual([400, 'Izberite datoteko PDF ali DOCX.']);
     const big = new Uint8Array(1024 * 1024 + 1); big.set(PDF);
     expect(await send(big)).toEqual([413, expect.stringMatching(/prevelika/)]);
     expect(files()).toHaveLength(0);

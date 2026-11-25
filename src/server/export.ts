@@ -2,6 +2,7 @@ import { Zip, ZipPassThrough } from 'fflate';
 import { createReadStream } from 'node:fs';
 import { STATUS_LABELS, sortByDeadline, toView, VALUE_PERIOD_LABELS, type Attachment, type ContractView } from '../shared/contracts.js';
 import { today } from '../shared/dates.js';
+import { fileKind, withoutExtension } from '../shared/files.js';
 import { translate, type Key, type Lang } from '../shared/i18n.js';
 import type { ContractStore } from './contracts.js';
 import { xlsx, type Cell } from './xlsx.js';
@@ -16,14 +17,14 @@ export function safeName(name: string, max = 80): string {
 }
 
 function unique(name: string, taken: Set<string>): string {
-  const dot = name.toLowerCase().endsWith('.pdf') ? name.length - 4 : name.length;
+  const dot = withoutExtension(name).length;
   let result = name;
   for (let n = 2; taken.has(result.toLowerCase()); n++) result = `${name.slice(0, dot)} (${n})${name.slice(dot)}`;
   taken.add(result.toLowerCase());
   return result;
 }
 
-const pdfName = (name: string) => `${safeName(name.replace(/\.pdf$/i, ''))}.pdf`;
+const documentName = (name: string) => `${safeName(withoutExtension(name))}.${fileKind(name)}`;
 
 interface Entry { path: string; file: string }
 
@@ -38,10 +39,10 @@ export function planExport(store: ContractStore, userId: string, lang: Lang): { 
     const folder = `${t('dokumenti')}/${String(i + 1).padStart(3, '0')} ${safeName(c.title, 60)}`;
     const taken = new Set<string>();
     const own: Attachment[] = attachments.get(c.id) ?? [];
-    entries.push({ path: `${folder}/${unique(pdfName(c.fileName), taken)}`, file: store.mainPath(userId, c.id)! });
+    entries.push({ path: `${folder}/${unique(documentName(c.fileName), taken)}`, file: store.mainPath(userId, c.id)! });
     size += c.fileSize;
     for (const a of own) {
-      entries.push({ path: `${folder}/${t('priloge')}/${unique(pdfName(a.name), taken)}`, file: store.attachmentPath(userId, c.id, a.id)! });
+      entries.push({ path: `${folder}/${t('priloge')}/${unique(documentName(a.name), taken)}`, file: store.attachmentPath(userId, c.id, a.id)! });
       size += a.size;
     }
     const date = (iso: string | null): Cell => (iso ? { date: iso } : null);

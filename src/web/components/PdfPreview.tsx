@@ -1,19 +1,19 @@
 import type { PDFPageProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { ZoomIn, ZoomOut } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Mark } from '../../shared/ai.js';
 import { t } from '../i18n.js';
+import type { PreviewProps } from './FilePreview.js';
 import { PageImage, usePdf } from './pdf.js';
 import { ErrorNotice, Icon, Skeleton } from './ui.js';
 
 const ZOOMS = [1, 1.25, 1.5, 2, 3];
 
-export interface PreviewMark extends Mark { key: string; label: string }
-// Kam naj se premakne pogled; n se poveča ob vsaki zahtevi, tudi za isto mesto.
-export interface PreviewTarget { key: string; page: number; n: number }
+interface PreviewMark extends Mark { key: string; label: string }
 
-// Predogled datoteke. Nariše se v brskalniku in se za to nikamor ne pošlje.
-export default function PdfPreview({ file, marks, target, onPick }: { file: File; marks: PreviewMark[]; target: PreviewTarget | null; onPick: (key: string) => void }) {
+export default function PdfPreview({ file, sources, target, onPick }: PreviewProps) {
+  // Manjše oznake so nad večjimi, da je vsako mogoče klikniti.
+  const marks = useMemo<PreviewMark[]>(() => sources.flatMap((s) => s.marks.map((m) => ({ ...m, key: s.key, label: s.label }))).sort((a, b) => b.w * b.h - a.w * a.h), [sources]);
   const { pages, total, failed } = usePdf(file);
   const [zoom, setZoom] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);

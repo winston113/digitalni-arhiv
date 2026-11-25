@@ -1,10 +1,12 @@
 import { ArrowLeft, Ban, CalendarPlus, CircleEllipsis, Clock, CircleX, Download, FileText, Pencil, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { Attachment, ContractDetails as Contract } from '../../shared/contracts.js';
 import { isIsoDate } from '../../shared/dates.js';
+import { fileKind } from '../../shared/files.js';
 import { api, ApiError } from '../api.js';
 import { Attachments } from '../components/Attachments.js';
+import { FilePreview, type PreviewSource } from '../components/FilePreview.js';
 import { TextStatus } from '../components/TextStatus.js';
 import { DateInput } from '../components/DateInput.js';
 import { Badge, ConfirmDialog, Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
@@ -81,9 +83,9 @@ function Details({ c, onChange, onAttachments, onTexts }: { c: Contract; onChang
         </section>
         <div className="stack">
         <section className="panel">
-          <div className="panel-head"><h2>{t('Dokument')}</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />{t('Prenesi PDF')}</a></div>
+          <div className="panel-head"><h2>{t('Dokument')}</h2><a className="btn btn-secondary" href={`${file}?prenos`} download><Icon of={Download} />{t('Prenesi datoteko')}</a></div>
           <div className="panel-body stack">
-            <iframe className="pdf" src={file} title={t('Predogled dokumenta {name}', { name: c.fileName })} loading="lazy" />
+            {fileKind(c.fileName) === 'pdf' ? <iframe className="pdf" src={file} title={t('Predogled dokumenta {name}', { name: c.fileName })} loading="lazy" /> : <WordDocument id={c.id} name={c.fileName} />}
             <div className="file"><Icon of={FileText} /><div className="file-body"><a className="link file-name" href={file} target="_blank" rel="noreferrer">{c.fileName}</a><div className="file-meta num">{formatSize(c.fileSize)}<TextStatus state={c.textState} /></div></div></div>
           </div>
         </section>
@@ -100,6 +102,15 @@ function Details({ c, onChange, onAttachments, onTexts }: { c: Contract; onChang
       {action === 'remove' && <RemoveDialog c={c} close={() => setAction(null)} />}
     </>
   );
+}
+
+const NONE: PreviewSource[] = [];
+
+// Brskalnik datoteke Word ne zna prikazati sam.
+function WordDocument({ id, name }: { id: string; name: string }) {
+  const { data, error, retry } = useLoad(() => api.file(id, name), [id, name]);
+  if (error) return <ErrorNotice message={t('Predogleda te datoteke ni mogoče prikazati.')} retry={retry} />;
+  return <div className="word"><Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}>{data ? <FilePreview file={data} sources={NONE} target={null} onPick={() => {}} /> : <Skeleton label={t('Nalaganje predogleda')} />}</Suspense></div>;
 }
 
 function ExtendDialog({ c, close, done }: { c: Contract; close: () => void; done: (c: Contract) => void }) {
@@ -133,7 +144,7 @@ function RemoveDialog({ c, close }: { c: Contract; close: () => void }) {
   const { toast } = useApp();
   return (
     <ConfirmDialog title={t('Brisanje pogodbe')} label={t('Izbriši pogodbo')} busyLabel={t('Brisanje')} close={close}
-      text={t('Pogodba {title} in datoteka PDF bosta trajno izbrisani.', { title: c.title })}
+      text={t('Pogodba {title} in njena datoteka bosta trajno izbrisani.', { title: c.title })}
       run={async () => { await api.remove(c.id); toast(t('Pogodba je izbrisana.')); navigate('/pogodbe', { replace: true }); }} />
   );
 }

@@ -136,10 +136,10 @@ Uporabnik opozorila izklopi na strani Moj račun.
 
 ### Branje podatkov iz pogodb (umetna inteligenca)
 
-Pri dodajanju in urejanju pogodbe gumb »Izpolni iz PDF« predlaga naziv, stranko, kategorijo, številko, datume, odpovedni rok in vrednost. Privzeto je izklopljeno. Predogled datoteke je pri dodajanju in urejanju na voljo tudi brez njega; nariše ga brskalnik, na telefonu z gumbom »Pokaži dokument«.
+Pri dodajanju in urejanju pogodbe gumb »Izpolni iz datoteke« predlaga naziv, stranko, kategorijo, številko, datume, odpovedni rok in vrednost. Privzeto je izklopljeno. Predogled datoteke je pri dodajanju in urejanju na voljo tudi brez njega; nariše ga brskalnik, na telefonu z gumbom »Pokaži dokument«.
 
 1. V razdelku Skrbništvo, Umetna inteligenca, izberite ponudnika (Ollama, OpenAI ali združljiv strežnik, Anthropic), preverite povezavo in izberite model.
-2. Na strani uporabnika vklopite dovoljenje »Branje podatkov iz PDF z umetno inteligenco«. Privzeto ga nima nihče, tudi skrbnik ne. Dnevno število branj na uporabnika je omejeno.
+2. Na strani uporabnika vklopite dovoljenje »Branje podatkov iz datoteke z umetno inteligenco«. Privzeto ga nima nihče, tudi skrbnik ne. Dnevno število branj na uporabnika je omejeno.
 
 Predlogi se nikoli ne shranijo sami in ne prepišejo že vnesenih podatkov. Stranka, številka, datumi, odpovedni rok in vrednost se prikažejo samo, če jih potrjuje navedek, ki je dobesedno v dokumentu. Naziv in kategorija sta predloga brez navedka. Pri vsakem podatku sta navedena stran in besedilo, v predogledu datoteke na desni pa je mesto označeno: klik na navedek pokaže mesto, klik na oznako odpre polje. Model se kljub temu lahko zmoti, na primer pri izbiri napačnega datuma, zato podatke preverite.
 
@@ -148,6 +148,8 @@ Ponudniku se pošlje samo besedilo pogodbe, ne datoteka. Pri lastnem strežniku 
 ### Velike datoteke in razdelitev
 
 Največja velikost datoteke je privzeto 100 MB (`MAX_FILE_MB`). Datoteka se zapiše naravnost na disk, zato velik sken ne porabi veliko pomnilnika. Naložene, a neshranjene datoteke se po enem dnevu izbrišejo. Povratni posrednik mora dovoliti tako velike zahteve; Caddy jih privzeto ne omejuje.
+
+Pogodbe in priloge so lahko tudi datoteke Word (DOCX, do 30 MB). Shrani se izvirnik, brez pretvorbe. Besedilo je na voljo za iskanje in branje z umetno inteligenco, predogled z oznakami pa nariše brskalnik v ločenem okvirju brez skript in brez nalaganja zunanje vsebine; postavitev se lahko razlikuje od Worda. Starejši zapis DOC, datoteke z makri in zaščitene z geslom niso podprte. Razdelitev je na voljo samo za PDF.
 
 Če je v enem PDF več pogodb ali aneksov, na strani Nova pogodba izberite »Razdeli datoteko«. Na sličicah označite, kje se začne nov dokument, in za vsakega izberite, ali je pogodba, priloga k eni od pogodb ali ga izpustite. Vsaka pogodba nato dobi svoj obrazec, priloge se ji dodajo ob shranjevanju. Z dovoljenjem za umetno inteligenco začetke predlaga gumb »Predlagaj razdelitev«; ponudniku se pošljeta začetek in konec besedila vsake strani.
 

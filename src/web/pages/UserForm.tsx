@@ -126,7 +126,7 @@ function Editor({ u, onChange }: { u: ManagedUser; onChange: (u: ManagedUser) =>
       {dialog === 'block' && <ConfirmDialog title={t('Blokiranje uporabnika')} label={t('Blokiraj')} busyLabel={t('Blokiranje')} close={() => setDialog(null)} run={() => setDisabled(true)} text={t('Uporabnik {name} bo takoj odjavljen na vseh napravah in se ne bo mogel prijaviti. Pogodbe ostanejo shranjene.', { name: u.name })} />}
       {dialog === 'remove' && <ConfirmDialog title={t('Brisanje uporabnika')} label={t('Izbriši uporabnika')} busyLabel={t('Brisanje')} close={() => setDialog(null)}
         run={async () => { await api.removeUser(u.id); toast(t('Uporabnik je izbrisan.')); navigate('/skrbnistvo/uporabniki', { replace: true }); }}
-        text={t('Račun {email} bo trajno izbrisan skupaj z vsemi pogodbami in datotekami PDF. Število pogodb: {n}.', { email: u.email, n: u.contracts })} />}
+        text={t('Račun {email} bo trajno izbrisan skupaj z vsemi pogodbami in datotekami. Število pogodb: {n}.', { email: u.email, n: u.contracts })} />}
     </>
   );
 }

@@ -36,7 +36,7 @@ export function PermissionFields({ value, onChange }: { value: Permissions; onCh
       {PERMISSION_LABELS.map(([key, label]) => (
         <label key={key} className="check" htmlFor={`p-${key}`}><input id={`p-${key}`} type="checkbox" checked={value[key]} onChange={(e) => onChange({ ...value, [key]: e.target.checked })} />{t(label)}</label>
       ))}
-      <label className="check" htmlFor="p-ai"><input id="p-ai" type="checkbox" checked={value.ai} onChange={(e) => onChange({ ...value, ai: e.target.checked })} />{t('Branje podatkov iz PDF z umetno inteligenco')}</label>
+      <label className="check" htmlFor="p-ai"><input id="p-ai" type="checkbox" checked={value.ai} onChange={(e) => onChange({ ...value, ai: e.target.checked })} />{t('Branje podatkov iz datoteke z umetno inteligenco')}</label>
       <span className="field-hint">{t('Ogled in prenos lastnih pogodb sta vedno mogoča.')}</span>
     </fieldset>
   );

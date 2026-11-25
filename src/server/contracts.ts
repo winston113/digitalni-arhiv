@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { MAX_ATTACHMENTS, type Attachment, type Contract, type ContractInput } from '../shared/contracts.js';
 import type { TextState } from '../shared/search.js';
 import type { Db } from './db.js';
+import { filePath, removeFile } from './files.js';
 
 interface Row {
   id: string; user_id: string; title: string; party: string; category: string; number: string | null;
@@ -37,7 +36,7 @@ export class UploadGone extends Error {}
 export class ContractStore {
   constructor(private db: Db, private dataDir: string) {}
 
-  private path(fileId: string) { return join(this.dataDir, 'files', `${fileId}.pdf`); }
+  private path(fileId: string) { return filePath(this.dataDir, fileId); }
 
   private row(userId: string, id: string): Row | undefined {
     return this.db.prepare('SELECT * FROM contracts WHERE id = ? AND user_id = ?').get(id, userId) as Row | undefined;
@@ -50,7 +49,7 @@ export class ContractStore {
     return row;
   }
 
-  private async removeFile(fileId: string) { await rm(this.path(fileId), { force: true }); }
+  private async removeFile(fileId: string) { await removeFile(this.dataDir, fileId); }
 
   list(userId: string): Contract[] {
     return (this.db.prepare('SELECT * FROM contracts WHERE user_id = ?').all(userId) as Row[]).map(toContract);

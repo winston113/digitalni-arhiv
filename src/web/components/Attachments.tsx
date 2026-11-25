@@ -1,6 +1,7 @@
 import { Download, FileText, LoaderCircle, Paperclip, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { MAX_ATTACHMENTS, type Attachment } from '../../shared/contracts.js';
+import { ACCEPT, isAllowedName } from '../../shared/files.js';
 import { api, ApiError } from '../api.js';
 import { formatSize } from '../format.js';
 import { msg, t, tr } from '../i18n.js';
@@ -24,8 +25,8 @@ export function Attachments({ contractId, attachments, onChange }: { contractId:
     setErrors([]);
     for (const [i, file] of files.entries()) {
       setProgress({ n: i + 1, total: files.length });
-      const problem = !/\.pdf$/i.test(file.name) ? msg('Datoteka ni v obliki PDF. Izberite datoteko PDF.')
-        : file.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : null;
+      const problem = !isAllowedName(file.name) ? msg('Datoteka ni v obliki PDF ali DOCX. Izberite drugo.')
+        : file.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo.') : null;
       if (problem) { failed.push(t('{name}: {error}', { name: file.name, error: t(problem) })); continue; }
       try {
         onChange(await api.addAttachment(contractId, (await api.upload(file)).id));
@@ -50,7 +51,7 @@ export function Attachments({ contractId, attachments, onChange }: { contractId:
             <Icon of={progress ? LoaderCircle : Paperclip} />{t('Dodaj priloge')}
           </button>
         )}
-        <input ref={picker} type="file" accept="application/pdf,.pdf" multiple hidden aria-label={t('Dodaj priloge')}
+        <input ref={picker} type="file" accept={ACCEPT} multiple hidden aria-label={t('Dodaj priloge')}
           onChange={(e) => { const files = [...(e.target.files ?? [])]; e.target.value = ''; if (files.length) void upload(files); }} />
       </div>
       <div className="panel-body stack">

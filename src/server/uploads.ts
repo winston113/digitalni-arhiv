@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { open, rm, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { open, rename, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import type { SplitPart, Upload } from '../shared/uploads.js';
 import type { Db } from './db.js';
+import { fileKind, withoutExtension, type FileKind } from '../shared/files.js';
+import { checkDocx, MAX_DOCX } from './docx.js';
 import type { PdfTools } from './extract.js';
+import { filePath, newFilePath, removeFile } from './files.js';
 
 const MAX_WAITING = 100;
 const MAX_AGE = 24 * 60 * 60 * 1000;
@@ -16,14 +18,25 @@ export class UploadError extends Error {
   constructor(message: string, readonly status: 400 | 404 | 409 | 413 | 422 | 507) { super(message); }
 }
 
-export const TOO_LARGE = 'Datoteka je prevelika. Izberite manjšo datoteko PDF.';
-export const NOT_PDF = 'Datoteka ni v obliki PDF. Izberite datoteko PDF.';
+export const TOO_LARGE = 'Datoteka je prevelika. Izberite manjšo.';
+export const WRONG_TYPE = 'Datoteka ni v obliki PDF ali DOCX. Izberite drugo.';
+const OLD_WORD = 'Starejše in z geslom zaščitene datoteke Word niso podprte. Shranite jo kot DOCX ali PDF.';
+const BAD_DOCX = 'Datoteke DOCX ni mogoče odpreti ali vsebuje makre. Shranite jo kot PDF.';
 export const NO_SPACE = 'V arhivu ni več prostora. Obrnite se na skrbnika.';
 export const GONE = 'Naložena datoteka ni več na voljo. Izberite jo znova.';
 
 export function cleanFileName(name: string): string {
   const base = (name.split(/[\\/]/).at(-1) ?? '').replace(/[\p{Cc}"]/gu, '').trim().slice(-150);
-  return base || 'pogodba.pdf';
+  return base || 'pogodba';
+}
+
+// Končnica imena je vedno usklajena z vsebino.
+const nameFor = (name: string, kind: FileKind) => { const clean = cleanFileName(name); return /\.(pdf|docx)$/i.test(clean) && fileKind(clean) === kind ? clean : `${withoutExtension(clean)}.${kind}`; };
+
+function kindOf(head: Buffer): FileKind {
+  if (head.toString('latin1', 0, 5) === '%PDF-') return 'pdf';
+  if (head.toString('latin1', 0, 4) === 'PK\u0003\u0004') return 'docx';
+  throw new UploadError(head.toString('hex', 0, 4) === 'd0cf11e0' ? OLD_WORD : WRONG_TYPE, 400);
 }
 
 const toUpload = (r: Row): Upload => ({ id: r.id, name: r.name, size: r.size, pages: r.pages });
@@ -32,7 +45,7 @@ const toUpload = (r: Row): Upload => ({ id: r.id, name: r.name, size: r.size, pa
 export class UploadStore {
   constructor(private db: Db, private dataDir: string, private tools: Pick<PdfTools, 'countPages' | 'split'>, private maxSize: number, private storageLimit: number | null) {}
 
-  path(id: string): string { return join(this.dataDir, 'files', `${id}.pdf`); }
+  path(id: string): string { return filePath(this.dataDir, id); }
 
   private row(userId: string, id: string): Row | undefined {
     return this.db.prepare('SELECT * FROM uploads WHERE id = ? AND user_id = ?').get(id, userId) as Row | undefined;
@@ -67,31 +80,37 @@ export class UploadStore {
     if (declared > this.maxSize) throw new UploadError(TOO_LARGE, 413);
     this.checkRoom(userId, declared);
     const id = randomUUID();
-    const path = this.path(id);
+    const path = newFilePath(this.dataDir, id, 'pdf');
     try {
       const file = await open(path, 'wx', 0o600);
       let size = 0;
       let head = Buffer.alloc(0);
+      let kind: FileKind | null = null;
       try {
         for await (const chunk of body ?? []) {
           size += chunk.length;
           if (size > this.maxSize) throw new UploadError(TOO_LARGE, 413);
           if (head.length < 5) {
             head = Buffer.concat([head, chunk]).subarray(0, 5);
-            if (head.length === 5 && head.toString('latin1') !== '%PDF-') throw new UploadError(NOT_PDF, 400);
+            if (head.length === 5) kind = kindOf(head);
           }
+          if (kind === 'docx' && size > MAX_DOCX) throw new UploadError(TOO_LARGE, 413);
           await file.write(chunk);
         }
       } finally {
         await file.close();
       }
-      if (size === 0) throw new UploadError('Izberite datoteko PDF.', 400);
-      if (head.length < 5) throw new UploadError(NOT_PDF, 400);
-      const pages = await this.tools.countPages(path).catch(() => null);
+      if (size === 0) throw new UploadError('Izberite datoteko PDF ali DOCX.', 400);
+      if (!kind) throw new UploadError(WRONG_TYPE, 400);
+      if (kind === 'docx') {
+        await checkDocx(path).catch(() => { throw new UploadError(BAD_DOCX, 400); });
+        await rename(path, newFilePath(this.dataDir, id, 'docx'));
+      }
+      const pages = kind === 'pdf' ? await this.tools.countPages(path).catch(() => null) : null;
       this.checkRoom(userId, size);
-      return this.insert(userId, id, cleanFileName(name), size, pages);
+      return this.insert(userId, id, nameFor(name, kind), size, pages);
     } catch (error) {
-      await rm(path, { force: true });
+      await removeFile(this.dataDir, id);
       throw error;
     }
   }
@@ -108,12 +127,13 @@ export class UploadStore {
         // V imenu je lahko številka pogodbe s poševnico.
         const name = part.name.replace(/[\\/]/g, '-');
         try {
-          await this.tools.split(this.path(id), part.from, part.to, this.path(newId));
-          const { size } = await stat(this.path(newId));
+          const out = newFilePath(this.dataDir, newId, 'pdf');
+          await this.tools.split(this.path(id), part.from, part.to, out);
+          const { size } = await stat(out);
           this.checkRoom(userId, size);
-          done.push(this.insert(userId, newId, cleanFileName(/\.pdf$/i.test(name) ? name : `${name}.pdf`), size, part.to - part.from + 1));
+          done.push(this.insert(userId, newId, nameFor(name, 'pdf'), size, part.to - part.from + 1));
         } catch (error) {
-          await rm(this.path(newId), { force: true });
+          await removeFile(this.dataDir, newId);
           throw error instanceof UploadError ? error : new UploadError('Te datoteke ni mogoče razdeliti.', 422);
         }
       }
@@ -126,7 +146,7 @@ export class UploadStore {
 
   async remove(userId: string, id: string): Promise<boolean> {
     if (this.db.prepare('DELETE FROM uploads WHERE id = ? AND user_id = ?').run(id, userId).changes === 0) return false;
-    await rm(this.path(id), { force: true });
+    await removeFile(this.dataDir, id);
     return true;
   }
 

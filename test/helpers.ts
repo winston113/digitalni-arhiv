@@ -22,7 +22,7 @@ export const PDF = new TextEncoder().encode('%PDF-1.4\nvsebina');
 let ip = 0;
 const address = () => `10.1.${ip >> 8}.${ip & 255}`;
 
-export async function setup(env: Record<string, string> = {}) {
+export async function setup(env: Record<string, string> = {}, realExtract?: Extract) {
   const dataDir = mkdtempSync(join(tmpdir(), 'arhiv-'));
   const config = loadConfig({ DATA_DIR: dataDir, BASE_URL: ORIGIN, TRUST_PROXY: 'true', ...env });
   const db = openDb(dataDir);
@@ -40,11 +40,11 @@ export async function setup(env: Record<string, string> = {}) {
   const auth = new AuthHolder(() => createAuth(config, db, mail, oidc.current));
   const reminders = new Reminders(config, db, new ContractStore(db, dataDir), mail, settings);
   // Vsebina preizkusne datoteke po glavi je njeno besedilo; \f loči strani, ! pomeni pokvarjeno datoteko.
-  const extract: Extract = async (path) => {
+  const extract: Extract = realExtract ?? (async (path) => {
     const text = readFileSync(path, 'utf8').replace(/^%PDF-1\.4\n?/, '');
     if (text.startsWith('!')) throw new Error('pokvarjena');
     return { pages: text.split('\f'), method: text ? 'text' : 'empty' };
-  };
+  });
   // Besede so na preizkusni strani v mreži: deset na vrstico, vrstica je visoka dva odstotka strani.
   const pageWords: PageWords = async (path, page) => (await extract(path)).pages[page - 1]!.split(/\s+/)
     .map((text, i) => ({ text, x: (i % 10) / 10, y: Math.floor(i / 10) / 50, w: 0.09, h: 0.018 }));

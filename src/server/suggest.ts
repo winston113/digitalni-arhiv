@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { Suggestion, Suggestions, SuggestResult } from '../shared/ai.js';
 import { amountsIn, parseAmount } from '../shared/amounts.js';
 import { CATEGORIES, VALUE_PERIODS } from '../shared/contracts.js';
+import { fileKind } from '../shared/files.js';
 import { daysBetween, isIsoDate } from '../shared/dates.js';
 import { MAX_PARTS, type Outline, type OutlinePart } from '../shared/uploads.js';
 import { AiError, type Ai } from './ai.js';
@@ -226,12 +227,14 @@ export class Suggester {
       const text = `<contract>\n${chosen.map((p) => `[page ${p.page}]\n${p.text.replace(/<\/?contract>/gi, '')}`).join('\n\n')}\n</contract>`;
       const raw = await this.ai.ask({ system: prompt(organisation), text, schema: answerSchema }, cancelled);
       const suggestions = verify(raw, new Source(chosen), organisation);
-      await this.locate(path, suggestions, words ?? new Map(), chosen.map((p) => p.page));
+      // Pri DOCX mesto navedka poišče predogled v brskalniku.
+      if (fileKind(path) === 'pdf') await this.locate(path, suggestions, words ?? new Map(), chosen.map((p) => p.page));
       return { suggestions, pagesRead: chosen.length, pagesTotal: pages.filter(Boolean).length };
     });
   }
 
   outline(userId: string, path: string, day: string, cancelled: AbortSignal): Promise<Outline> {
+    if (fileKind(path) !== 'pdf') return Promise.reject(new AiError('Te datoteke ni mogoče razdeliti.', 422));
     return this.run(userId, path, day, MAX_OUTLINE_SCANS, async ({ pages }) => {
       const total = pages.filter(Boolean).length;
       if (total === 0) return null;

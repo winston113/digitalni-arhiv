@@ -11,7 +11,7 @@ The interface is in Slovenian (default) and English. Choose the language in the 
 - Contracts with PDF upload, preview and download, search and filters
 - Annexes and attachments, up to 30 PDFs per contract
 - Export of everything as a ZIP with the PDFs and an Excel spreadsheet
-- Optional: fill in the form from the PDF with AI (Ollama, OpenAI-compatible or Anthropic), allowed per user by an administrator
+- Optional: fill in the form from the file with AI (Ollama, OpenAI-compatible or Anthropic), allowed per user by an administrator
 - Search inside documents by keyword or regular expression, with OCR for scans
 - Action deadlines that take the notice period into account, shown in the app and sent by email
 - Light, dark and system theme; works on desktop and phone
@@ -79,10 +79,10 @@ Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTT
 
 ### Reading contract details (AI)
 
-When adding or editing a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default. The file preview, when adding and editing, works without it too; the browser draws it, on phones behind a "Show document" button.
+When adding or editing a contract, "Fill in from file" suggests the title, party, category, number, dates, notice period and value. It is off by default. The file preview, when adding and editing, works without it too; the browser draws it, on phones behind a "Show document" button.
 
 1. Under Admin, Artificial intelligence, choose a provider (Ollama, OpenAI or a compatible server, Anthropic), check the connection and pick a model.
-2. On a user's page, turn on "Read details from PDFs with AI". Nobody has it by default, not even the administrator. Reads per user per day are limited.
+2. On a user's page, turn on "Read details from files with AI". Nobody has it by default, not even the administrator. Reads per user per day are limited.
 
 Suggestions are never saved on their own and never overwrite what the user typed. The party, number, dates, notice period and value appear only if confirmed by a quote that is literally in the document. Title and category are suggested without a quote. Each detail shows its page and quote, and the place is highlighted in the file preview on the right: clicking the quote shows the place, clicking the highlight opens the field. The model can still be wrong, for example by picking the wrong date, so check the details.
 
@@ -91,6 +91,8 @@ Only the text of the contract is sent, not the file. With your own Ollama server
 ### Large files and splitting
 
 Files can be up to 100 MB by default (`MAX_FILE_MB`). A file is written straight to disk, so a large scan needs little memory. Files that were uploaded but not saved are deleted after a day. The reverse proxy has to allow requests that large; Caddy does not limit them by default.
+
+Contracts and annexes can also be Word files (DOCX, up to 30 MB). The original is stored without conversion. Its text is available for search and AI reading, and the browser draws the highlighted preview in an isolated frame without scripts or external content; the layout may differ from Word. The older DOC format, files with macros and password-protected files are not supported. Splitting is for PDF only.
 
 If one PDF holds several contracts or annexes, choose "Split the file" on the New contract page. Mark on the thumbnails where each new document starts and choose whether it is a contract, an annex to one of them, or left out. Every contract then gets its own form, and its annexes are attached when you save it. With the AI permission, "Suggest a split" proposes the starts; the beginning and end of each page's text are sent to the provider.
 

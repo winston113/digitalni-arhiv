@@ -8,6 +8,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import { z } from 'zod';
 import { contractInput, fieldErrors, MAX_ATTACHMENTS, toView, type Contract, type ContractDetails } from '../shared/contracts.js';
 import { isIsoDate, today } from '../shared/dates.js';
+import { fileKind, MIME } from '../shared/files.js';
 import { password, type Access, type CurrentUser, type Permission } from '../shared/users.js';
 import { createAdminApi, createAiApi, createMailApi, createOidcApi } from './admin.js';
 import { CLIENT_IP_HEADER, type AuthHolder } from './auth.js';
@@ -47,10 +48,12 @@ function clientIp(c: Context, trustProxy: boolean): string {
   }
 }
 
-function sendPdf(c: Context, file: StoredFile) {
-  const kind = c.req.query('prenos') === undefined ? 'inline' : 'attachment';
+// DOCX se vedno prenese: brskalnik ga sam ne prikaže.
+function sendFile(c: Context, file: StoredFile) {
+  const type = fileKind(file.name);
+  const kind = type === 'pdf' && c.req.query('prenos') === undefined ? 'inline' : 'attachment';
   return c.body(file.stream(), 200, {
-    'Content-Type': 'application/pdf',
+    'Content-Type': MIME[type],
     'Content-Length': String(file.size),
     'Content-Disposition': `${kind}; filename*=UTF-8''${encodeURIComponent(file.name)}`,
     'X-Content-Type-Options': 'nosniff',
@@ -207,7 +210,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     const { data, upload, attachments } = await readBody(c);
     const parsed = contractInput.safeParse(data);
     if (!parsed.success || !upload) {
-      return c.json({ error: 'Preverite označena polja.', fields: { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(upload ? {} : { file: 'Izberite datoteko PDF.' }) } }, 400);
+      return c.json({ error: 'Preverite označena polja.', fields: { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(upload ? {} : { file: 'Izberite datoteko PDF ali DOCX.' }) } }, 400);
     }
     const created = store.create(c.get('userId'), parsed.data, upload, attachments);
     indexer.kick();
@@ -250,14 +253,14 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   api.get('/:id/file', (c) => {
     const file = store.file(c.get('userId'), c.req.param('id'));
-    return file ? sendPdf(c, file) : c.json(NOT_FOUND, 404);
+    return file ? sendFile(c, file) : c.json(NOT_FOUND, 404);
   });
 
   api.post('/:id/attachments', allow('edit'), limit, async (c) => {
     const id = c.req.param('id');
     if (!store.get(c.get('userId'), id)) return c.json(NOT_FOUND, 404);
     const { upload } = await readBody(c);
-    if (!upload) return c.json({ error: 'Izberite datoteko PDF.' }, 400);
+    if (!upload) return c.json({ error: 'Izberite datoteko PDF ali DOCX.' }, 400);
     if (!store.addAttachment(c.get('userId'), id, upload)) {
       await uploads.remove(c.get('userId'), upload);
       return c.json({ error: 'Pogodba ima lahko največ 30 prilog.' }, 409);
@@ -268,7 +271,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   api.get('/:id/attachments/:attachment/file', (c) => {
     const file = store.attachmentFile(c.get('userId'), c.req.param('id'), c.req.param('attachment'));
-    return file ? sendPdf(c, file) : c.json(NO_ATTACHMENT, 404);
+    return file ? sendFile(c, file) : c.json(NO_ATTACHMENT, 404);
   });
 
   api.delete('/:id/attachments/:attachment', allow('edit'), async (c) => {
@@ -307,7 +310,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
 
   files.get('/:id/file', (c) => {
     const { name, size } = uploads.get(c.get('userId'), own(c))!;
-    return sendPdf(c, { name, size, stream: () => uploads.stream(c.req.param('id')) });
+    return sendFile(c, { name, size, stream: () => uploads.stream(c.req.param('id')) });
   });
 
   files.delete('/:id', async (c) => ((await uploads.remove(c.get('userId'), c.req.param('id'))) ? c.body(null, 204) : c.json({ error: GONE }, 404)));

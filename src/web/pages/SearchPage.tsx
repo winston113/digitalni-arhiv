@@ -1,6 +1,7 @@
 import { ArrowLeft, ChevronDown, FileText, Search } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
+import { fileKind } from '../../shared/files.js';
 import type { Key } from '../../shared/i18n.js';
 import type { Excerpt, SearchHit, SearchInput, SearchMode, SearchResult } from '../../shared/search.js';
 import { api, ApiError } from '../api.js';
@@ -109,7 +110,7 @@ function ExcerptLine({ contractId, excerpt: e }: { contractId: string; excerpt: 
   return (
     <div className="excerpt">
       <p>{e.parts.map((p, i) => (p.hit ? <mark key={i}>{p.text}</mark> : <span key={i}>{p.text}</span>))}</p>
-      <a className="link excerpt-source" href={`${base}#page=${e.page}`} target="_blank" rel="noreferrer"><Icon of={FileText} size="sm" />{t('{name}, stran {page}', { name: e.name, page: e.page })}</a>
+      <a className="link excerpt-source" href={fileKind(e.name) === 'pdf' ? `${base}#page=${e.page}` : base} target="_blank" rel="noreferrer"><Icon of={FileText} size="sm" />{fileKind(e.name) === 'pdf' ? t('{name}, stran {page}', { name: e.name, page: e.page }) : e.name}</a>
     </div>
   );
 }

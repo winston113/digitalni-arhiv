@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { MAX_ATTACHMENTS } from '../../shared/contracts.js';
 import { MAX_PARTS, type Upload } from '../../shared/uploads.js';
 import { api, type ApiError } from '../api.js';
+import { withoutExtension } from '../../shared/files.js';
+import type { PreviewSource } from '../components/FilePreview.js';
 import PdfPreview from '../components/PdfPreview.js';
 import { PageImage, usePdf } from '../components/pdf.js';
 import { Dialog, ErrorNotice, Icon, Skeleton, Submit } from '../components/ui.js';
@@ -14,7 +16,8 @@ export interface QueueItem { upload: Upload; attachments: Upload[] }
 
 interface Part { page: number; name: string; role: 'contract' | 'annex' | 'skip'; to: number | null }
 
-const baseName = (file: File) => file.name.replace(/\.pdf$/i, '').slice(0, 100);
+const NONE: PreviewSource[] = [];
+const baseName = (file: File) => withoutExtension(file.name).slice(0, 100);
 
 // Pogodba, ki ji priloga pripada: izbrana, sicer najbližja pred njo, sicer prva.
 function contractFor(parts: Part[], part: Part): Part | null {
@@ -147,7 +150,7 @@ export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file
       )}
       {shown !== null && (
         <Dialog title={file.name} wide onClose={() => setShown(null)}>
-          <PdfPreview file={file} marks={[]} target={{ key: '', page: shown, n: 0 }} onPick={() => {}} />
+          <PdfPreview file={file} sources={NONE} target={{ key: '', page: shown, n: 0 }} onPick={() => {}} />
           <div className="dialog-actions"><button type="button" className="btn btn-secondary" data-autofocus onClick={() => setShown(null)}>{t('Zapri')}</button></div>
         </Dialog>
       )}

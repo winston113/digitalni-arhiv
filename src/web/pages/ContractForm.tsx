@@ -1,12 +1,13 @@
 import { ArrowLeft, ChevronDown, CircleAlert, CircleCheck, Eye, FileText, Paperclip, ScanText, Scissors, Upload, X } from 'lucide-react';
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type FocusEvent, type FormEvent } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type FocusEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { CATEGORIES, contractInput, fieldErrors, type Category, type ContractView, type ValuePeriod } from '../../shared/contracts.js';
 import type { SuggestResult, Suggestion, Suggestions } from '../../shared/ai.js';
 import { parseAmount } from '../../shared/amounts.js';
 import type { Key } from '../../shared/i18n.js';
 import { api, ApiError } from '../api.js';
-import type { PreviewMark, PreviewTarget } from '../components/PdfPreview.js';
+import { ACCEPT, fileKind, isAllowedName } from '../../shared/files.js';
+import { FilePreview, type PreviewSource, type PreviewTarget } from '../components/FilePreview.js';
 import { DateInput } from '../components/DateInput.js';
 import { Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { formatDate, formatSize, pluralDays } from '../format.js';
@@ -15,9 +16,6 @@ import { useUpload } from './NewContract.js';
 import { NotFound } from './NotFound.js';
 import type { QueueItem } from './SplitFile.js';
 import { getLang, msg, t, tr } from '../i18n.js';
-
-// Pregledovalnik je velik, zato se naloži šele, ko je izbrana datoteka.
-const PdfPreview = lazy(() => import('../components/PdfPreview.js'));
 
 const WIDE = '(min-width: 1100px)';
 const useWide = () => useSyncExternalStore((changed) => { const m = matchMedia(WIDE); m.addEventListener('change', changed); return () => m.removeEventListener('change', changed); }, () => matchMedia(WIDE).matches);
@@ -69,7 +67,7 @@ function fillEmpty(f: FormValues, s: Suggestions): { values: FormValues; filled:
 }
 
 // Od kod je predlog; če se vnos razlikuje, ponudi zamenjavo.
-function Note({ id, f, suggestions, shown, apply, show }: { id: keyof Suggestions; f: FormValues; suggestions: Suggestions | undefined; shown: (value: never) => string; apply: (changes: Partial<FormValues>) => void; show: () => void }) {
+function Note({ id, f, suggestions, shown, apply, show, paged }: { paged: boolean; id: keyof Suggestions; f: FormValues; suggestions: Suggestions | undefined; shown: (value: never) => string; apply: (changes: Partial<FormValues>) => void; show: () => void }) {
   const s = suggestions?.[id] as Suggestion<never> | undefined;
   if (!s) return null;
   const changes = changesFor(suggestions!, id);
@@ -78,7 +76,7 @@ function Note({ id, f, suggestions, shown, apply, show }: { id: keyof Suggestion
     <span className="field-note">
       {!same && <span>{t('Predlog: {value}', { value: shown(s.value) })} <button type="button" className="btn btn-text" onClick={() => apply(changes)}>{t('Uporabi')}</button></span>}
       {s.quote
-        ? <button type="button" className="source" title={t('Pokaži v dokumentu')} onClick={show}><Icon of={Eye} size="sm" /><span>{t('Iz pogodbe, stran {page}: »{quote}«', { page: s.page!, quote: s.quote })}</span></button>
+        ? <button type="button" className="source" title={t('Pokaži v dokumentu')} onClick={show}><Icon of={Eye} size="sm" /><span>{paged ? t('Iz pogodbe, stran {page}: »{quote}«', { page: s.page!, quote: s.quote }) : t('Iz pogodbe: »{quote}«', { quote: s.quote })}</span></button>
         : same && <span>{t('Predlog, preverite ga.')}</span>}
     </span>
   );
@@ -149,6 +147,7 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
     return () => { active = false; };
   }, [contract, item, setUser]);
   const shown = file ?? (replacing ? null : stored);
+  const shownKind = fileKind(shown?.name ?? '');
 
   useEffect(() => () => reading?.abort(), [reading]);
   const forget = () => { reading?.abort(); setReading(null); setRead(null); setReadError(''); setTarget(null); setOpened(false); };
@@ -176,12 +175,12 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
     setReading(null);
   };
   const apply = (changes: Partial<FormValues>) => setF({ ...f, ...changes });
-  const note = (id: keyof Suggestions, shown: (value: never) => string = String) => <Note id={id} f={f} suggestions={read?.suggestions} shown={shown} apply={apply} show={() => { if (point(id) && !wide) setOpened(true); }} />;
+  const note = (id: keyof Suggestions, shown: (value: never) => string = String) => <Note id={id} f={f} paged={shownKind === 'pdf'} suggestions={read?.suggestions} shown={shown} apply={apply} show={() => { if (point(id) && !wide) setOpened(true); }} />;
 
   const found = read?.suggestions;
-  // Plačilo in vrednost imata isti vir, zato skupno oznako. Manjše oznake so nad večjimi, da je vsako mogoče klikniti.
-  const marks = useMemo<PreviewMark[]>(() => Object.entries(found ?? {}).flatMap(([key, s]) => (key === 'valuePeriod' ? [] : (s as Suggestion<unknown>).marks ?? []).map((m) => ({ ...m, key, label: t(FIELD_LABELS[key as keyof Suggestions]) })))
-    .sort((a, b) => b.w * b.h - a.w * a.h), [found]);
+  // Plačilo in vrednost imata isti vir, zato skupno oznako.
+  const sources = useMemo<PreviewSource[]>(() => Object.entries(found ?? {}).flatMap(([key, s]: [string, Suggestion<unknown>]) =>
+    (s.quote && key !== 'valuePeriod' ? [{ key, label: t(FIELD_LABELS[key as keyof Suggestions]), quote: s.quote, marks: s.marks ?? [] }] : [])), [found]);
   const point = (id: string): boolean => {
     const s = found?.[id as keyof Suggestions] as Suggestion<unknown> | undefined;
     if (!s?.page) return false;
@@ -196,14 +195,14 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
     setTarget((old) => ({ key, page: (found![key as keyof Suggestions] as Suggestion<unknown>).page!, n: old?.n ?? 0 }));
     requestAnimationFrame(() => form.current?.querySelector<HTMLElement>(`#${key}`)?.focus());
   };
-  const preview = shown && <Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}><PdfPreview file={shown} marks={marks} target={target} onPick={pick} /></Suspense>;
+  const preview = shown && <Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}><FilePreview file={shown} sources={sources} target={target} onPick={pick} /></Suspense>;
 
   const choose = (chosen: File | undefined) => {
     if (!chosen) return;
     forget();
     uploads.discard();
-    const problem = !/\.pdf$/i.test(chosen.name) ? msg('Datoteka ni v obliki PDF. Izberite datoteko PDF.')
-      : chosen.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : '';
+    const problem = !isAllowedName(chosen.name) ? msg('Datoteka ni v obliki PDF ali DOCX. Izberite drugo.')
+      : chosen.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo.') : '';
     const { file: _, ...rest } = fields;
     setFields(problem ? { ...rest, file: problem } : rest);
     setFile(problem ? null : chosen);
@@ -218,7 +217,7 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
       warnDays: days(f.warnDays, NaN), valueCents: parseAmount(f.value), valuePeriod: f.valuePeriod, notes: f.notes,
     };
     const parsed = contractInput.safeParse(data);
-    const invalid = { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(replacing && !file && { file: fields.file ?? msg('Izberite datoteko PDF.') }) };
+    const invalid = { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(replacing && !file && { file: fields.file ?? msg('Izberite datoteko PDF ali DOCX.') }) };
     setFields(invalid);
     setError('');
     if (Object.keys(invalid).length) return;
@@ -255,7 +254,7 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
       <form className="form" ref={form} onSubmit={submit} onFocus={follow} noValidate>
         <div className="field full" role="group" aria-labelledby="file-label">
           <span className="field-label" id="file-label">{t('Datoteka pogodbe')}</span>
-          <input ref={picker} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
+          <input ref={picker} type="file" accept={ACCEPT} hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
           {shownFile ? (
             <div className="file"><Icon of={FileText} /><div className="file-body"><div className="file-name">{shownFile.name}</div><div className="file-meta num">{formatSize(shownFile.size)}</div></div>
               {!item && <button type="button" className="btn btn-icon" aria-label={file ? t('Odstrani datoteko') : t('Zamenjaj datoteko')} onClick={() => { forget(); uploads.discard(); if (file) setFile(null); else setReplacing(true); }}><Icon of={X} /></button>}</div>
@@ -266,15 +265,15 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
                 <button type="button" className="btn btn-secondary" aria-describedby="file-hint" onClick={() => picker.current?.click()}>{t('Izberi datoteko')}</button>
                 {contract && <button type="button" className="btn btn-text" onClick={() => { setReplacing(false); const { file: _, ...rest } = fields; setFields(rest); }}>{t('Obdrži sedanjo')}</button>}
               </div>
-              <p className="field-hint" id="file-hint">{t('Datoteka PDF, največ {n} MB.', { n: config.maxFileMb })}</p>
+              <p className="field-hint" id="file-hint">{t('Datoteka PDF do {n} MB ali DOCX do {docx} MB.', { n: config.maxFileMb, docx: Math.min(30, config.maxFileMb) })}</p>
             </div>
           )}
           {item?.attachments.map((a) => <div key={a.id} className="file"><Icon of={Paperclip} /><div className="file-body"><div className="file-name">{a.name}</div><div className="file-meta num">{t('Priloga')}, {formatSize(a.size)}</div></div></div>)}
-          {file && onSplit && <p className="field-hint split-hint">{t('Je v datoteki več pogodb ali aneksov?')} <button type="button" className="btn btn-text" onClick={() => onSplit(file)}><Icon of={Scissors} />{t('Razdeli datoteko')}</button></p>}
+          {file && onSplit && shownKind === 'pdf' && <p className="field-hint split-hint">{t('Je v datoteki več pogodb ali aneksov?')} <button type="button" className="btn btn-text" onClick={() => onSplit(file)}><Icon of={Scissors} />{t('Razdeli datoteko')}</button></p>}
           {shown && !wide && <button type="button" className="btn btn-secondary btn-preview" onClick={() => setOpened(true)}><Icon of={Eye} />{t('Pokaži dokument')}</button>}
           {shown && user?.ai && (
             <div className="read">
-              <Submit type="button" busy={reading !== null} busyLabel={percent !== null ? t('Nalaganje datoteke: {n} %', { n: percent }) : t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz PDF')}</Submit>
+              <Submit type="button" busy={reading !== null} busyLabel={percent !== null ? t('Nalaganje datoteke: {n} %', { n: percent }) : t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz datoteke')}</Submit>
               <span className="field-hint">{reading ? t('To lahko traja nekaj minut. Polja lahko medtem izpolnjujete sami.') : t('Besedilo pogodbe se pošlje na {destination}, kjer ga prebere umetna inteligenca.', { destination: user.ai.destination })}</span>
             </div>
           )}
