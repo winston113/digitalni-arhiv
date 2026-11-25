@@ -538,6 +538,15 @@ export const EN = {
   'Današnje število branj je porabljeno. Poskusite jutri ali izpolnite polja ročno.': 'You have used all of today\'s reads. Try tomorrow or fill in the fields yourself.',
   'V datoteki ni besedila, ki bi ga bilo mogoče prebrati.': 'The file has no readable text.',
   'Besedila iz datoteke ni bilo mogoče prebrati.': 'The text of the file could not be read.',
+  'Predogleda te datoteke ni mogoče prikazati.': 'This file cannot be previewed.',
+  'Strani: {n}': 'Pages: {n}',
+  'Pomanjšaj': 'Zoom out',
+  'Povečaj': 'Zoom in',
+  'Nalaganje predogleda': 'Loading preview',
+  'Stran {page}': 'Page {page}',
+  'Pokaži v dokumentu': 'Show in document',
+  'Pokaži dokument': 'Show document',
+  'Zapri': 'Close',
 } as const;
 
 export type Key = keyof typeof EN;

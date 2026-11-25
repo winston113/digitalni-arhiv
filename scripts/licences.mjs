@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 const root = JSON.parse(readFileSync('package.json', 'utf8'));
 // Odvisnosti vmesnika, ki jih Vite vključi v objavljeno kodo.
-const bundled = ['react', 'react-dom', 'react-router', 'lucide-react', '@fontsource/ibm-plex-sans'];
+const bundled = ['react', 'react-dom', 'react-router', 'lucide-react', 'pdfjs-dist', '@fontsource/ibm-plex-sans'];
 const seen = new Map();
 
 function visit(name) {

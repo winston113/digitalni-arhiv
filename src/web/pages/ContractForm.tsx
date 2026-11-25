@@ -1,17 +1,29 @@
-import { ArrowLeft, ChevronDown, CircleAlert, CircleCheck, FileText, ScanText, Upload, X } from 'lucide-react';
-import { useEffect, useRef, useState, type DragEvent, type FormEvent } from 'react';
+import { ArrowLeft, ChevronDown, CircleAlert, CircleCheck, Eye, FileText, ScanText, Upload, X } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type FocusEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { CATEGORIES, contractInput, fieldErrors, MAX_FILE_SIZE, type Category, type ContractView, type ValuePeriod } from '../../shared/contracts.js';
 import type { SuggestResult, Suggestion, Suggestions } from '../../shared/ai.js';
 import { parseAmount } from '../../shared/amounts.js';
 import type { Key } from '../../shared/i18n.js';
 import { api, ApiError } from '../api.js';
+import type { PreviewMark, PreviewTarget } from '../components/PdfPreview.js';
 import { DateInput } from '../components/DateInput.js';
-import { ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
+import { Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { formatDate, formatSize, pluralDays } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 import { NotFound } from './NotFound.js';
 import { getLang, msg, t, tr } from '../i18n.js';
+
+// Pregledovalnik je velik, zato se naloži šele, ko je izbrana datoteka.
+const PdfPreview = lazy(() => import('../components/PdfPreview.js'));
+
+const WIDE = '(min-width: 1100px)';
+const useWide = () => useSyncExternalStore((changed) => { const m = matchMedia(WIDE); m.addEventListener('change', changed); return () => m.removeEventListener('change', changed); }, () => matchMedia(WIDE).matches);
+
+const FIELD_LABELS: Record<keyof Suggestions, Key> = {
+  title: 'Naziv', party: 'Pogodbena stranka', category: 'Kategorija', number: 'Številka pogodbe', startDate: 'Datum začetka', endDate: 'Datum poteka',
+  openEnded: 'Pogodba za nedoločen čas', noticeDays: 'Odpovedni rok', valueCents: 'Vrednost v evrih', valuePeriod: 'Plačilo',
+};
 
 const PERIODS: [ValuePeriod, Key][] = [['enkratno', 'Enkratno'], ['mesecno', 'Mesečno'], ['letno', 'Letno']];
 
@@ -47,7 +59,7 @@ function fillEmpty(f: FormValues, s: Suggestions): { values: FormValues; filled:
 }
 
 // Od kod je predlog; če se vnos razlikuje, ponudi zamenjavo.
-function Note({ id, f, suggestions, shown, apply }: { id: keyof Suggestions; f: FormValues; suggestions: Suggestions | undefined; shown: (value: never) => string; apply: (changes: Partial<FormValues>) => void }) {
+function Note({ id, f, suggestions, shown, apply, show }: { id: keyof Suggestions; f: FormValues; suggestions: Suggestions | undefined; shown: (value: never) => string; apply: (changes: Partial<FormValues>) => void; show: () => void }) {
   const s = suggestions?.[id] as Suggestion<never> | undefined;
   if (!s) return null;
   const changes = changesFor(suggestions!, id);
@@ -55,7 +67,9 @@ function Note({ id, f, suggestions, shown, apply }: { id: keyof Suggestions; f: 
   return (
     <span className="field-note">
       {!same && <span>{t('Predlog: {value}', { value: shown(s.value) })} <button type="button" className="btn btn-text" onClick={() => apply(changes)}>{t('Uporabi')}</button></span>}
-      <span>{s.quote ? t('Iz pogodbe, stran {page}: »{quote}«', { page: s.page!, quote: s.quote }) : same && t('Predlog, preverite ga.')}</span>
+      {s.quote
+        ? <button type="button" className="source" title={t('Pokaži v dokumentu')} onClick={show}><Icon of={Eye} size="sm" /><span>{t('Iz pogodbe, stran {page}: »{quote}«', { page: s.page!, quote: s.quote })}</span></button>
+        : same && <span>{t('Predlog, preverite ga.')}</span>}
     </span>
   );
 }
@@ -86,6 +100,9 @@ function Form({ contract }: { contract: ContractView | null }) {
   const [readError, setReadError] = useState('');
   const latest = useRef(f);
   latest.current = f;
+  const wide = useWide();
+  const [target, setTarget] = useState<PreviewTarget | null>(null);
+  const [opened, setOpened] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
   const form = useRef<HTMLFormElement>(null);
   const back = contract ? `/pogodbe/${contract.id}` : '/pogodbe';
@@ -96,13 +113,14 @@ function Form({ contract }: { contract: ContractView | null }) {
   }, [fields]);
 
   useEffect(() => () => reading?.abort(), [reading]);
-  const forget = () => { reading?.abort(); setReading(null); setRead(null); setReadError(''); };
+  const forget = () => { reading?.abort(); setReading(null); setRead(null); setReadError(''); setTarget(null); setOpened(false); };
   const suggest = async () => {
     if (!file) return;
     const controller = new AbortController();
     setReading(controller);
     setRead(null);
     setReadError('');
+    setTarget(null);
     try {
       const result = await api.suggest(file, controller.signal);
       if (controller.signal.aborted) return;
@@ -118,7 +136,27 @@ function Form({ contract }: { contract: ContractView | null }) {
     setReading(null);
   };
   const apply = (changes: Partial<FormValues>) => setF({ ...f, ...changes });
-  const note = (id: keyof Suggestions, shown: (value: never) => string = String) => <Note id={id} f={f} suggestions={read?.suggestions} shown={shown} apply={apply} />;
+  const note = (id: keyof Suggestions, shown: (value: never) => string = String) => <Note id={id} f={f} suggestions={read?.suggestions} shown={shown} apply={apply} show={() => { if (point(id) && !wide) setOpened(true); }} />;
+
+  const found = read?.suggestions;
+  // Plačilo in vrednost imata isti vir, zato skupno oznako. Manjše oznake so nad večjimi, da je vsako mogoče klikniti.
+  const marks = useMemo<PreviewMark[]>(() => Object.entries(found ?? {}).flatMap(([key, s]) => (key === 'valuePeriod' ? [] : (s as Suggestion<unknown>).marks ?? []).map((m) => ({ ...m, key, label: t(FIELD_LABELS[key as keyof Suggestions]) })))
+    .sort((a, b) => b.w * b.h - a.w * a.h), [found]);
+  const point = (id: string): boolean => {
+    const s = found?.[id as keyof Suggestions] as Suggestion<unknown> | undefined;
+    if (!s?.page) return false;
+    setTarget((old) => ({ key: id === 'valuePeriod' ? 'valueCents' : id, page: s.page!, n: (old?.n ?? 0) + 1 }));
+    return true;
+  };
+  // Ob vstopu v polje pogled pokaže njegov vir.
+  const follow = (e: FocusEvent) => { const id = (e.target as HTMLElement).id; if (wide && id && (id === 'valuePeriod' ? 'valueCents' : id) !== target?.key) point(id); };
+  // Klik na oznako odpre polje, ki ga je treba preveriti.
+  const pick = (key: string) => {
+    setOpened(false);
+    setTarget((old) => ({ key, page: (found![key as keyof Suggestions] as Suggestion<unknown>).page!, n: old?.n ?? 0 }));
+    requestAnimationFrame(() => form.current?.querySelector<HTMLElement>(`#${key}`)?.focus());
+  };
+  const preview = file && <Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}><PdfPreview file={file} marks={marks} target={target} onPick={pick} /></Suspense>;
 
   const choose = (chosen: File | undefined) => {
     if (!chosen) return;
@@ -164,7 +202,8 @@ function Form({ contract }: { contract: ContractView | null }) {
       <Link className="back" to={back}><Icon of={ArrowLeft} />{contract ? t('Nazaj na pogodbo') : t('Nazaj na pogodbe')}</Link>
       <div className="page-head"><h1>{heading}</h1></div>
       {error && <ErrorNotice message={error} />}
-      <form className="form" ref={form} onSubmit={submit} noValidate>
+      <div className={file && wide ? 'with-preview' : undefined}>
+      <form className="form" ref={form} onSubmit={submit} onFocus={follow} noValidate>
         <div className="field full" role="group" aria-labelledby="file-label">
           <span className="field-label" id="file-label">{t('Datoteka pogodbe')}</span>
           <input ref={picker} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
@@ -181,6 +220,7 @@ function Form({ contract }: { contract: ContractView | null }) {
               <p className="field-hint" id="file-hint">{t('Datoteka PDF, največ 10 MB.')}</p>
             </div>
           )}
+          {file && !wide && <button type="button" className="btn btn-secondary btn-preview" onClick={() => setOpened(true)}><Icon of={Eye} />{t('Pokaži dokument')}</button>}
           {file && user?.ai && (
             <div className="read">
               <Submit type="button" busy={reading !== null} busyLabel={t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz PDF')}</Submit>
@@ -212,6 +252,14 @@ function Form({ contract }: { contract: ContractView | null }) {
         <Field id="notes" label={t('Opombe')} optional error={fields.notes} full>{(a) => <textarea {...a} className="input" maxLength={2000} value={f.notes} onChange={set('notes')} />}</Field>
         <div className="form-actions full"><Submit busy={busy} busyLabel={t('Shranjevanje')}>{t('Shrani pogodbo')}</Submit><Link className="btn btn-secondary" to={back}>{t('Prekliči')}</Link></div>
       </form>
+      {file && wide && <aside className="preview-side">{preview}</aside>}
+      </div>
+      {file && !wide && opened && (
+        <Dialog title={file.name} wide onClose={() => setOpened(false)}>
+          {preview}
+          <div className="dialog-actions"><button type="button" className="btn btn-secondary" data-autofocus onClick={() => setOpened(false)}>{t('Zapri')}</button></div>
+        </Dialog>
+      )}
     </>
   );
 }

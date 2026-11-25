@@ -79,12 +79,12 @@ Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTT
 
 ### Reading contract details (AI)
 
-When adding a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default.
+When adding a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default. The preview of the chosen file works without it too; the browser draws it, on phones behind a "Show document" button.
 
 1. Under Admin, Artificial intelligence, choose a provider (Ollama, OpenAI or a compatible server, Anthropic), check the connection and pick a model.
 2. On a user's page, turn on "Read details from PDFs with AI". Nobody has it by default, not even the administrator. Reads per user per day are limited.
 
-Suggestions are never saved on their own and never overwrite what the user typed. The party, number, dates, notice period and value appear only if confirmed by a quote that is literally in the document. Title and category are suggested without a quote. Each detail shows its page and quote. The model can still be wrong, for example by picking the wrong date, so check the details.
+Suggestions are never saved on their own and never overwrite what the user typed. The party, number, dates, notice period and value appear only if confirmed by a quote that is literally in the document. Title and category are suggested without a quote. Each detail shows its page and quote, and the place is highlighted in the file preview on the right: clicking the quote shows the place, clicking the highlight opens the field. The model can still be wrong, for example by picking the wrong date, so check the details.
 
 Only the text of the contract is sent, not the file. With your own Ollama server the text stays on your network. The key is encrypted and never shown again. For contracts longer than about 25 pages, whole pages from the beginning and end are read, and the app says how many. Connect a model directly rather than an agent with tools (such as Hermes Agent).
 

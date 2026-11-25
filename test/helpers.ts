@@ -6,7 +6,7 @@ import { Ai } from '../src/server/ai.js';
 import { AuthHolder, createAuth, migrateAuth } from '../src/server/auth.js';
 import { loadConfig } from '../src/server/config.js';
 import { ContractStore } from '../src/server/contracts.js';
-import type { Extract } from '../src/server/extract.js';
+import type { Extract, PageWords } from '../src/server/extract.js';
 import { Indexer } from '../src/server/indexer.js';
 import { Mail, type Message, type Smtp } from '../src/server/mail.js';
 import { Oidc } from '../src/server/oidc.js';
@@ -45,8 +45,11 @@ export async function setup(env: Record<string, string> = {}) {
     if (text.startsWith('!')) throw new Error('pokvarjena');
     return { pages: text.split('\f'), method: text ? 'text' : 'empty' };
   };
+  // Besede so na preizkusni strani v mreži: deset na vrstico, vrstica je visoka dva odstotka strani.
+  const pageWords: PageWords = async (path, page) => (await extract(path)).pages[page - 1]!.split(/\s+/)
+    .map((text, i) => ({ text, x: (i % 10) / 10, y: Math.floor(i / 10) / 50, w: 0.09, h: 0.018 }));
   const indexer = new Indexer(db, dataDir, extract, 4);
-  const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings, env.ANTHROPIC_TEST_URL), extract);
+  const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings, env.ANTHROPIC_TEST_URL), extract, pageWords);
   ip++;
   const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
     const headers = new Headers(init.headers);

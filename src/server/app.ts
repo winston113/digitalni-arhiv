@@ -23,7 +23,7 @@ import type { Reminders } from './reminders.js';
 import { searchInput } from '../shared/search.js';
 import { Search, SearchError } from './search.js';
 import { AiError, type Ai } from './ai.js';
-import type { Extract } from './extract.js';
+import type { Extract, PageWords } from './extract.js';
 import { Suggester } from './suggest.js';
 import { UserStore } from './users.js';
 
@@ -79,11 +79,11 @@ async function readForm(c: Context): Promise<{ data: unknown; upload: Upload | n
   return { data, upload: { name: cleanFileName(file.name), bytes }, fileError: null };
 }
 
-export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, indexer: Indexer, ai: Ai, extract: Extract, webDir: string | null = null) {
+export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, oidc: Oidc, reminders: Reminders, indexer: Indexer, ai: Ai, extract: Extract, pageWords: PageWords, webDir: string | null = null) {
   const store = new ContractStore(db, config.dataDir);
   const search = new Search(db, config.dataDir, store);
   const users = new UserStore(db);
-  const suggester = new Suggester(ai, extract);
+  const suggester = new Suggester(ai, extract, pageWords);
   const app = new Hono<Env>();
   const https = config.baseUrl.startsWith('https://');
 

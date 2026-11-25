@@ -104,3 +104,28 @@ dialog.dialog::backdrop{background:var(--overlay)}
 .field-note{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font:400 14px/20px var(--font-sans);color:var(--ink-muted);overflow-wrap:anywhere}
 .read{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:8px 0}
 .read .field-hint{flex:1 1 260px}
+.source{display:inline-flex;align-items:flex-start;gap:var(--space-1);min-height:32px;padding:6px 0;border:0;background:none;color:var(--ink-muted);font:400 14px/20px var(--font-sans);text-align:left;overflow-wrap:anywhere;cursor:pointer}
+.source .icon{flex:none;margin-top:2px;color:var(--primary)}
+.source:hover{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.btn-preview{align-self:flex-start;margin-top:var(--space-2)}
+.content:has(.with-preview){max-width:none}
+.with-preview{display:grid;grid-template-columns:minmax(0,min(640px,46%)) minmax(0,1fr);gap:var(--space-5);align-items:start}
+.with-preview .form{max-width:none}
+.preview-side{position:sticky;top:var(--space-5);height:calc(100vh - 2*var(--space-5));height:calc(100dvh - 2*var(--space-5))}
+.preview{display:flex;flex-direction:column;height:100%;min-height:0;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface);overflow:hidden}
+.preview-bar{display:flex;align-items:center;gap:var(--space-1);padding:var(--space-1) var(--space-2) var(--space-1) var(--space-4);border-bottom:1px solid var(--line)}
+.preview-bar>:first-child{flex:1}
+.preview-zoom{min-width:56px;text-align:center}
+.preview-pages{position:relative;flex:1;min-height:0;overflow:auto;padding:var(--space-3);background:var(--neutral-tint)}
+.preview-pages:focus-visible{outline-offset:-2px}
+.preview-page{position:relative;margin:0 auto var(--space-3);background:#fff;border:1px solid var(--line)}
+.preview-page:last-child{margin-bottom:0}
+.preview-canvas,.preview-canvas canvas{display:block;width:100%;height:100%}
+.preview-mark{position:absolute;box-sizing:content-box;margin:-3px;padding:3px;border-radius:var(--radius-sm);background:color-mix(in srgb,var(--primary) 20%,transparent);cursor:pointer}
+.preview-mark:hover{background:color-mix(in srgb,var(--primary) 30%,transparent)}
+.preview-mark.is-active{background:color-mix(in srgb,var(--primary) 30%,transparent);box-shadow:0 0 0 2px var(--primary)}
+dialog.dialog-wide{width:min(960px,calc(100vw - 16px));max-width:none;height:calc(100dvh - 16px);max-height:none;padding:var(--space-3)}
+dialog.dialog-wide[open]{display:flex;flex-direction:column;gap:var(--space-3)}
+dialog.dialog-wide h2{overflow-wrap:anywhere;font-size:16px;line-height:24px}
+dialog.dialog-wide .preview{flex:1;height:auto}
+dialog.dialog-wide .dialog-actions{margin:0}

@@ -76,7 +76,7 @@ export function Skeleton({ label }: { label: string }) {
   );
 }
 
-export function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Dialog({ title, onClose, wide, children }: { title: string; onClose: () => void; wide?: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = ref.current!;
@@ -86,7 +86,7 @@ export function Dialog({ title, onClose, children }: { title: string; onClose: (
     return () => { dialog.close(); opener?.focus(); };
   }, []);
   return (
-    <dialog ref={ref} className="dialog" aria-labelledby="dialog-title" onCancel={(e) => { e.preventDefault(); onClose(); }}>
+    <dialog ref={ref} className={wide ? 'dialog dialog-wide' : 'dialog'} aria-labelledby="dialog-title" onCancel={(e) => { e.preventDefault(); onClose(); }}>
       <h2 id="dialog-title">{title}</h2>
       {children}
     </dialog>

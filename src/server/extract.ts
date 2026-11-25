@@ -1,13 +1,24 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { eachLimited, Limiter } from './limiter.js';
+import { parseBbox, parseTsv, type Word } from './locate.js';
 
-export interface Extracted { pages: string[]; method: 'text' | 'ocr' | 'empty' }
+// words vsebuje besede z lego za strani, prebrane s slike (ključ je številka strani), če so zahtevane.
+export interface Extracted { pages: string[]; method: 'text' | 'ocr' | 'empty'; words?: Map<number, Word[]> }
 // maxScans omeji število strani, ki se berejo s slike.
-export type Extract = (path: string, maxScans?: number) => Promise<Extracted>;
+export type Extract = (path: string, options?: { maxScans?: number; words?: boolean }) => Promise<Extracted>;
+// Besede z lego na strani z besedilom.
+export type PageWords = (path: string, page: number) => Promise<Word[]>;
+
+// Vidni del strani je enak kot v predogledu.
+export const pageWords: PageWords = async (path, page) => {
+  const only = ['-f', String(page), '-l', String(page)];
+  const [info, words] = await Promise.all([tool('pdfinfo', [...only, path], 20_000), tool('pdftotext', ['-q', '-bbox', '-cropbox', '-enc', 'UTF-8', ...only, path, '-'], 20_000)]);
+  return parseBbox(words, Number(/^Page\s+\d+\s+rot:\s+(\d+)/m.exec(info)?.[1] ?? 0));
+};
 
 export class ToolsMissing extends Error {}
 
@@ -56,21 +67,25 @@ const letters = (text: string) => text.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
 export function createExtract({ ocr, languages, workers }: ExtractOptions): Extract {
   // Omejitev je skupna vsem dokumentom, zato število procesov nikoli ne preseže števila delavcev.
   const limiter = new Limiter(workers);
-  const readPage = async (path: string, page: number, dir: string): Promise<string> => {
+  const readPage = async (path: string, page: number, dir: string, withWords: boolean): Promise<{ text: string; words: Word[] }> => {
     const image = join(dir, `s${page}`);
-    await tool('pdftoppm', ['-q', '-gray', '-png', '-singlefile', '-scale-to', String(OCR_PIXELS), '-f', String(page), '-l', String(page), path, image], 60_000);
+    await tool('pdftoppm', ['-q', '-cropbox', '-gray', '-png', '-singlefile', '-scale-to', String(OCR_PIXELS), '-f', String(page), '-l', String(page), path, image], 60_000);
     try {
-      return cleanText(await tool('tesseract', [`${image}.png`, 'stdout', '-l', languages, '--psm', '3', ...ENGINE], 120_000));
+      const tables = withWords ? ['-c', 'tessedit_create_txt=1', '-c', 'tessedit_create_tsv=1'] : [];
+      const out = await tool('tesseract', [`${image}.png`, withWords ? image : 'stdout', '-l', languages, '--psm', '3', ...ENGINE, ...tables], 120_000);
+      if (!withWords) return { text: cleanText(out), words: [] };
+      return { text: cleanText(await readFile(`${image}.txt`, 'utf8')), words: parseTsv(await readFile(`${image}.tsv`, 'utf8')) };
     } finally {
-      await rm(`${image}.png`, { force: true });
+      for (const type of ['png', 'txt', 'tsv']) await rm(`${image}.${type}`, { force: true });
     }
   };
 
-  return async (path, maxScans = MAX_OCR_PAGES) => {
+  return async (path, { maxScans = MAX_OCR_PAGES, words: withWords = false } = {}) => {
     const raw = await tool('pdftotext', ['-q', '-enc', 'UTF-8', '-eol', 'unix', path, '-'], 120_000);
     const pages = raw.split('\f').slice(0, MAX_PAGES).map(cleanText);
     if (pages.length > 1 && pages.at(-1) === '') pages.pop();
 
+    const words = new Map<number, Word[]>();
     let recognised = false;
     const scans = ocr ? pages.flatMap((text, i) => (letters(text) < MIN_LETTERS ? [i] : [])).slice(0, maxScans) : [];
     if (scans.length > 0) {
@@ -79,13 +94,13 @@ export function createExtract({ ocr, languages, workers }: ExtractOptions): Extr
         // Vsak dokument odda največ toliko strani naenkrat, kolikor je delavcev, da velik dokument ne zadrži majhnih.
         await eachLimited(scans, workers, async (i) => {
           // Ena neberljiva stran ne sme pokvariti celotnega dokumenta.
-          const found = await limiter.run(() => readPage(path, i + 1, dir)).catch((error: unknown) => { if (error instanceof ToolsMissing) throw error; return ''; });
-          if (letters(found) > letters(pages[i]!)) { pages[i] = found; recognised = true; }
+          const found = await limiter.run(() => readPage(path, i + 1, dir, withWords)).catch((error: unknown) => { if (error instanceof ToolsMissing) throw error; return null; });
+          if (found && letters(found.text) > letters(pages[i]!)) { pages[i] = found.text; words.set(i + 1, found.words); recognised = true; }
         });
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
     }
-    return { pages, method: recognised ? 'ocr' : pages.some((p) => letters(p) > 0) ? 'text' : 'empty' };
+    return { pages, method: recognised ? 'ocr' : pages.some((p) => letters(p) > 0) ? 'text' : 'empty', ...(withWords && { words }) };
   };
 }

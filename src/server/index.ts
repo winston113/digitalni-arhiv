@@ -9,7 +9,7 @@ import { migrate, openDb } from './db.js';
 import { ContractStore } from './contracts.js';
 import { Mail } from './mail.js';
 import { Oidc } from './oidc.js';
-import { createExtract, OCR_VERSION } from './extract.js';
+import { createExtract, OCR_VERSION, pageWords } from './extract.js';
 import { Indexer } from './indexer.js';
 import { tooManyWorkers } from './limiter.js';
 import { Reminders } from './reminders.js';
@@ -36,7 +36,7 @@ if (reread) console.log(`Skenirani dokumenti, ki bodo znova prebrani: ${reread}`
 indexer.start();
 
 const webDir = fileURLToPath(new URL('../web', import.meta.url));
-const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings), extract, existsSync(webDir) ? webDir : null);
+const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings), extract, pageWords, existsSync(webDir) ? webDir : null);
 const server = serve({ fetch: app.fetch, port: config.port }, () => {
   console.log(`Digitalni arhiv pogodb: ${config.baseUrl} (vrata ${config.port})`);
   console.log(`OCR: ${config.ocr ? `vklopljen, sočasnih obdelav: ${config.ocrWorkers}` : 'izklopljen'}`);

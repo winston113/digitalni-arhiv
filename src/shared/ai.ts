@@ -45,7 +45,10 @@ export interface AiView { settings: (Omit<AiInput, 'apiKey'> & { hasKey: boolean
 // Kar sme vedeti uporabnik: kam se pošlje besedilo.
 export interface AiInfo { destination: string }
 
-export interface Suggestion<T> { value: T; quote?: string; page?: number }
+// Del strani, od koder je podatek; mere so deleži širine in višine strani.
+export interface Mark { page: number; x: number; y: number; w: number; h: number }
+
+export interface Suggestion<T> { value: T; quote?: string; page?: number; marks?: Mark[] }
 
 export interface Suggestions {
   title?: Suggestion<string>;

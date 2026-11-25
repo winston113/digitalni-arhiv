@@ -8,7 +8,8 @@ import { amountsIn, parseAmount } from '../shared/amounts.js';
 import { CATEGORIES, VALUE_PERIODS } from '../shared/contracts.js';
 import { daysBetween, isIsoDate } from '../shared/dates.js';
 import { AiError, type Ai } from './ai.js';
-import type { Extract } from './extract.js';
+import type { Extract, Extracted, PageWords } from './extract.js';
+import { bare, marksFor, type Word } from './locate.js';
 
 const MAX_CHARS = 60_000;
 const MAX_SCANNED_PAGES = 40;
@@ -43,8 +44,6 @@ Answer with one JSON object with exactly these keys:
 - value: {amount, period, quote}. The main recurring payment or total price in euros, copied as written. period is enkratno (once or total), mesecno (monthly) or letno (yearly).
 
 quote is the shortest passage that states the value, copied exactly, character for character, from the contract. Only give dates that are written in the contract; do not calculate them. If something is not stated, use null for both the value and the quote. Do not guess.`;
-
-export const bare = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
 
 const MONTHS: [string, number][] = [['jan', 1], ['feb', 2], ['mar', 3], ['apr', 4], ['maj', 5], ['may', 5], ['jun', 6], ['jul', 7], ['avg', 8], ['aug', 8], ['sep', 9], ['okt', 10], ['oct', 10], ['nov', 11], ['dec', 12]];
 
@@ -182,16 +181,17 @@ export function selectPages(pages: string[], max = MAX_CHARS): { page: number; t
 export class Suggester {
   private busy = new Set<string>();
 
-  constructor(private ai: Ai, private extract: Extract) {}
+  constructor(private ai: Ai, private extract: Extract, private pageWords: PageWords) {}
 
   async run(userId: string, bytes: Uint8Array, day: string, cancelled: AbortSignal): Promise<SuggestResult> {
     const config = this.ai.current;
     if (!config) throw new AiError('Umetna inteligenca ni nastavljena.', 409);
     if (this.busy.has(userId)) throw new AiError('Branje že poteka. Počakajte, da se konča.', 409);
     this.busy.add(userId);
+    const path = join(tmpdir(), `branje-${randomUUID()}.pdf`);
     try {
       if (!this.ai.take(userId, day)) throw new AiError('Današnje število branj je porabljeno. Poskusite jutri ali izpolnite polja ročno.', 409);
-      const pages = await this.read(bytes).catch((error: unknown) => { this.ai.giveBack(userId, day); throw error; });
+      const { pages, words } = await this.read(path, bytes).catch((error: unknown) => { this.ai.giveBack(userId, day); throw error; });
       const chosen = selectPages(pages);
       if (chosen.length === 0) {
         this.ai.giveBack(userId, day);
@@ -200,25 +200,41 @@ export class Suggester {
       const text = `<contract>\n${chosen.map((p) => `[page ${p.page}]\n${p.text.replace(/<\/?contract>/gi, '')}`).join('\n\n')}\n</contract>`;
       try {
         const raw = await this.ai.ask({ system: prompt(config.organisation), text, schema: answerSchema }, cancelled);
-        return { suggestions: verify(raw, new Source(chosen), config.organisation), pagesRead: chosen.length, pagesTotal: pages.filter(Boolean).length };
+        const suggestions = verify(raw, new Source(chosen), config.organisation);
+        await this.locate(path, suggestions, words ?? new Map(), chosen.map((p) => p.page));
+        return { suggestions, pagesRead: chosen.length, pagesTotal: pages.filter(Boolean).length };
       } catch (error) {
         if (error instanceof AiError && error.unreachable) this.ai.giveBack(userId, day);
         throw error;
       }
     } finally {
       this.busy.delete(userId);
+      await rm(path, { force: true });
     }
   }
 
-  private async read(bytes: Uint8Array): Promise<string[]> {
-    const path = join(tmpdir(), `branje-${randomUUID()}.pdf`);
+  // Doda lego navedkov za oznake v predogledu. Če je ni mogoče določiti, predlog ostane brez oznake.
+  private async locate(path: string, suggestions: Suggestions, scanned: Map<number, Word[]>, chosen: number[]): Promise<void> {
+    const known = new Map<number, Promise<Word[]>>();
+    const wordsOn = (page: number) => {
+      if (!known.has(page)) known.set(page, scanned.has(page) ? Promise.resolve(scanned.get(page)!) : this.pageWords(path, page).catch(() => []));
+      return known.get(page)!;
+    };
+    for (const s of Object.values(suggestions) as Suggestion<unknown>[]) {
+      if (!s.quote || !s.page) continue;
+      let marks = marksFor(s.quote, [{ page: s.page, words: await wordsOn(s.page) }]);
+      const next = chosen.includes(s.page + 1) ? s.page + 1 : null;
+      if (!marks.length && next) marks = marksFor(s.quote, [{ page: s.page, words: await wordsOn(s.page) }, { page: next, words: await wordsOn(next) }]);
+      if (marks.length) s.marks = marks;
+    }
+  }
+
+  private async read(path: string, bytes: Uint8Array): Promise<Extracted> {
     try {
       await writeFile(path, bytes, { mode: 0o600 });
-      return (await this.extract(path, MAX_SCANNED_PAGES)).pages;
+      return await this.extract(path, { maxScans: MAX_SCANNED_PAGES, words: true });
     } catch {
       throw new AiError('Besedila iz datoteke ni bilo mogoče prebrati.', 422);
-    } finally {
-      await rm(path, { force: true });
     }
   }
 }

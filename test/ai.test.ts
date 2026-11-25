@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AiView, SuggestResult } from '../src/shared/ai.js';
+import { marksFor, parseBbox, parseTsv } from '../src/server/locate.js';
 import { amountsIn } from '../src/shared/amounts.js';
 import type { CurrentUser, ManagedUser } from '../src/shared/users.js';
 import { datesIn, selectPages, Source, verify } from '../src/server/suggest.js';
@@ -118,7 +119,13 @@ describe('ponudniki', () => {
     expect((await save({ provider, baseUrl: url + suffix, apiKey: 'sk-kljuc' })).status).toBe(200);
     const r = await suggest(ana);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({
+    const result = (await r.json()) as SuggestResult;
+    // Oznake kažejo na besede navedka; druga stran ima svojo mrežo.
+    expect(result.suggestions.valueCents!.marks).toEqual([{ page: 2, x: 0, y: 0, w: 0.49, h: 0.018 }]);
+    expect(result.suggestions.startDate!.marks!.every((m) => m.page === 1)).toBe(true);
+    expect(result.suggestions.title).not.toHaveProperty('marks');
+    for (const s of Object.values(result.suggestions) as { quote?: string; marks?: unknown[] }[]) { if (s.quote) expect(s.marks!.length).toBeGreaterThan(0); delete s.marks; }
+    expect(result).toEqual({
       pagesRead: 2, pagesTotal: 2,
       suggestions: {
         title: { value: 'Vzdrževanje računalniške opreme' }, category: { value: 'Storitve' },
@@ -344,5 +351,47 @@ describe('preverjanje odgovora', () => {
     expect(chosen).toEqual([1, 2, 3, 4, 5, 6, 7, 28, 29, 30]);
     expect(selectPages(['a', '', 'b']).map((p) => p.page)).toEqual([1, 3]);
     expect(selectPages(['x'.repeat(2000)], 1000)).toEqual([]);
+  });
+});
+
+describe('lega navedkov', () => {
+  const grid = (text: string) => text.split(' ').map((w, i) => ({ text: w, x: (i % 4) / 4, y: Math.floor(i / 4) / 10, w: 0.2, h: 0.05 }));
+
+  it('združi besede po vrsticah in poišče navedek ne glede na ločila', () => {
+    const pages = [{ page: 3, words: grid('Pogodba velja od 15. 1. 2026 do preklica stranke') }];
+    expect(marksFor('VELJA od »15. 1. 2026«', pages)).toEqual([{ page: 3, x: 0.25, y: 0, w: 0.7, h: 0.05 }, { page: 3, x: 0, y: 0.1, w: 0.45, h: 0.05 }]);
+    expect(marksFor('velja ... preklica', pages)).toHaveLength(2);
+    expect(marksFor('ni v besedilu', pages)).toEqual([]);
+    expect(marksFor('', pages)).toEqual([]);
+    expect(marksFor('velja', [])).toEqual([]);
+  });
+
+  it('navedek čez dve strani in deljena beseda', () => {
+    const marks = marksFor('odpovedni rok je šestdeset dni', [{ page: 1, words: grid('Odpovedni rok je šest-') }, { page: 2, words: grid('deset dni od') }]);
+    expect(marks.map((m) => m.page)).toEqual([1, 2]);
+  });
+
+  it('združi tudi navpično zapisane besede', () => {
+    const words = ['Pogodba', 'velja', 'od'].map((text, i) => ({ text, x: 0.5, y: 0.1 + i * 0.1, w: 0.03, h: 0.09, upright: text.length > 2 }));
+    expect(marksFor('pogodba velja od', [{ page: 1, words }])).toEqual([{ page: 1, x: 0.5, y: 0.1, w: 0.03, h: 0.29 }]);
+  });
+
+  it('omeji število oznak', () => {
+    expect(marksFor(Array.from({ length: 100 }, (_, i) => `b${i}`).join(' '), [{ page: 1, words: grid(Array.from({ length: 100 }, (_, i) => `b${i}`).join(' ')) }])).toHaveLength(12);
+  });
+
+  it('prebere izpis pdftotext', () => {
+    const html = '<page width="200.0" height="100.0">\n<word xMin="20" yMin="10" xMax="60" yMax="20">A&amp;B</word>\n<word xMin="-10" yMin="90" xMax="300" yMax="120">rob</word><word xMin="500" yMin="1" xMax="600" yMax="2">zunaj</word>';
+    expect(parseBbox(html)).toEqual([{ text: 'A&B', x: 0.1, y: 0.1, w: 0.19999999999999998, h: 0.1 }, { text: 'rob', x: 0, y: 0.9, w: 1, h: 0.09999999999999998 }]);
+    const turned = parseBbox('<page width="100" height="200"><word xMin="180" yMin="10" xMax="190" yMax="60">Pogodba</word>', 90);
+    expect(turned.map((w) => [w.upright, ...[w.x, w.y, w.w, w.h].map((n) => Math.round(n * 1000) / 1000)])).toEqual([[true, 0.9, 0.1, 0.05, 0.5]]);
+    expect(parseBbox('nesmisel')).toEqual([]);
+    expect(parseBbox('<page width="0" height="0"><word xMin="1" yMin="1" xMax="2" yMax="2">x</word>')).toEqual([]);
+  });
+
+  it('prebere izpis Tesseracta', () => {
+    const tsv = 'level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext\n1\t1\t0\t0\t0\t0\t0\t0\t1000\t2000\t-1\t\n5\t1\t1\t1\t1\t1\t100\t200\t50\t40\t96\tPogodba\n5\t1\t1\t1\t1\t2\t0\t0\t10\t10\t95\t \n4\t1\t1\t1\t1\t0\t1\t1\t1\t1\t-1\t';
+    expect(parseTsv(tsv).map((w) => [w.text, ...[w.x, w.y, w.w, w.h].map((n) => Math.round(n * 1000) / 1000)])).toEqual([['Pogodba', 0.1, 0.1, 0.05, 0.02]]);
+    expect(parseTsv('')).toEqual([]);
   });
 });
