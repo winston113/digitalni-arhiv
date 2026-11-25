@@ -25,6 +25,10 @@ jobs:
 
   image:
     needs: test
+    # Zapisi o gradnji vsebujejo podatke dogodka GitHub, tudi e-poštni naslov, zato jih ne objavljamo.
+    env:
+      DOCKER_BUILD_SUMMARY: 'false'
+      DOCKER_BUILD_RECORD_UPLOAD: 'false'
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -50,6 +54,8 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
+          sbom: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
