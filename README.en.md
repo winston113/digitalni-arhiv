@@ -54,7 +54,7 @@ docker compose pull
 On Unraid the login is kept in memory and is lost on reboot. Instead of pulling, you can build from source (`docker compose up -d --build`) or copy the image from another machine:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.3.1 | ssh server docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.4.0 | ssh server docker load
 ```
 
 ### Reverse proxy (Caddy)
@@ -79,7 +79,7 @@ Set it up under Admin, Email (for Mailjet: `in-v3.mailjet.com`, port 587, STARTT
 
 ### Reading contract details (AI)
 
-When adding a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default. The preview of the chosen file works without it too; the browser draws it, on phones behind a "Show document" button.
+When adding or editing a contract, "Fill in from PDF" suggests the title, party, category, number, dates, notice period and value. It is off by default. The file preview, when adding and editing, works without it too; the browser draws it, on phones behind a "Show document" button.
 
 1. Under Admin, Artificial intelligence, choose a provider (Ollama, OpenAI or a compatible server, Anthropic), check the connection and pick a model.
 2. On a user's page, turn on "Read details from PDFs with AI". Nobody has it by default, not even the administrator. Reads per user per day are limited.

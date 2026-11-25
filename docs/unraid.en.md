@@ -23,7 +23,7 @@ Copy `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.example` (as `.env
 While the package is private, the simplest way is to send the image from the machine where you built it:
 
 ```sh
-podman save ghcr.io/winston113/digitalni-arhiv:1.3.1 | ssh root@UNRAID docker load
+podman save ghcr.io/winston113/digitalni-arhiv:1.4.0 | ssh root@UNRAID docker load
 ```
 
 Compose uses a local image and does not try to download it again. If the package is public, skip this step.

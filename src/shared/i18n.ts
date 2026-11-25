@@ -547,6 +547,8 @@ export const EN = {
   'Pokaži v dokumentu': 'Show in document',
   'Pokaži dokument': 'Show document',
   'Zapri': 'Close',
+  'Vsi najdeni podatki se ujemajo z vnesenimi.': 'Everything found matches what is entered.',
+  'Predlogov, ki se razlikujejo od vnesenih podatkov: {n}. Prikazani so ob poljih.': 'Suggestions that differ from what is entered: {n}. They are shown next to the fields.',
 } as const;
 
 export type Key = keyof typeof EN;

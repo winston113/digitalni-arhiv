@@ -48,14 +48,22 @@ const asValues: { [K in keyof Suggestions]-?: (value: NonNullable<Suggestions[K]
 };
 const changesFor = (s: Suggestions, key: keyof Suggestions) => (asValues[key] as (v: unknown) => Partial<FormValues>)(s[key]!.value);
 
+// Ali je predlog enak vnosu.
+function agrees(f: FormValues, s: Suggestions, key: keyof Suggestions): boolean {
+  const changes = changesFor(s, key);
+  return (Object.keys(changes) as (keyof FormValues)[]).every((k) => (k === 'value' ? parseAmount(f.value) === parseAmount(changes.value!) : f[k] === changes[k]));
+}
+
 // Izpolni samo prazna polja; kar je uporabnik že vnesel, ostane.
-function fillEmpty(f: FormValues, s: Suggestions): { values: FormValues; filled: number } {
+function fillEmpty(f: FormValues, s: Suggestions): { values: FormValues; filled: number; differ: number } {
   const empty: Record<keyof Suggestions, boolean> = {
     title: !f.title, party: !f.party, category: !f.category, number: !f.number, startDate: !f.startDate,
     endDate: !f.endDate && !f.openEnded, openEnded: !f.endDate && !f.openEnded, noticeDays: !f.noticeDays, valueCents: !f.value, valuePeriod: !f.value,
   };
-  const keys = (Object.keys(s) as (keyof Suggestions)[]).filter((k) => empty[k]);
-  return { values: Object.assign({}, f, ...keys.map((k) => changesFor(s, k))) as FormValues, filled: keys.length };
+  const all = Object.keys(s) as (keyof Suggestions)[];
+  const keys = all.filter((k) => empty[k]);
+  const values = Object.assign({}, f, ...keys.map((k) => changesFor(s, k))) as FormValues;
+  return { values, filled: keys.length, differ: all.filter((k) => !agrees(values, s, k)).length };
 }
 
 // Od kod je predlog; če se vnos razlikuje, ponudi zamenjavo.
@@ -63,7 +71,7 @@ function Note({ id, f, suggestions, shown, apply, show }: { id: keyof Suggestion
   const s = suggestions?.[id] as Suggestion<never> | undefined;
   if (!s) return null;
   const changes = changesFor(suggestions!, id);
-  const same = (Object.keys(changes) as (keyof FormValues)[]).every((k) => (k === 'value' ? parseAmount(f.value) === parseAmount(changes.value!) : f[k] === changes[k]));
+  const same = agrees(f, suggestions!, id);
   return (
     <span className="field-note">
       {!same && <span>{t('Predlog: {value}', { value: shown(s.value) })} <button type="button" className="btn btn-text" onClick={() => apply(changes)}>{t('Uporabi')}</button></span>}
@@ -91,12 +99,14 @@ function Form({ contract }: { contract: ContractView | null }) {
   const [f, setF] = useState(() => toForm(contract));
   const [file, setFile] = useState<File | null>(null);
   const [replacing, setReplacing] = useState(!contract);
+  const [stored, setStored] = useState<File | null>(null);
+  const [storedFailed, setStoredFailed] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [reading, setReading] = useState<AbortController | null>(null);
-  const [read, setRead] = useState<(SuggestResult & { filled: number }) | null>(null);
+  const [read, setRead] = useState<(SuggestResult & { filled: number; differ: number }) | null>(null);
   const [readError, setReadError] = useState('');
   const latest = useRef(f);
   latest.current = f;
@@ -112,21 +122,33 @@ function Form({ contract }: { contract: ContractView | null }) {
     if (Object.keys(fields).length) form.current?.querySelector<HTMLElement>('[aria-invalid=true], .is-invalid button')?.focus();
   }, [fields]);
 
+  // Pri urejanju je v predogledu shranjena datoteka, dokler je uporabnik ne zamenja.
+  useEffect(() => {
+    if (!contract) return;
+    let active = true;
+    api.file(contract.id, contract.fileName).then((loaded) => { if (active) setStored(loaded); }, (err: ApiError) => {
+      if (!active) return;
+      if (err.status === 401) setUser(null); else setStoredFailed(true);
+    });
+    return () => { active = false; };
+  }, [contract, setUser]);
+  const shown = file ?? (replacing ? null : stored);
+
   useEffect(() => () => reading?.abort(), [reading]);
   const forget = () => { reading?.abort(); setReading(null); setRead(null); setReadError(''); setTarget(null); setOpened(false); };
   const suggest = async () => {
-    if (!file) return;
+    if (!shown) return;
     const controller = new AbortController();
     setReading(controller);
     setRead(null);
     setReadError('');
     setTarget(null);
     try {
-      const result = await api.suggest(file, controller.signal);
+      const result = await api.suggest(shown, controller.signal);
       if (controller.signal.aborted) return;
-      const { values, filled } = fillEmpty(latest.current, result.suggestions);
+      const { values, filled, differ } = fillEmpty(latest.current, result.suggestions);
       setF(values);
-      setRead({ ...result, filled });
+      setRead({ ...result, filled, differ });
     } catch (err) {
       if (controller.signal.aborted) return;
       const { message, status } = err as ApiError;
@@ -156,7 +178,7 @@ function Form({ contract }: { contract: ContractView | null }) {
     setTarget((old) => ({ key, page: (found![key as keyof Suggestions] as Suggestion<unknown>).page!, n: old?.n ?? 0 }));
     requestAnimationFrame(() => form.current?.querySelector<HTMLElement>(`#${key}`)?.focus());
   };
-  const preview = file && <Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}><PdfPreview file={file} marks={marks} target={target} onPick={pick} /></Suspense>;
+  const preview = shown && <Suspense fallback={<Skeleton label={t('Nalaganje predogleda')} />}><PdfPreview file={shown} marks={marks} target={target} onPick={pick} /></Suspense>;
 
   const choose = (chosen: File | undefined) => {
     if (!chosen) return;
@@ -197,12 +219,15 @@ function Form({ contract }: { contract: ContractView | null }) {
 
   const shownFile = file ? { name: file.name, size: file.size } : !replacing && contract ? { name: contract.fileName, size: contract.fileSize } : null;
 
+  const side = wide && (file !== null || (contract !== null && !replacing));
+  const good = read !== null && Object.keys(read.suggestions).length > 0 && (read.filled > 0 || read.differ === 0);
+
   return (
     <>
       <Link className="back" to={back}><Icon of={ArrowLeft} />{contract ? t('Nazaj na pogodbo') : t('Nazaj na pogodbe')}</Link>
       <div className="page-head"><h1>{heading}</h1></div>
       {error && <ErrorNotice message={error} />}
-      <div className={file && wide ? 'with-preview' : undefined}>
+      <div className={side ? 'with-preview' : undefined}>
       <form className="form" ref={form} onSubmit={submit} onFocus={follow} noValidate>
         <div className="field full" role="group" aria-labelledby="file-label">
           <span className="field-label" id="file-label">{t('Datoteka pogodbe')}</span>
@@ -220,8 +245,8 @@ function Form({ contract }: { contract: ContractView | null }) {
               <p className="field-hint" id="file-hint">{t('Datoteka PDF, največ 10 MB.')}</p>
             </div>
           )}
-          {file && !wide && <button type="button" className="btn btn-secondary btn-preview" onClick={() => setOpened(true)}><Icon of={Eye} />{t('Pokaži dokument')}</button>}
-          {file && user?.ai && (
+          {shown && !wide && <button type="button" className="btn btn-secondary btn-preview" onClick={() => setOpened(true)}><Icon of={Eye} />{t('Pokaži dokument')}</button>}
+          {shown && user?.ai && (
             <div className="read">
               <Submit type="button" busy={reading !== null} busyLabel={t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz PDF')}</Submit>
               <span className="field-hint">{reading ? t('To lahko traja nekaj minut. Polja lahko medtem izpolnjujete sami.') : t('Besedilo pogodbe se pošlje na {destination}, kjer ga prebere umetna inteligenca.', { destination: user.ai.destination })}</span>
@@ -229,9 +254,11 @@ function Form({ contract }: { contract: ContractView | null }) {
           )}
           {readError && <ErrorNotice message={readError} />}
           <div role="status">{read && (
-            <div className={`notice${read.filled ? ' notice-success' : ''}`}><Icon of={read.filled ? CircleCheck : CircleAlert} /><div>
+            <div className={`notice${good ? ' notice-success' : ''}`}><Icon of={good ? CircleCheck : CircleAlert} /><div>
               {Object.keys(read.suggestions).length === 0 ? t('V pogodbi ni bilo mogoče zanesljivo najti podatkov. Polja izpolnite ročno.')
-                : t('Izpolnjenih podatkov: {n}. Pred shranjevanjem preverite vsakega.', { n: read.filled })}
+                : read.filled ? t('Izpolnjenih podatkov: {n}. Pred shranjevanjem preverite vsakega.', { n: read.filled })
+                : !read.differ ? t('Vsi najdeni podatki se ujemajo z vnesenimi.') : ''}
+              {read.differ > 0 && <> {t('Predlogov, ki se razlikujejo od vnesenih podatkov: {n}. Prikazani so ob poljih.', { n: read.differ })}</>}
               {read.pagesRead < read.pagesTotal && <> {t('Prebranih je {read} od {total} strani z besedilom, ker je pogodba predolga.', { read: read.pagesRead, total: read.pagesTotal })}</>}
             </div></div>
           )}</div>
@@ -252,10 +279,10 @@ function Form({ contract }: { contract: ContractView | null }) {
         <Field id="notes" label={t('Opombe')} optional error={fields.notes} full>{(a) => <textarea {...a} className="input" maxLength={2000} value={f.notes} onChange={set('notes')} />}</Field>
         <div className="form-actions full"><Submit busy={busy} busyLabel={t('Shranjevanje')}>{t('Shrani pogodbo')}</Submit><Link className="btn btn-secondary" to={back}>{t('Prekliči')}</Link></div>
       </form>
-      {file && wide && <aside className="preview-side">{preview}</aside>}
+      {side && <aside className="preview-side">{preview ?? (storedFailed ? <ErrorNotice message={t('Predogleda te datoteke ni mogoče prikazati.')} /> : <Skeleton label={t('Nalaganje predogleda')} />)}</aside>}
       </div>
-      {file && !wide && opened && (
-        <Dialog title={file.name} wide onClose={() => setOpened(false)}>
+      {shown && !wide && opened && (
+        <Dialog title={shown.name} wide onClose={() => setOpened(false)}>
           {preview}
           <div className="dialog-actions"><button type="button" className="btn btn-secondary" data-autofocus onClick={() => setOpened(false)}>{t('Zapri')}</button></div>
         </Dialog>

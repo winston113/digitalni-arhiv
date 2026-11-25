@@ -65,7 +65,7 @@ docker compose pull
 Na Unraidu se prijava shrani v pomnilnik in po ponovnem zagonu izgine. Namesto prevzema lahko sliko zgradite iz izvorne kode (`docker compose up -d --build`) ali jo prenesete z drugega računalnika:
 
 ```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.3.1 | ssh strežnik docker load
+docker save ghcr.io/winston113/digitalni-arhiv:1.4.0 | ssh strežnik docker load
 ```
 
 ### Prvi skrbnik
@@ -136,7 +136,7 @@ Uporabnik opozorila izklopi na strani Moj račun.
 
 ### Branje podatkov iz pogodb (umetna inteligenca)
 
-Pri dodajanju pogodbe gumb »Izpolni iz PDF« predlaga naziv, stranko, kategorijo, številko, datume, odpovedni rok in vrednost. Privzeto je izklopljeno. Predogled izbrane datoteke je na voljo tudi brez njega; nariše ga brskalnik, na telefonu z gumbom »Pokaži dokument«.
+Pri dodajanju in urejanju pogodbe gumb »Izpolni iz PDF« predlaga naziv, stranko, kategorijo, številko, datume, odpovedni rok in vrednost. Privzeto je izklopljeno. Predogled datoteke je pri dodajanju in urejanju na voljo tudi brez njega; nariše ga brskalnik, na telefonu z gumbom »Pokaži dokument«.
 
 1. V razdelku Skrbništvo, Umetna inteligenca, izberite ponudnika (Ollama, OpenAI ali združljiv strežnik, Anthropic), preverite povezavo in izberite model.
 2. Na strani uporabnika vklopite dovoljenje »Branje podatkov iz PDF z umetno inteligenco«. Privzeto ga nima nihče, tudi skrbnik ne. Dnevno število branj na uporabnika je omejeno.

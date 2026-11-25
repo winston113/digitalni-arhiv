@@ -72,6 +72,7 @@ export const api = {
   },
   list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
   get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractDetails>,
+  file: async (id: string, name: string) => new File([await (await send(`/api/contracts/${id}/file`)).blob()], name, { type: 'application/pdf' }),
   create: async (data: unknown, file: File | null) =>
     (await send('/api/contracts', { method: 'POST', body: formData(data, file) })).json() as Promise<ContractDetails>,
   update: async (id: string, data: unknown, file: File | null) =>
