@@ -14,8 +14,6 @@ export type Category = (typeof CATEGORIES)[number];
 export type ValuePeriod = (typeof VALUE_PERIODS)[number];
 export type Status = (typeof STATUSES)[number];
 
-export const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
 const isoDate = (message: string) => z.string({ error: message }).refine(isIsoDate, { error: message });
 const optionalText = (max: number, message: string) =>
   z.string().trim().max(max, { error: message }).nullish().transform((v) => v || null);

@@ -32,13 +32,13 @@ Oseba, ki v manjšem podjetju skrbi za pogodbe: vodja pisarne, računovodja ali 
 | Naziv | da | |
 | Pogodbena stranka | da | |
 | Kategorija | da | Najem, Dobava, Storitve, Zaposlitev, Zavarovanje, Licence in naročnine, Drugo |
-| Datoteka PDF | da | največ 10 MB |
+| Datoteka PDF | da | privzeto največ 100 MB |
 | Datum začetka | da | |
 | Datum poteka | da, razen pri pogodbi za nedoločen čas | ne sme biti pred datumom začetka |
 | Številka pogodbe | ne | |
 | Odpovedni rok | ne | v dneh, privzeto 0 |
 | Opozorilo | da | število dni pred rokom za ukrepanje, privzeto 30 |
-| Priloge in aneksi | ne | do 30 datotek PDF, vsaka največ 10 MB |
+| Priloge in aneksi | ne | do 30 datotek PDF, vsaka privzeto največ 100 MB |
 | Vrednost | ne | v evrih; enkratno, mesečno ali letno |
 | Opombe | ne | |
 
@@ -61,6 +61,6 @@ Podaljšanje pomeni vnos novega datuma poteka. Pogodba se s tem vrne med aktivne
 
 ## Obseg prve različice
 
-Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, slovenski in angleški vmesnik, priloge in aneksi, izvoz arhiva (ZIP s PDF in preglednico), iskanje po vsebini z regularnimi izrazi in prepoznavo besedila (OCR), branje rokov in zneskov iz PDF z umetno inteligenco (neobvezno, z dovoljenjem skrbnika), skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
+Vključeno: registracija, prijava in odjava, nalaganje PDF, vnos, pregled, urejanje in brisanje pogodb, iskanje in filtri, nadzorna plošča, opozorila v aplikaciji, podaljšanje in prekinitev, svetla in temna tema, slovenski in angleški vmesnik, priloge in aneksi, izvoz arhiva (ZIP s PDF in preglednico), iskanje po vsebini z regularnimi izrazi in prepoznavo besedila (OCR), razdelitev ene datoteke na več pogodb in aneksov, predogled PDF ob obrazcu, branje rokov in zneskov iz PDF z umetno inteligenco (neobvezno, z dovoljenjem skrbnika), skrbniško upravljanje uporabnikov in dovoljenj, prijava prek ponudnika OpenID Connect, ponastavitev gesla in opozorila po e-pošti.
 
 Ni vključeno: elektronski podpis, potrjevanje pogodb, skupna raba pogodb, zgodovina različic, pogovorni pomočnik.

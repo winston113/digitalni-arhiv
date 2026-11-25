@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Razdelitev datoteke</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="NovaPogodba.dc.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na obrazec</a>
+<div class="page-head"><h1>Razdelitev datoteke</h1></div>
+<p class="muted">Označite, kje se začne nov dokument. Vsaka pogodba bo dobila svoj obrazec, priloge pa se ji dodajo ob shranjevanju.</p>
+<div class="read"><button class="btn btn-secondary" type="button">Predlagaj razdelitev</button><span class="field-hint">Začetek in konec vsake strani se pošljeta na ollama.primer.si, kjer ju prebere umetna inteligenca.</span></div>
+<div class="notice notice-success" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><div>Predlaganih dokumentov: 3. Preverite začetke, vrste in imena.</div></div>
+<section class="panel"><div class="panel-head"><h2>Dokument 1 <span class="muted num">Strani 1 do 3</span></h2></div><div class="panel-body stack"><div class="split-fields"><div class="field"><label class="field-label" for="r-1">Vrsta</label><span class="select"><select class="input" id="r-1"><option selected>Pogodba</option><option>Izpusti</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div><div class="field"><label class="field-label" for="n-1">Ime datoteke</label><input class="input" id="n-1" defaultValue="Vzdrževanje računalniške opreme"></div></div><ul class="thumbs"><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:60%'></i><i style='width:0%'></i><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:70%'></i><i style='width:0%'></i><i style='width:88%'></i><i style='width:90%'></i><i style='width:64%'></i></div></div><span class="num">Stran 1</span></li><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:78%'></i><i style='width:88%'></i><i style='width:0%'></i><i style='width:84%'></i><i style='width:90%'></i></div></div><span class="num">Stran 2</span><button class="btn btn-text" type="button">Nov dokument</button></li><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:78%'></i></div></div><span class="num">Stran 3</span><button class="btn btn-text" type="button">Nov dokument</button></li></ul></div></section>
+<section class="panel"><div class="panel-head"><h2>Dokument 2 <span class="muted num">Stran 4</span></h2><button class="btn btn-text" type="button">Združi s prejšnjim</button></div><div class="panel-body stack"><div class="split-fields"><div class="field"><label class="field-label" for="r-2">Vrsta</label><span class="select"><select class="input" id="r-2"><option selected>Priloga k: Vzdrževanje računalniške opreme</option><option>Pogodba</option><option>Izpusti</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div><div class="field"><label class="field-label" for="n-2">Ime datoteke</label><input class="input" id="n-2" defaultValue="Aneks 1"></div></div><ul class="thumbs"><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:60%'></i><i style='width:0%'></i><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:70%'></i></div></div><span class="num">Stran 4</span></li></ul></div></section>
+<section class="panel"><div class="panel-head"><h2>Dokument 3 <span class="muted num">Strani 5 do 6</span></h2><button class="btn btn-text" type="button">Združi s prejšnjim</button></div><div class="panel-body stack"><div class="split-fields"><div class="field"><label class="field-label" for="r-3">Vrsta</label><span class="select"><select class="input" id="r-3"><option selected>Pogodba</option><option>Izpusti</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div><div class="field"><label class="field-label" for="n-3">Ime datoteke</label><input class="input" id="n-3" defaultValue="Najem poslovnih prostorov"></div></div><ul class="thumbs"><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:60%'></i><i style='width:0%'></i><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:70%'></i><i style='width:0%'></i><i style='width:88%'></i><i style='width:90%'></i><i style='width:64%'></i></div></div><span class="num">Stran 5</span></li><li><div class="thumb" data-theme="light"><div class="mini"><i style='width:90%'></i><i style='width:86%'></i><i style='width:92%'></i><i style='width:78%'></i><i style='width:88%'></i><i style='width:0%'></i><i style='width:84%'></i><i style='width:90%'></i></div></div><span class="num">Stran 6</span><button class="btn btn-text" type="button">Nov dokument</button></li></ul></div></section>
+<div class="form-actions"><a class="btn btn-primary" href="NovaPogodba.dc.html">Nadaljuj na obrazce (2)</a><a class="btn btn-secondary" href="NovaPogodba.dc.html">Prekliči</a></div>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"$preview":{"width":1280,"height":1480}}'>
+class Component extends DCLogic {
+  state = {};
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    return { tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }), da: true };
+  }
+}
+</script>
+</body>
+</html>

@@ -5,15 +5,18 @@
 //   node dist/server/cli.js demo <e-pošta>    doda vzorčne pogodbe uporabniku brez pogodb
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { createInterface } from 'node:readline/promises';
 import { contractInput } from '../shared/contracts.js';
 import { createAuth } from './auth.js';
 import { loadConfigOrExit } from './config.js';
 import { ContractStore } from './contracts.js';
 import { migrate, openDb } from './db.js';
+import { countPages, splitPages } from './extract.js';
 import { Indexer } from './indexer.js';
 import { Mail } from './mail.js';
 import { Settings } from './settings.js';
+import { UploadStore } from './uploads.js';
 import { UserStore } from './users.js';
 
 function fail(message: string, code = 1): never {
@@ -56,12 +59,14 @@ if (command === 'geslo') {
   console.log('Uporabnik je skrbnik.');
 } else {
   const store = new ContractStore(db, config.dataDir);
+  const uploads = new UploadStore(db, config.dataDir, { countPages, split: splitPages }, config.maxFileMb * 1024 * 1024, null);
   if (store.list(userId).length > 0) fail('Uporabnik že ima pogodbe. Vzorčne pogodbe se dodajo samo v prazen arhiv.');
   const dir = join(process.cwd(), 'demo');
   const samples = JSON.parse(readFileSync(join(dir, 'pogodbe.json'), 'utf8')) as { file: string; terminated?: boolean }[];
   for (const sample of samples) {
     const bytes = new Uint8Array(readFileSync(join(dir, sample.file)));
-    const contract = await store.create(userId, contractInput.parse(sample), { name: sample.file, bytes });
+    const upload = await uploads.receive(userId, sample.file, Readable.from([bytes]), bytes.length);
+    const contract = store.create(userId, contractInput.parse(sample), upload.id);
     if (sample.terminated) store.terminate(userId, contract.id);
   }
   console.log(`Dodanih pogodb: ${samples.length}`);

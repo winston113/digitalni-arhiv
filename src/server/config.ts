@@ -17,6 +17,7 @@ export interface Config {
   secret: string;
   trustProxy: boolean;
   storageLimit: number | null;
+  maxFileMb: number;
   ocr: boolean;
   ocrLanguages: string;
   ocrWorkers: number;
@@ -60,6 +61,12 @@ function ocrLanguages(value: string): string {
 function positive(value: string): number {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) throw new StartupError('STORAGE_LIMIT_MB mora biti pozitivno število.');
+  return n;
+}
+
+function maxFileMb(value: string): number {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 1000) throw new StartupError('MAX_FILE_MB mora biti celo število od 1 do 1000.');
   return n;
 }
 
@@ -108,6 +115,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     ocrLanguages: ocrLanguages(env.OCR_LANGUAGES || 'slv+eng'),
     ocrWorkers: ocrWorkers(env.OCR_WORKERS || 'auto'),
     storageLimit: env.STORAGE_LIMIT_MB ? positive(env.STORAGE_LIMIT_MB) * 1024 * 1024 : null,
+    maxFileMb: maxFileMb(env.MAX_FILE_MB || '100'),
     registration: flag(env, 'REGISTRATION', true),
     oidc: issuer && clientId
       ? { issuer: normalizeIssuer(issuer), clientId, method: oidcMethod(env), clientSecret: env.OIDC_CLIENT_SECRET || undefined, name: env.OIDC_NAME || 'OpenID Connect', scopes: env.OIDC_SCOPES || 'openid profile email', registration: flag(env, 'OIDC_REGISTRATION', true) }

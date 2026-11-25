@@ -1,6 +1,6 @@
 import { Download, FileText, LoaderCircle, Paperclip, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { MAX_ATTACHMENTS, MAX_FILE_SIZE, type Attachment } from '../../shared/contracts.js';
+import { MAX_ATTACHMENTS, type Attachment } from '../../shared/contracts.js';
 import { api, ApiError } from '../api.js';
 import { formatSize } from '../format.js';
 import { msg, t, tr } from '../i18n.js';
@@ -9,7 +9,7 @@ import { TextStatus } from './TextStatus.js';
 import { ConfirmDialog, ErrorNotice, Icon } from './ui.js';
 
 export function Attachments({ contractId, attachments, onChange }: { contractId: string; attachments: Attachment[]; onChange: (a: Attachment[]) => void }) {
-  const { user, toast, setUser } = useApp();
+  const { user, config, toast, setUser } = useApp();
   const mayEdit = user!.permissions.edit;
   const picker = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ n: number; total: number } | null>(null);
@@ -25,10 +25,10 @@ export function Attachments({ contractId, attachments, onChange }: { contractId:
     for (const [i, file] of files.entries()) {
       setProgress({ n: i + 1, total: files.length });
       const problem = !/\.pdf$/i.test(file.name) ? msg('Datoteka ni v obliki PDF. Izberite datoteko PDF.')
-        : file.size > MAX_FILE_SIZE ? msg('Datoteka je prevelika. Izberite datoteko PDF, manjšo od 10 MB.') : null;
+        : file.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : null;
       if (problem) { failed.push(t('{name}: {error}', { name: file.name, error: t(problem) })); continue; }
       try {
-        onChange(await api.addAttachment(contractId, file));
+        onChange(await api.addAttachment(contractId, (await api.upload(file)).id));
         added++;
       } catch (err) {
         const { message, status } = err as ApiError;

@@ -5,7 +5,7 @@ Pogodbe na enem mestu, roki pod nadzorom. Digitalni arhiv pogodb je poslovno oro
 - Jezik je slovenščina, uporabnika vikamo. Angleških izrazov in nadomestnih besedil ni.
 - Ton je stvaren: »Pogodba je shranjena.«, ne »Super, uspelo je!«. Klicajev in emojijev ni.
 - Gumb pove dejanje: »Shrani pogodbo«, »Podaljšaj pogodbo«, »Počisti filtre«.
-- Napaka pove vzrok in rešitev: »Datoteka je prevelika. Izberite datoteko PDF, manjšo od 10 MB.«
+- Napaka pove vzrok in rešitev: »Datoteka je prevelika. Izberite manjšo datoteko PDF.«
 - Samo prva beseda naslova ima veliko začetnico.
 - Datum: `15. 1. 2027` z nedeljivimi presledki. Znesek: `1.250,00 €`. Število se sklanja: 1 dan, 2 dneva, 3 dni, 23 dni.
 - Statusi so samo štirje: Aktivna, Kmalu poteče, Potekla, Prekinjena.

@@ -13,6 +13,24 @@ export type Extract = (path: string, options?: { maxScans?: number; words?: bool
 // Besede z lego na strani z besedilom.
 export type PageWords = (path: string, page: number) => Promise<Word[]>;
 
+export interface PdfTools {
+  extract: Extract;
+  pageWords: PageWords;
+  countPages: (path: string) => Promise<number>;
+  split: (path: string, from: number, to: number, out: string) => Promise<void>;
+}
+
+export const countPages = async (path: string): Promise<number> => {
+  const pages = Number(/^Pages:\s+(\d+)/m.exec(await tool('pdfinfo', [path], 20_000))?.[1]);
+  if (!Number.isInteger(pages) || pages < 1) throw new Error('Število strani ni znano.');
+  return pages;
+};
+
+// Nov dokument vsebuje samo izbrane strani, brez kazala, prilog in skript izvirnika.
+export const splitPages = async (path: string, from: number, to: number, out: string): Promise<void> => {
+  await tool('qpdf', ['--warning-exit-0', '--empty', '--pages', path, `${from}-${to}`, '--', out], 120_000);
+};
+
 // Vidni del strani je enak kot v predogledu.
 export const pageWords: PageWords = async (path, page) => {
   const only = ['-f', String(page), '-l', String(page)];

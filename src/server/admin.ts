@@ -14,6 +14,7 @@ import { AiError, type Ai } from './ai.js';
 import { mailError, type Mail } from './mail.js';
 import { checkIssuer, type Oidc } from './oidc.js';
 import type { Reminders } from './reminders.js';
+import type { UploadStore } from './uploads.js';
 import type { UserStore } from './users.js';
 
 type Env = { Variables: { userId: string; access: Access } };
@@ -26,7 +27,7 @@ const body = async <T extends z.ZodType>(c: { req: { json: () => Promise<unknown
 const invalid = (error: z.ZodError) => ({ error: 'Preverite označena polja.', fields: fieldErrors(error) });
 
 // Kliče se samo za skrbnike. Pogodb drugih uporabnikov ne razkriva, razen njihovega števila.
-export function createAdminApi(auth: AuthHolder, mail: Mail, users: UserStore, contracts: ContractStore) {
+export function createAdminApi(auth: AuthHolder, mail: Mail, users: UserStore, contracts: ContractStore, uploads: UploadStore) {
   const app = new Hono<Env>();
 
 
@@ -104,6 +105,7 @@ export function createAdminApi(auth: AuthHolder, mail: Mail, users: UserStore, c
     if (id === c.get('userId')) return c.json({ error: 'Svojega računa ne morete izbrisati.' }, 409);
     if (users.isLastAdmin(id)) return c.json(LAST_ADMIN, 409);
     users.endSessions(id);
+    await uploads.removeAll(id);
     await contracts.removeAll(id);
     users.remove(id);
     return c.body(null, 204);

@@ -1,5 +1,5 @@
 import { Zip, ZipPassThrough } from 'fflate';
-import { readFile } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import { STATUS_LABELS, sortByDeadline, toView, VALUE_PERIOD_LABELS, type Attachment, type ContractView } from '../shared/contracts.js';
 import { today } from '../shared/dates.js';
 import { translate, type Key, type Lang } from '../shared/i18n.js';
@@ -65,30 +65,44 @@ export function exportStream(sheetName: string, sheet: Uint8Array, entries: Entr
   let sheetDone = false;
   let ended = false;
   const zip = new Zip((error, chunk) => { if (error) failure = error; else if (chunk.length) out.push(chunk); });
-  const add = (name: string, data: Uint8Array) => {
+  const open = (name: string) => {
     const file = new ZipPassThrough(name);
     zip.add(file);
-    file.push(data, true);
+    return file;
   };
+  // Trenutno odprta datoteka; bere se po kosih, da velika ni v celoti v pomnilniku.
+  let current: { file: ZipPassThrough; chunks: AsyncIterator<Buffer>; close: () => void } | null = null;
   const finish = () => { if (!ended) { ended = true; onEnd(); } };
 
   return new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
-        if (!sheetDone) { sheetDone = true; add(sheetName, sheet); }
-        else if (next < entries.length) { const e = entries[next++]!; add(e.path, new Uint8Array(await readFile(e.file))); }
-        else if (!ended) { zip.end(); finish(); }
+        // Korak brez izhoda ne sme ustaviti toka, zato nadaljuje do prvega.
+        while (!out.length && !ended && !failure) {
+        if (!sheetDone) { sheetDone = true; open(sheetName).push(sheet, true); }
+        else if (current) {
+          const { value, done } = await current.chunks.next();
+          current.file.push(done ? new Uint8Array(0) : new Uint8Array(value), done);
+          if (done) current = null;
+        } else if (next < entries.length) {
+          const e = entries[next++]!;
+          const stream = createReadStream(e.file, { highWaterMark: 1024 * 1024 });
+          current = { file: open(e.path), chunks: stream[Symbol.asyncIterator](), close: () => stream.destroy() };
+        }
+        else { zip.end(); finish(); }
+        }
         if (failure) throw failure;
         const ready = out;
         out = [];
         for (const chunk of ready) controller.enqueue(chunk);
         if (ended) controller.close();
       } catch (error) {
+        current?.close();
         finish();
         console.error('Izvoz ni uspel:', error instanceof Error ? error.message : error);
         controller.error(error);
       }
     },
-    cancel() { zip.terminate(); finish(); },
+    cancel() { current?.close(); zip.terminate(); finish(); },
   }, { highWaterMark: 1 });
 }

@@ -57,7 +57,8 @@ describe('priloge', () => {
     expect((await t.request(`/api/contracts/${id}/attachments/${a!.id}/file`)).status).toBe(401);
     expect((await t.request(`/api/contracts/${id}/attachments/${a!.id}`, { method: 'DELETE', cookie: ana, headers: { origin: 'https://zlo.test' } })).status).toBe(403);
     expect((await get(id)).attachments).toHaveLength(1);
-    expect(files()).toHaveLength(4);
+    // Štiri shranjene in ena, ki jo je drug uporabnik samo naložil.
+    expect(files()).toHaveLength(5);
   });
 
   it('zavrne napačne datoteke in preveč prilog, ničesar ne pusti na disku', async () => {

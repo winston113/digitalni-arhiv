@@ -5,12 +5,14 @@ import type { MailInput, MailUses, MailView } from '../shared/mail.js';
 import type { Key, Lang } from '../shared/i18n.js';
 import type { OidcCheck, OidcInput, OidcView } from '../shared/oidc.js';
 import type { SearchInput, SearchResult } from '../shared/search.js';
+import type { Outline, SplitPart, Upload } from '../shared/uploads.js';
 import type { CurrentUser, ManagedUser, UserCreate, UserUpdate } from '../shared/users.js';
 
 export interface AppConfig {
   registration: { local: boolean; oidc: boolean };
   passwordReset: boolean;
   reminders: boolean;
+  maxFileMb: number;
   oidc: { name: string } | null;
 }
 
@@ -35,7 +37,8 @@ async function send(path: string, init: RequestInit = {}): Promise<Response> {
   let response: Response;
   try {
     response = await fetch(path, { credentials: 'same-origin', ...init });
-  } catch {
+  } catch (error) {
+    if ((error as Error).name === 'AbortError') throw error;
     throw new ApiError(OFFLINE, 0);
   }
   if (response.ok) return response;
@@ -51,11 +54,23 @@ const withBody = (method: string) => (path: string, body: unknown) =>
 const post = withBody('POST');
 const put = withBody('PUT');
 
-function formData(data: unknown, file: File | null): FormData {
-  const form = new FormData();
-  form.set('data', JSON.stringify(data));
-  if (file) form.set('file', file);
-  return form;
+// fetch ne sporoča napredka nalaganja, zato XMLHttpRequest. Ime je v glavi, da ne pride v dnevnike posrednikov.
+function sendFile(file: File, onProgress?: (percent: number) => void): Promise<Upload> {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', '/api/uploads');
+    request.setRequestHeader('Content-Type', 'application/pdf');
+    request.setRequestHeader('X-File-Name', encodeURIComponent(file.name));
+    request.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(Math.floor((e.loaded / e.total) * 100)); };
+    request.onerror = () => reject(new ApiError(OFFLINE, 0));
+    request.onload = () => {
+      let body: { error?: string } = {};
+      try { body = JSON.parse(request.responseText) as typeof body; } catch { /* posrednik lahko vrne kaj drugega */ }
+      if (request.status === 201) resolve(body as Upload);
+      else reject(new ApiError(body.error ?? (request.status === 413 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : msg('Dejanje ni uspelo. Poskusite znova.')), request.status, body.error ? { file: body.error } : {}));
+    };
+    request.send(file);
+  });
 }
 
 export const api = {
@@ -73,14 +88,17 @@ export const api = {
   list: async () => (await send('/api/contracts')).json() as Promise<ContractView[]>,
   get: async (id: string) => (await send(`/api/contracts/${id}`)).json() as Promise<ContractDetails>,
   file: async (id: string, name: string) => new File([await (await send(`/api/contracts/${id}/file`)).blob()], name, { type: 'application/pdf' }),
-  create: async (data: unknown, file: File | null) =>
-    (await send('/api/contracts', { method: 'POST', body: formData(data, file) })).json() as Promise<ContractDetails>,
-  update: async (id: string, data: unknown, file: File | null) =>
-    (await send(`/api/contracts/${id}`, { method: 'PUT', body: formData(data, file) })).json() as Promise<ContractDetails>,
+  upload: sendFile,
+  uploadFile: async (id: string, name: string) => new File([await (await send(`/api/uploads/${id}/file`)).blob()], name, { type: 'application/pdf' }),
+  removeUpload: (id: string) => withBody('DELETE')(`/api/uploads/${id}`, {}),
+  outline: async (id: string, signal: AbortSignal) => (await send(`/api/uploads/${id}/outline`, { method: 'POST', signal })).json() as Promise<Outline>,
+  split: async (id: string, parts: SplitPart[]) => (await post(`/api/uploads/${id}/split`, { parts })).json() as Promise<Upload[]>,
+  create: async (data: unknown, upload: string | null, attachments: string[] = []) => (await post('/api/contracts', { data, upload, attachments })).json() as Promise<ContractDetails>,
+  update: async (id: string, data: unknown, upload: string | null) => (await put(`/api/contracts/${id}`, { data, upload })).json() as Promise<ContractDetails>,
   extend: async (id: string, endDate: string) => (await post(`/api/contracts/${id}/extend`, { endDate })).json() as Promise<ContractDetails>,
   terminate: async (id: string) => (await post(`/api/contracts/${id}/terminate`, {})).json() as Promise<ContractDetails>,
   remove: (id: string) => send(`/api/contracts/${id}`, { method: 'DELETE' }),
-  addAttachment: async (id: string, file: File) => (await send(`/api/contracts/${id}/attachments`, { method: 'POST', body: formData(null, file) })).json() as Promise<Attachment[]>,
+  addAttachment: async (id: string, upload: string) => (await post(`/api/contracts/${id}/attachments`, { upload })).json() as Promise<Attachment[]>,
   removeAttachment: async (id: string, attachment: string) => (await withBody('DELETE')(`/api/contracts/${id}/attachments/${attachment}`, {})).json() as Promise<Attachment[]>,
   search: async (data: SearchInput) => (await post('/api/search', data)).json() as Promise<SearchResult>,
   reindex: async (id: string) => (await post(`/api/contracts/${id}/reindex`, {})).json() as Promise<ContractDetails>,
@@ -106,7 +124,8 @@ export const api = {
   saveAi: async (data: AiInput) => (await put('/api/admin/ai', data)).json() as Promise<AiView>,
   clearAi: async () => (await withBody('DELETE')('/api/admin/ai', {})).json() as Promise<AiView>,
   aiModels: async (data: AiConnection) => (await post('/api/admin/ai/models', data)).json() as Promise<string[]>,
-  suggest: async (file: File, signal: AbortSignal) => (await send('/api/suggestions', { method: 'POST', body: formData(null, file), signal })).json() as Promise<SuggestResult>,
+  suggest: async (from: { upload: string } | { contract: string }, signal: AbortSignal) =>
+    (await send('upload' in from ? `/api/uploads/${from.upload}/suggest` : `/api/contracts/${from.contract}/suggest`, { method: 'POST', signal })).json() as Promise<SuggestResult>,
   setLanguage: (language: Lang) => put('/api/me/language', { language }),
   firstPassword: (newPassword: string) => post('/api/password/first', { newPassword }),
   oidc: async () => (await send('/api/admin/oidc')).json() as Promise<OidcView>,

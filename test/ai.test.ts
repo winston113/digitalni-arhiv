@@ -1,7 +1,6 @@
 import { readdirSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AiView, SuggestResult } from '../src/shared/ai.js';
 import { marksFor, parseBbox, parseTsv } from '../src/server/locate.js';
@@ -276,17 +275,17 @@ describe('omejitve', () => {
     await save({ dailyLimit: 1 });
     expect((await suggest(ana, '!')).status).toBe(422);
     expect((await suggest(ana, '')).status).toBe(422);
-    expect((await t.request('/api/suggestions', { method: 'POST', body: form(null), cookie: ana })).status).toBe(400);
+    expect((await t.request('/api/suggestions', { method: 'POST', body: form(null), cookie: ana })).status).toBe(404);
     expect((await t.request('/api/suggestions', { method: 'POST', body: form(null, new TextEncoder().encode('MZ')), cookie: ana })).status).toBe(400);
     expect(seen).toEqual([]);
     expect((await suggest(ana)).status).toBe(200);
   });
 
-  it('datoteka se ne shrani', async () => {
+  it('datoteka ostane samo med naloženimi', async () => {
     await save();
     await suggest(ana);
-    expect(readdirSync(`${t.dataDir}/files`)).toEqual([]);
-    expect(readdirSync(tmpdir()).filter((f) => f.startsWith('branje-'))).toEqual([]);
+    expect(readdirSync(`${t.dataDir}/files`)).toHaveLength(1);
+    expect(t.db.prepare('SELECT COUNT(*) n FROM uploads').get()).toEqual({ n: 1 });
     expect(t.db.prepare('SELECT COUNT(*) n FROM contracts').get()).toEqual({ n: 0 });
   });
 

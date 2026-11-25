@@ -88,6 +88,12 @@ Suggestions are never saved on their own and never overwrite what the user typed
 
 Only the text of the contract is sent, not the file. With your own Ollama server the text stays on your network. The key is encrypted and never shown again. For contracts longer than about 25 pages, whole pages from the beginning and end are read, and the app says how many. Connect a model directly rather than an agent with tools (such as Hermes Agent).
 
+### Large files and splitting
+
+Files can be up to 100 MB by default (`MAX_FILE_MB`). A file is written straight to disk, so a large scan needs little memory. Files that were uploaded but not saved are deleted after a day. The reverse proxy has to allow requests that large; Caddy does not limit them by default.
+
+If one PDF holds several contracts or annexes, choose "Split the file" on the New contract page. Mark on the thumbnails where each new document starts and choose whether it is a contract, an annex to one of them, or left out. Every contract then gets its own form, and its annexes are attached when you save it. With the AI permission, "Suggest a split" proposes the starts; the beginning and end of each page's text are sent to the provider.
+
 ### Content search and OCR
 
 The text of every PDF is read in the background after upload; scanned pages are recognised with Tesseract (Slovenian and English). Keyword search ignores accents and finds other forms of Slovenian words, quotes mean an exact phrase and a minus excludes a word. Regular expressions run in a separate thread with a time limit.

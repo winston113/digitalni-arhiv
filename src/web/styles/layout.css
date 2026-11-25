@@ -120,7 +120,8 @@ dialog.dialog::backdrop{background:var(--overlay)}
 .preview-pages:focus-visible{outline-offset:-2px}
 .preview-page{position:relative;margin:0 auto var(--space-3);background:#fff;border:1px solid var(--line)}
 .preview-page:last-child{margin-bottom:0}
-.preview-canvas,.preview-canvas canvas{display:block;width:100%;height:100%}
+.preview-canvas{width:100%}
+.preview-canvas canvas{display:block;width:100%;height:100%}
 .preview-mark{position:absolute;box-sizing:content-box;margin:-3px;padding:3px;border-radius:var(--radius-sm);background:color-mix(in srgb,var(--primary) 20%,transparent);cursor:pointer}
 .preview-mark:hover{background:color-mix(in srgb,var(--primary) 30%,transparent)}
 .preview-mark.is-active{background:color-mix(in srgb,var(--primary) 30%,transparent);box-shadow:0 0 0 2px var(--primary)}
@@ -129,3 +130,16 @@ dialog.dialog-wide[open]{display:flex;flex-direction:column;gap:var(--space-3)}
 dialog.dialog-wide h2{overflow-wrap:anywhere;font-size:16px;line-height:24px}
 dialog.dialog-wide .preview{flex:1;height:auto}
 dialog.dialog-wide .dialog-actions{margin:0}
+.btn-back{padding:0;border:0;background:none;font:500 16px/24px var(--font-sans);cursor:pointer}
+.split-hint{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--space-2)}
+.split-hint .btn,.thumb-split{min-height:32px;padding:0}
+.split-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--space-4) var(--space-5)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:var(--space-4);margin:0;padding:0;list-style:none}
+.thumbs li{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);min-width:0;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.thumb{width:100%;padding:0;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;overflow:hidden;cursor:zoom-in}
+.thumb:hover{border-color:var(--primary)}
+.thumb-split{display:inline-flex;align-items:center;gap:var(--space-1);font:500 14px/20px var(--font-sans);white-space:nowrap}
+.is-skipped .thumbs{opacity:.45}
+.split-actions{align-items:center}
+h1:focus{outline:none}
+.panel-head h2 .num{margin-left:var(--space-2);font-weight:400}

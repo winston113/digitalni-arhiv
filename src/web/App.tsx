@@ -17,6 +17,7 @@ import { Contracts } from './pages/Contracts.js';
 import { Dashboard } from './pages/Dashboard.js';
 import { ForgotPassword, NewPassword } from './pages/Password.js';
 import { MailSettings } from './pages/MailSettings.js';
+import { NewContract } from './pages/NewContract.js';
 import { NotFound } from './pages/NotFound.js';
 import { OidcSettings } from './pages/OidcSettings.js';
 import { SearchPage } from './pages/SearchPage.js';
@@ -76,10 +77,10 @@ export function App() {
           <Route element={<Shell />}>
             <Route index element={<Dashboard />} />
             <Route path="pogodbe" element={<Contracts />} />
-            {user.permissions.create && <Route path="pogodbe/nova" element={<ContractForm key="nova" />} />}
+            {user.permissions.create && <Route path="pogodbe/nova" element={<NewContract />} />}
             <Route path="pogodbe/iskanje" element={<SearchPage />} />
             <Route path="pogodbe/:id" element={<ContractDetails />} />
-            {user.permissions.edit && <Route path="pogodbe/:id/uredi" element={<ContractForm key="uredi" />} />}
+            {user.permissions.edit && <Route path="pogodbe/:id/uredi" element={<ContractForm />} />}
             <Route path="opozorila" element={<Alerts />} />
             <Route path="racun" element={<Account />} />
             {user.role === 'admin' && (

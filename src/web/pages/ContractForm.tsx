@@ -1,7 +1,7 @@
-import { ArrowLeft, ChevronDown, CircleAlert, CircleCheck, Eye, FileText, ScanText, Upload, X } from 'lucide-react';
+import { ArrowLeft, ChevronDown, CircleAlert, CircleCheck, Eye, FileText, Paperclip, ScanText, Scissors, Upload, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore, type DragEvent, type FocusEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { CATEGORIES, contractInput, fieldErrors, MAX_FILE_SIZE, type Category, type ContractView, type ValuePeriod } from '../../shared/contracts.js';
+import { CATEGORIES, contractInput, fieldErrors, type Category, type ContractView, type ValuePeriod } from '../../shared/contracts.js';
 import type { SuggestResult, Suggestion, Suggestions } from '../../shared/ai.js';
 import { parseAmount } from '../../shared/amounts.js';
 import type { Key } from '../../shared/i18n.js';
@@ -11,7 +11,9 @@ import { DateInput } from '../components/DateInput.js';
 import { Dialog, ErrorNotice, Field, Icon, Skeleton, Submit } from '../components/ui.js';
 import { formatDate, formatSize, pluralDays } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
+import { useUpload } from './NewContract.js';
 import { NotFound } from './NotFound.js';
+import type { QueueItem } from './SplitFile.js';
 import { getLang, msg, t, tr } from '../i18n.js';
 
 // Pregledovalnik je velik, zato se naloži šele, ko je izbrana datoteka.
@@ -83,22 +85,36 @@ function Note({ id, f, suggestions, shown, apply, show }: { id: keyof Suggestion
 }
 
 export function ContractForm() {
-  const { id } = useParams();
-  const { data, error, retry } = useLoad<ContractView | null>(() => (id ? api.get(id) : Promise.resolve(null)), [id]);
+  const { id = '' } = useParams();
+  const uploads = useUpload();
+  const { data, error, retry } = useLoad<ContractView>(() => api.get(id), [id]);
   if (error?.status === 404) return <NotFound title={t('Pogodba ne obstaja')} text={t('Morda je bila izbrisana.')} />;
   if (error) return <ErrorNotice message={error.message} retry={retry} />;
-  if (id && !data) return <Skeleton label={t('Nalaganje pogodbe')} />;
-  return <Form key={data?.id ?? 'nova'} contract={data} />;
+  if (!data) return <Skeleton label={t('Nalaganje pogodbe')} />;
+  return <Form key={data.id} contract={data} uploads={uploads} />;
 }
 
-function Form({ contract }: { contract: ContractView | null }) {
+interface FormProps {
+  contract: ContractView | null;
+  uploads: ReturnType<typeof useUpload>;
+  initialFile?: File | null;
+  // Pogodba iz razdeljene datoteke: datoteka in priloge so že na strežniku.
+  item?: QueueItem;
+  step?: { n: number; total: number };
+  onSplit?: (file: File) => void;
+  onSaved?: () => void;
+  onSkip?: () => void;
+}
+
+export function Form({ contract, uploads, initialFile = null, item, step, onSplit, onSaved, onSkip }: FormProps) {
   const heading = contract ? t('Urejanje pogodbe') : t('Nova pogodba');
   usePageTitle(heading);
-  const { toast, user, setUser } = useApp();
+  const { toast, user, config, setUser } = useApp();
   const navigate = useNavigate();
   const [f, setF] = useState(() => toForm(contract));
-  const [file, setFile] = useState<File | null>(null);
-  const [replacing, setReplacing] = useState(!contract);
+  const [file, setFile] = useState<File | null>(initialFile);
+  const [percent, setPercent] = useState<number | null>(null);
+  const [replacing, setReplacing] = useState(!contract && !item);
   const [stored, setStored] = useState<File | null>(null);
   const [storedFailed, setStoredFailed] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -124,18 +140,20 @@ function Form({ contract }: { contract: ContractView | null }) {
 
   // Pri urejanju je v predogledu shranjena datoteka, dokler je uporabnik ne zamenja.
   useEffect(() => {
-    if (!contract) return;
+    if (!contract && !item) return;
     let active = true;
-    api.file(contract.id, contract.fileName).then((loaded) => { if (active) setStored(loaded); }, (err: ApiError) => {
+    (contract ? api.file(contract.id, contract.fileName) : api.uploadFile(item!.upload.id, item!.upload.name)).then((loaded) => { if (active) setStored(loaded); }, (err: ApiError) => {
       if (!active) return;
       if (err.status === 401) setUser(null); else setStoredFailed(true);
     });
     return () => { active = false; };
-  }, [contract, setUser]);
+  }, [contract, item, setUser]);
   const shown = file ?? (replacing ? null : stored);
 
   useEffect(() => () => reading?.abort(), [reading]);
   const forget = () => { reading?.abort(); setReading(null); setRead(null); setReadError(''); setTarget(null); setOpened(false); };
+  // Izbrana datoteka se naloži ob prvi potrebi: za branje ali za shranjevanje.
+  const uploaded = async (chosen: File) => { try { return await uploads.ensure(chosen, setPercent); } finally { setPercent(null); } };
   const suggest = async () => {
     if (!shown) return;
     const controller = new AbortController();
@@ -144,7 +162,7 @@ function Form({ contract }: { contract: ContractView | null }) {
     setReadError('');
     setTarget(null);
     try {
-      const result = await api.suggest(shown, controller.signal);
+      const result = await api.suggest(file ? { upload: (await uploaded(file)).id } : item ? { upload: item.upload.id } : { contract: contract!.id }, controller.signal);
       if (controller.signal.aborted) return;
       const { values, filled, differ } = fillEmpty(latest.current, result.suggestions);
       setF(values);
@@ -183,8 +201,9 @@ function Form({ contract }: { contract: ContractView | null }) {
   const choose = (chosen: File | undefined) => {
     if (!chosen) return;
     forget();
+    uploads.discard();
     const problem = !/\.pdf$/i.test(chosen.name) ? msg('Datoteka ni v obliki PDF. Izberite datoteko PDF.')
-      : chosen.size > MAX_FILE_SIZE ? msg('Datoteka je prevelika. Izberite datoteko PDF, manjšo od 10 MB.') : '';
+      : chosen.size > config.maxFileMb * 1024 * 1024 ? msg('Datoteka je prevelika. Izberite manjšo datoteko PDF.') : '';
     const { file: _, ...rest } = fields;
     setFields(problem ? { ...rest, file: problem } : rest);
     setFile(problem ? null : chosen);
@@ -205,27 +224,32 @@ function Form({ contract }: { contract: ContractView | null }) {
     if (Object.keys(invalid).length) return;
     setBusy(true);
     try {
-      const saved = contract ? await api.update(contract.id, data, file) : await api.create(data, file);
+      const upload = file ? (await uploaded(file)).id : item?.upload.id ?? null;
+      const saved = contract ? await api.update(contract.id, data, upload) : await api.create(data, upload, item?.attachments.map((a) => a.id));
+      uploads.forget();
+      if (onSaved) return onSaved();
       toast(t('Pogodba je shranjena.'));
       navigate(`/pogodbe/${saved.id}`, { replace: true });
     } catch (err) {
       const { message, status, fields: invalidFields } = err as ApiError;
       if (status === 401) return setUser(null);
+      if (invalidFields.file) uploads.forget();
       setFields(invalidFields);
       setError(message);
       setBusy(false);
     }
   };
 
-  const shownFile = file ? { name: file.name, size: file.size } : !replacing && contract ? { name: contract.fileName, size: contract.fileSize } : null;
+  const shownFile = file ? { name: file.name, size: file.size } : item ? item.upload : !replacing && contract ? { name: contract.fileName, size: contract.fileSize } : null;
 
-  const side = wide && (file !== null || (contract !== null && !replacing));
+  const side = wide && (file !== null || !replacing);
   const good = read !== null && Object.keys(read.suggestions).length > 0 && (read.filled > 0 || read.differ === 0);
 
   return (
     <>
       <Link className="back" to={back}><Icon of={ArrowLeft} />{contract ? t('Nazaj na pogodbo') : t('Nazaj na pogodbe')}</Link>
-      <div className="page-head"><h1>{heading}</h1></div>
+      <div className="page-head"><h1>{heading}</h1>{step && <span className="muted num">{t('Pogodba {n} od {total}', step)}</span>}</div>
+      {step && step.total > step.n && <p className="muted">{t('Če stran zapustite, preostale pogodbe iz te datoteke ne bodo dodane.')}</p>}
       {error && <ErrorNotice message={error} />}
       <div className={side ? 'with-preview' : undefined}>
       <form className="form" ref={form} onSubmit={submit} onFocus={follow} noValidate>
@@ -234,7 +258,7 @@ function Form({ contract }: { contract: ContractView | null }) {
           <input ref={picker} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
           {shownFile ? (
             <div className="file"><Icon of={FileText} /><div className="file-body"><div className="file-name">{shownFile.name}</div><div className="file-meta num">{formatSize(shownFile.size)}</div></div>
-              <button type="button" className="btn btn-icon" aria-label={file ? t('Odstrani datoteko') : t('Zamenjaj datoteko')} onClick={() => { forget(); if (file) setFile(null); else setReplacing(true); }}><Icon of={X} /></button></div>
+              {!item && <button type="button" className="btn btn-icon" aria-label={file ? t('Odstrani datoteko') : t('Zamenjaj datoteko')} onClick={() => { forget(); uploads.discard(); if (file) setFile(null); else setReplacing(true); }}><Icon of={X} /></button>}</div>
           ) : (
             <div className={`upload${dragging ? ' is-dragging' : ''}${fields.file ? ' is-invalid' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
               <Icon of={Upload} /><p>{t('Povlecite datoteko sem ali jo izberite iz naprave.')}</p>
@@ -242,13 +266,15 @@ function Form({ contract }: { contract: ContractView | null }) {
                 <button type="button" className="btn btn-secondary" aria-describedby="file-hint" onClick={() => picker.current?.click()}>{t('Izberi datoteko')}</button>
                 {contract && <button type="button" className="btn btn-text" onClick={() => { setReplacing(false); const { file: _, ...rest } = fields; setFields(rest); }}>{t('Obdrži sedanjo')}</button>}
               </div>
-              <p className="field-hint" id="file-hint">{t('Datoteka PDF, največ 10 MB.')}</p>
+              <p className="field-hint" id="file-hint">{t('Datoteka PDF, največ {n} MB.', { n: config.maxFileMb })}</p>
             </div>
           )}
+          {item?.attachments.map((a) => <div key={a.id} className="file"><Icon of={Paperclip} /><div className="file-body"><div className="file-name">{a.name}</div><div className="file-meta num">{t('Priloga')}, {formatSize(a.size)}</div></div></div>)}
+          {file && onSplit && <p className="field-hint split-hint">{t('Je v datoteki več pogodb ali aneksov?')} <button type="button" className="btn btn-text" onClick={() => onSplit(file)}><Icon of={Scissors} />{t('Razdeli datoteko')}</button></p>}
           {shown && !wide && <button type="button" className="btn btn-secondary btn-preview" onClick={() => setOpened(true)}><Icon of={Eye} />{t('Pokaži dokument')}</button>}
           {shown && user?.ai && (
             <div className="read">
-              <Submit type="button" busy={reading !== null} busyLabel={t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz PDF')}</Submit>
+              <Submit type="button" busy={reading !== null} busyLabel={percent !== null ? t('Nalaganje datoteke: {n} %', { n: percent }) : t('Branje pogodbe')} className="btn btn-secondary" onClick={suggest}><Icon of={ScanText} />{t('Izpolni iz PDF')}</Submit>
               <span className="field-hint">{reading ? t('To lahko traja nekaj minut. Polja lahko medtem izpolnjujete sami.') : t('Besedilo pogodbe se pošlje na {destination}, kjer ga prebere umetna inteligenca.', { destination: user.ai.destination })}</span>
             </div>
           )}
@@ -277,7 +303,7 @@ function Form({ contract }: { contract: ContractView | null }) {
         <Field id="valueCents" note={note('valueCents', amountText)} label={t('Vrednost v evrih')} optional error={fields.valueCents}>{(a) => <input {...a} className="input num" inputMode="decimal" value={f.value} onChange={set('value')} />}</Field>
         <Field id="valuePeriod" note={note('valuePeriod', (v: ValuePeriod) => t(PERIODS.find(([p]) => p === v)![1]))} label={t('Plačilo')} error={fields.valuePeriod}>{(a) => <span className="select"><select {...a} className="input" value={f.valuePeriod} onChange={set('valuePeriod')}>{PERIODS.map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}</select><Icon of={ChevronDown} /></span>}</Field>
         <Field id="notes" label={t('Opombe')} optional error={fields.notes} full>{(a) => <textarea {...a} className="input" maxLength={2000} value={f.notes} onChange={set('notes')} />}</Field>
-        <div className="form-actions full"><Submit busy={busy} busyLabel={t('Shranjevanje')}>{t('Shrani pogodbo')}</Submit><Link className="btn btn-secondary" to={back}>{t('Prekliči')}</Link></div>
+        <div className="form-actions full"><Submit busy={busy} busyLabel={percent !== null ? t('Nalaganje datoteke: {n} %', { n: percent }) : t('Shranjevanje')}>{step && step.n < step.total ? t('Shrani in nadaljuj') : t('Shrani pogodbo')}</Submit>{onSkip ? <button type="button" className="btn btn-secondary" onClick={onSkip}>{t('Preskoči pogodbo')}</button> : <Link className="btn btn-secondary" to={back}>{t('Prekliči')}</Link>}</div>
       </form>
       {side && <aside className="preview-side">{preview ?? (storedFailed ? <ErrorNotice message={t('Predogleda te datoteke ni mogoče prikazati.')} /> : <Skeleton label={t('Nalaganje predogleda')} />)}</aside>}
       </div>

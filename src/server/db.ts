@@ -103,6 +103,15 @@ const MIGRATIONS = [
     count INTEGER NOT NULL,
     PRIMARY KEY (user_id, day)
   );`,
+  `CREATE TABLE uploads (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    pages INTEGER,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX uploads_user ON uploads(user_id);`,
 ];
 
 export function openDb(dataDir: string): Db {

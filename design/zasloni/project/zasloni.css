@@ -84,6 +84,15 @@
 .screen .doc h4{font:600 13px/20px var(--font-sans);margin:16px 0 8px}
 .screen .doc-mark{padding:2px 3px;border-radius:var(--radius-sm);background:color-mix(in srgb,var(--primary) 20%,transparent)}
 .screen .doc-mark.is-active{background:color-mix(in srgb,var(--primary) 30%,transparent);box-shadow:0 0 0 2px var(--primary)}
+.screen .split-hint{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--space-2)}
+.screen .split-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--space-4) var(--space-5)}
+.screen .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:var(--space-4);margin:0;padding:0;list-style:none}
+.screen .thumbs li{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
+.screen .thumbs .btn{min-height:32px;padding:0;font-size:14px}
+.screen .thumb{width:100%;aspect-ratio:210/297;border:1px solid var(--line);border-radius:var(--radius-sm);background:#fff;overflow:hidden}
+.screen .mini{display:flex;flex-direction:column;gap:6px;padding:14px 12px}
+.screen .mini i{height:4px;background:#c9d0cc;border-radius:2px}
+.screen .panel-head h2 .num{margin-left:var(--space-2);font-weight:400}
 .screen .separator{display:flex;align-items:center;gap:var(--space-3);color:var(--ink-muted)}
 .screen .separator::before,.screen .separator::after{content:"";flex:1;border-top:1px solid var(--line)}
 .screen .overlay{position:absolute;inset:0;z-index:30;align-items:flex-start;padding-top:160px}

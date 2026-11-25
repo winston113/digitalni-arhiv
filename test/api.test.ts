@@ -36,7 +36,8 @@ describe('ločenost uporabnikov', () => {
     expect(await (await t.request('/api/contracts', { cookie: bor })).json()).toEqual([]);
     const mine = await (await t.request(`/api/contracts/${id}`, { cookie: ana })).json();
     expect(mine).toMatchObject({ title: input.title, endDate: input.endDate, terminatedAt: null });
-    expect(files()).toHaveLength(1);
+    // Datoteka, ki jo je drug uporabnik samo naložil, ostane njegova do samodejnega izbrisa.
+    expect(files()).toHaveLength(2);
   });
 
   it('brez prijave ni dostopa', async () => {
@@ -86,14 +87,17 @@ describe('pogodbe', () => {
   it('zavrne manjkajočo, preveliko ali napačno datoteko in ničesar ne shrani', async () => {
     const send = async (file?: Uint8Array) => {
       const r = await t.request('/api/contracts', { method: 'POST', body: form(input, file), cookie: ana });
-      return [r.status, ((await r.json()) as { fields: { file: string } }).fields.file];
+      const body = (await r.json()) as { error: string; fields?: { file: string } };
+      return [r.status, body.fields?.file ?? body.error];
     };
+    t = await setup({ MAX_FILE_MB: '1' });
+    ana = await t.register('ana@primer.si');
     expect(await send()).toEqual([400, 'Izberite datoteko PDF.']);
     expect((await send(new TextEncoder().encode('<html>')))[1]).toMatch(/ni v obliki PDF/);
-    const big = new Uint8Array(10 * 1024 * 1024 + 1); big.set(PDF);
-    expect(await send(big)).toEqual([400, expect.stringMatching(/prevelika/)]);
-    const huge = new Uint8Array(11 * 1024 * 1024); huge.set(PDF);
-    expect((await send(huge))[0]).toBe(413);
+    expect((await send(new TextEncoder().encode('%PD')))[1]).toMatch(/ni v obliki PDF/);
+    expect(await send(new Uint8Array(0))).toEqual([400, 'Izberite datoteko PDF.']);
+    const big = new Uint8Array(1024 * 1024 + 1); big.set(PDF);
+    expect(await send(big)).toEqual([413, expect.stringMatching(/prevelika/)]);
     expect(files()).toHaveLength(0);
   });
 

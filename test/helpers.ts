@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createApp } from '../src/server/app.js';
@@ -49,9 +49,27 @@ export async function setup(env: Record<string, string> = {}) {
   const pageWords: PageWords = async (path, page) => (await extract(path)).pages[page - 1]!.split(/\s+/)
     .map((text, i) => ({ text, x: (i % 10) / 10, y: Math.floor(i / 10) / 50, w: 0.09, h: 0.018 }));
   const indexer = new Indexer(db, dataDir, extract, 4);
-  const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings, env.ANTHROPIC_TEST_URL), extract, pageWords);
+  const app = createApp(config, db, auth, mail, oidc, reminders, indexer, new Ai(db, settings, env.ANTHROPIC_TEST_URL), {
+    extract, pageWords,
+    countPages: async (path) => (await extract(path)).pages.length,
+    split: async (path, from, to, out) => writeFileSync(out, `%PDF-1.4\n${(await extract(path)).pages.slice(from - 1, to).join('\f')}`),
+  });
   ip++;
-  const request = (path: string, init: RequestInit & { cookie?: string } = {}) => {
+  const request = (path: string, init: RequestInit & { cookie?: string } = {}) => (init.body instanceof FormData ? submit(path, init as typeof init & { body: FormData }) : send(path, init));
+  // Obrazec z datoteko: najprej nalaganje, nato zahteva, ki se nanj sklicuje.
+  const submit = async (path: string, init: RequestInit & { cookie?: string; body: FormData }) => {
+    const file = init.body.get('file');
+    let upload: string | null = null;
+    if (file instanceof File) {
+      const sent = await send('/api/uploads', { ...init, method: 'POST', body: await file.arrayBuffer(), headers: { ...(init.headers as object), 'content-length': String(file.size), 'x-file-name': encodeURIComponent(file.name) } });
+      if (sent.status !== 201) return sent;
+      upload = ((await sent.json()) as { id: string }).id;
+    }
+    const body = path.endsWith('/attachments') ? { upload } : { data: JSON.parse(String(init.body.get('data'))), upload };
+    return path === '/api/suggestions' ? send(`/api/uploads/${upload}/suggest`, { ...init, body: undefined })
+      : send(path, { ...init, body: JSON.stringify(body), headers: { ...(init.headers as object), 'content-type': 'application/json' } });
+  };
+  const send = (path: string, init: RequestInit & { cookie?: string } = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has('origin')) headers.set('origin', ORIGIN);
     if (init.cookie) headers.set('cookie', init.cookie);

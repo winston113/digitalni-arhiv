@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { MAX_ATTACHMENTS, type Attachment, type Contract, type ContractInput } from '../shared/contracts.js';
@@ -30,7 +30,8 @@ const toAttachment = (r: AttachmentRow): Attachment => ({ id: r.id, name: r.name
 
 export interface StoredFile { stream: () => ReadableStream; name: string; size: number }
 
-export interface Upload { name: string; bytes: Uint8Array }
+// Naložena datoteka, ki jo shranjevanje prevzame, ne obstaja več.
+export class UploadGone extends Error {}
 
 // Vsaka poizvedba vsebuje user_id, zato uporabnik doseže samo svoje pogodbe.
 export class ContractStore {
@@ -42,18 +43,14 @@ export class ContractStore {
     return this.db.prepare('SELECT * FROM contracts WHERE id = ? AND user_id = ?').get(id, userId) as Row | undefined;
   }
 
-  private async saveFile(file: Upload): Promise<string> {
-    const fileId = randomUUID();
-    await writeFile(this.path(fileId), file.bytes, { mode: 0o600, flag: 'wx' });
-    return fileId;
+  // Datoteka pogodbe je ista kot naložena, zato se prevzame brez kopiranja. Kliče se znotraj transakcije.
+  private claim(userId: string, uploadId: string): { name: string; size: number } {
+    const row = this.db.prepare('DELETE FROM uploads WHERE id = ? AND user_id = ? RETURNING name, size').get(uploadId, userId) as { name: string; size: number } | undefined;
+    if (!row) throw new UploadGone();
+    return row;
   }
 
   private async removeFile(fileId: string) { await rm(this.path(fileId), { force: true }); }
-
-  // Skupna velikost vseh datotek, za omejitev prostora.
-  usedSpace(): number {
-    return (this.db.prepare('SELECT (SELECT COALESCE(SUM(file_size), 0) FROM contracts) + (SELECT COALESCE(SUM(size), 0) FROM attachments) AS n').get() as { n: number }).n;
-  }
 
   list(userId: string): Contract[] {
     return (this.db.prepare('SELECT * FROM contracts WHERE user_id = ?').all(userId) as Row[]).map(toContract);
@@ -64,33 +61,28 @@ export class ContractStore {
     return row ? toContract(row) : null;
   }
 
-  async create(userId: string, input: ContractInput, file: Upload): Promise<Contract> {
+  create(userId: string, input: ContractInput, uploadId: string, attachmentIds: string[] = []): Contract {
     const id = randomUUID();
     const now = new Date().toISOString();
-    const fileId = await this.saveFile(file);
-    try {
+    this.db.transaction(() => {
+      const file = this.claim(userId, uploadId);
       this.db.prepare(`INSERT INTO contracts (id, user_id, title, party, category, number, start_date, end_date, notice_days, warn_days, value_cents, value_period, notes, file_id, file_name, file_size, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .run(id, userId, input.title, input.party, input.category, input.number, input.startDate, input.endDate, input.noticeDays, input.warnDays, input.valueCents, input.valuePeriod, input.notes, fileId, file.name, file.bytes.length, now, now);
-    } catch (error) {
-      await this.removeFile(fileId);
-      throw error;
-    }
+        .run(id, userId, input.title, input.party, input.category, input.number, input.startDate, input.endDate, input.noticeDays, input.warnDays, input.valueCents, input.valuePeriod, input.notes, uploadId, file.name, file.size, now, now);
+      for (const attachment of attachmentIds) this.insertAttachment(userId, id, attachment);
+    })();
     return this.get(userId, id)!;
   }
 
-  async update(userId: string, id: string, input: ContractInput, file: Upload | null): Promise<Contract | null> {
+  async update(userId: string, id: string, input: ContractInput, uploadId: string | null): Promise<Contract | null> {
     const row = this.row(userId, id);
     if (!row) return null;
-    const fileId = file ? await this.saveFile(file) : row.file_id;
-    try {
+    this.db.transaction(() => {
+      const file = uploadId ? this.claim(userId, uploadId) : { name: row.file_name, size: row.file_size };
       this.db.prepare(`UPDATE contracts SET title = ?, party = ?, category = ?, number = ?, start_date = ?, end_date = ?, notice_days = ?, warn_days = ?, value_cents = ?, value_period = ?, notes = ?, file_id = ?, file_name = ?, file_size = ?, updated_at = ? WHERE id = ? AND user_id = ?`)
-        .run(input.title, input.party, input.category, input.number, input.startDate, input.endDate, input.noticeDays, input.warnDays, input.valueCents, input.valuePeriod, input.notes, fileId, file?.name ?? row.file_name, file?.bytes.length ?? row.file_size, new Date().toISOString(), id, userId);
-    } catch (error) {
-      if (file) await this.removeFile(fileId);
-      throw error;
-    }
-    if (file) await this.removeFile(row.file_id);
+        .run(input.title, input.party, input.category, input.number, input.startDate, input.endDate, input.noticeDays, input.warnDays, input.valueCents, input.valuePeriod, input.notes, uploadId ?? row.file_id, file.name, file.size, new Date().toISOString(), id, userId);
+    })();
+    if (uploadId) await this.removeFile(row.file_id);
     return this.get(userId, id);
   }
 
@@ -155,20 +147,20 @@ export class ContractStore {
     return result;
   }
 
-  // Vrne false, če je priloga odveč ali je bila pogodba med nalaganjem izbrisana.
-  async addAttachment(userId: string, contractId: string, file: Upload): Promise<boolean> {
-    const fileId = await this.saveFile(file);
-    try {
-      const added = this.db.prepare(`INSERT INTO attachments (id, contract_id, file_id, name, size, created_at)
-        SELECT ?, c.id, ?, ?, ?, ? FROM contracts c WHERE c.id = ? AND c.user_id = ? AND (SELECT COUNT(*) FROM attachments x WHERE x.contract_id = c.id) < ?`)
-        .run(randomUUID(), fileId, file.name, file.bytes.length, new Date().toISOString(), contractId, userId, MAX_ATTACHMENTS);
-      if (added.changes === 1) return true;
-      await this.removeFile(fileId);
-      return false;
-    } catch (error) {
-      await this.removeFile(fileId);
-      throw error;
-    }
+  private insertAttachment(userId: string, contractId: string, uploadId: string): void {
+    const file = this.claim(userId, uploadId);
+    this.db.prepare('INSERT INTO attachments (id, contract_id, file_id, name, size, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(randomUUID(), contractId, uploadId, file.name, file.size, new Date().toISOString());
+  }
+
+  // Vrne false, če je priloga odveč ali pogodba ne obstaja.
+  addAttachment(userId: string, contractId: string, uploadId: string): boolean {
+    return this.db.transaction(() => {
+      const found = this.db.prepare('SELECT (SELECT COUNT(*) FROM attachments x WHERE x.contract_id = c.id) AS n FROM contracts c WHERE c.id = ? AND c.user_id = ?').get(contractId, userId) as { n: number } | undefined;
+      if (!found || found.n >= MAX_ATTACHMENTS) return false;
+      this.insertAttachment(userId, contractId, uploadId);
+      return true;
+    })();
   }
 
   async removeAttachment(userId: string, contractId: string, id: string): Promise<boolean> {

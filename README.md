@@ -145,6 +145,12 @@ Predlogi se nikoli ne shranijo sami in ne prepišejo že vnesenih podatkov. Stra
 
 Ponudniku se pošlje samo besedilo pogodbe, ne datoteka. Pri lastnem strežniku Ollama besedilo ostane v vašem omrežju. Ključ je šifriran in se ne prikaže več. Pri pogodbah, daljših od približno 25 strani, se preberejo cele strani z začetka in konca, aplikacija pa pove, koliko jih je prebrala. Namesto agentov z orodji (npr. Hermes Agent) povežite neposredno model.
 
+### Velike datoteke in razdelitev
+
+Največja velikost datoteke je privzeto 100 MB (`MAX_FILE_MB`). Datoteka se zapiše naravnost na disk, zato velik sken ne porabi veliko pomnilnika. Naložene, a neshranjene datoteke se po enem dnevu izbrišejo. Povratni posrednik mora dovoliti tako velike zahteve; Caddy jih privzeto ne omejuje.
+
+Če je v enem PDF več pogodb ali aneksov, na strani Nova pogodba izberite »Razdeli datoteko«. Na sličicah označite, kje se začne nov dokument, in za vsakega izberite, ali je pogodba, priloga k eni od pogodb ali ga izpustite. Vsaka pogodba nato dobi svoj obrazec, priloge se ji dodajo ob shranjevanju. Z dovoljenjem za umetno inteligenco začetke predlaga gumb »Predlagaj razdelitev«; ponudniku se pošljeta začetek in konec besedila vsake strani.
+
 ### Iskanje po vsebini in OCR
 
 Besedilo vsake datoteke PDF se po nalaganju prebere v ozadju; skenirane strani prepozna Tesseract (slovenščina in angleščina). Iskanje po ključnih besedah ne loči šumnikov in najde tudi druge oblike besed, narekovaji pomenijo točno zvezo, minus izključitev. Regularni izrazi tečejo v ločeni niti z omejenim časom.
