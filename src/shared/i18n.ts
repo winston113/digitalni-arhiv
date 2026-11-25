@@ -591,6 +591,8 @@ export const EN = {
   'Datoteke DOCX ni mogoče odpreti ali vsebuje makre. Shranite jo kot PDF.': 'The DOCX file cannot be opened or contains macros. Save it as a PDF.',
   'Dokument Word': 'Word document',
   'Iz pogodbe: »{quote}«': 'From the contract: “{quote}”',
+  'Na tem naslovu prijava ne deluje. Aplikacijo odprite na': 'Signing in does not work at this address. Open the app at',
+  'Če ste skrbnik, preverite nastavitev BASE_URL.': 'If you are the administrator, check the BASE_URL setting.',
 } as const;
 
 export type Key = keyof typeof EN;

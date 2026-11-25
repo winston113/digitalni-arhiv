@@ -20,13 +20,22 @@ V to mapo kopirajte `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.exa
 
 ## 2. Slika vsebnika
 
-Dokler je paket zaseben, je najpreprosteje poslati sliko z računalnika, na katerem je zgrajena:
+Slika `ghcr.io/winston113/digitalni-arhiv:1.6.0` je javna in se prenese sama.
 
-```sh
-podman save ghcr.io/winston113/digitalni-arhiv:1.5.0 | ssh root@UNRAID docker load
-```
+Brez Compose: na strani **Add Container** (Advanced View) vnesite:
 
-Compose uporabi lokalno sliko in je ne prenaša znova. Če je paket javen, ta korak izpustite.
+| Polje | Vrednost |
+|---|---|
+| Repository | `ghcr.io/winston113/digitalni-arhiv:1.6.0` |
+| Network Type | Bridge |
+| Extra Parameters | `--user 99:100 --read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges --pids-limit 200 --restart unless-stopped` |
+| Port | `3000` (TCP) |
+| Path | `/data` na `/mnt/cache/appdata/digitalni-arhiv/data`, Read/Write |
+| Variable | `BASE_URL` = natanko naslov v brskalniku, brez poševnice na koncu |
+| Variable | `TRUST_PROXY` = `true` za Caddyjem, sicer `false` |
+| Variable | `REGISTRATION` = `true`, po registraciji prvega skrbnika `false` |
+
+Spremenljivk PUID in PGID tu ne dodajajte; uporabnika določa `--user`. Privzetega računa ni: prvi registrirani uporabnik je skrbnik.
 
 ## 3. Zasebni arhiv
 

@@ -42,20 +42,11 @@ systemctl --user enable --now podman.socket
 export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
 ```
 
-### Pulling the image from a private registry
+### Prebuilt image
 
-While the GitHub package is private, sign in once on the server with a classic personal access token that has `read:packages`:
+The image is public, so building is optional: instead of `--build` use `docker compose pull` and `docker compose up -d --no-build`. Image: `ghcr.io/winston113/digitalni-arhiv:1.6.0`.
 
-```sh
-docker login ghcr.io -u <github-user>
-docker compose pull
-```
-
-On Unraid the login is kept in memory and is lost on reboot. Instead of pulling, you can build from source (`docker compose up -d --build`) or copy the image from another machine:
-
-```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.5.0 | ssh server docker load
-```
+On Unraid you can add it directly on the Add Container page, see [docs/unraid.en.md](docs/unraid.en.md).
 
 ### Reverse proxy (Caddy)
 

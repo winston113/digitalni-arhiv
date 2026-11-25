@@ -13,6 +13,7 @@ export interface AppConfig {
   passwordReset: boolean;
   reminders: boolean;
   maxFileMb: number;
+  baseUrl: string;
   oidc: { name: string } | null;
 }
 

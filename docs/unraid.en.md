@@ -20,13 +20,22 @@ Copy `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.example` (as `.env
 
 ## 2. Get the image
 
-While the package is private, the simplest way is to send the image from the machine where you built it:
+The image `ghcr.io/winston113/digitalni-arhiv:1.6.0` is public and is pulled automatically.
 
-```sh
-podman save ghcr.io/winston113/digitalni-arhiv:1.5.0 | ssh root@UNRAID docker load
-```
+Without Compose, on the **Add Container** page (Advanced View) enter:
 
-Compose uses a local image and does not try to download it again. If the package is public, skip this step.
+| Field | Value |
+|---|---|
+| Repository | `ghcr.io/winston113/digitalni-arhiv:1.6.0` |
+| Network Type | Bridge |
+| Extra Parameters | `--user 99:100 --read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges --pids-limit 200 --restart unless-stopped` |
+| Port | `3000` (TCP) |
+| Path | `/data` to `/mnt/cache/appdata/digitalni-arhiv/data`, Read/Write |
+| Variable | `BASE_URL` = exactly the address in the browser, without a trailing slash |
+| Variable | `TRUST_PROXY` = `true` behind Caddy, otherwise `false` |
+| Variable | `REGISTRATION` = `true`, then `false` once the first administrator has registered |
+
+Do not add PUID or PGID here; `--user` sets the user. There is no default account: the first user to register becomes the administrator.
 
 ## 3. Private archive
 

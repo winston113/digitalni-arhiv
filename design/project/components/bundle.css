@@ -71,7 +71,8 @@ textarea.input{min-height:96px;resize:vertical}
 .badge-ended{background:var(--neutral-tint);color:var(--ink-muted)}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
-.panel-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--line)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);min-height:calc(var(--control-height) + 2*var(--space-3) + 1px);padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--line)}
+.panel-head .btn-text{margin-right:calc(-1*var(--space-2))}
 .panel-head h2{font:600 18px/26px var(--font-sans)}
 .panel-body{padding:var(--space-5)}
 .data{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:var(--space-5)}
@@ -87,8 +88,11 @@ textarea.input{min-height:96px;resize:vertical}
 
 .list{container-type:inline-size;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
 .table{width:100%;border-collapse:collapse;text-align:left}
-.table th{padding:var(--space-3) var(--space-4);font:500 14px/20px var(--font-sans);color:var(--ink-muted);border-bottom:1px solid var(--line)}
+.table th{padding:var(--space-3) var(--space-4);font:500 14px/20px var(--font-sans);color:var(--ink-muted);border-bottom:1px solid var(--line);white-space:nowrap}
 .table td{padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--line);vertical-align:top}
+.table td.num{white-space:nowrap}
+.panel .table :is(th,td):first-child{padding-left:var(--space-5)}
+.panel .table :is(th,td):last-child{padding-right:var(--space-5)}
 .table tbody tr:last-child td{border-bottom:0}
 .table tbody tr:hover{background:var(--canvas)}
 .table .sub{display:block;font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
@@ -98,9 +102,11 @@ textarea.input{min-height:96px;resize:vertical}
  .table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
  .table tbody tr{display:grid;gap:var(--space-2);padding:var(--space-4);border-bottom:1px solid var(--line)}
  .table tbody tr:last-child{border-bottom:0}
- .table td{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 var(--space-2);padding:0;border:0}
+ .panel .table tbody tr{padding-left:var(--space-5);padding-right:var(--space-5)}
+ .table td,.panel .table td:is(:first-child,:last-child){display:flex;flex-wrap:wrap;align-items:baseline;gap:0 var(--space-2);padding:0;border:0}
  .table td[data-label]::before{content:attr(data-label) ":";color:var(--ink-muted)}
- .table td.main{display:block}
+ .table td.num{white-space:normal}
+ .table td.main,.panel .table td.main:first-child{display:block}
  .table .sub{display:inline}
  .table td.main .sub{display:block}
 }
@@ -161,7 +167,7 @@ textarea.input{min-height:96px;resize:vertical}
  .appbar{padding-left:var(--space-4);padding-right:var(--space-4)}
  .appbar-user{display:none}
  .appbar .brand{font-size:16px;line-height:20px}
- .panel-head,.panel-body{padding-left:var(--space-4);padding-right:var(--space-4)}
+ .panel-head,.panel-body,.panel .table tbody tr{padding-left:var(--space-4);padding-right:var(--space-4)}
  .dialog-actions .btn,.form-actions .btn{flex:1 1 100%}
 }
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

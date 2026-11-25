@@ -103,6 +103,7 @@ export function createApp(config: Config, db: Db, auth: AuthHolder, mail: Mail, 
     passwordReset: mail.canReset,
     reminders: mail.canRemind,
     maxFileMb: config.maxFileMb,
+    baseUrl: config.baseUrl,
     oidc: oidc.current ? { name: oidc.current.name } : null,
   }));
 

@@ -22,7 +22,7 @@
 .screen[data-theme=light]{color-scheme:light}
 .screen .layout{flex:1;display:grid;grid-template-columns:var(--sidebar-width) minmax(0,1fr);min-height:100vh}
 .screen .layout>:first-child{background:var(--nav)}
-.screen .main{display:flex;flex-direction:column;min-width:0}
+.screen .layout>.main{display:flex;flex-direction:column;min-width:0}
 .screen .content{display:flex;flex-direction:column;gap:var(--space-5);width:100%;max-width:calc(var(--content-width) + 64px);padding:var(--space-6)}
 .screen .bottom{display:none}
 .screen .appbar{position:relative;z-index:5}

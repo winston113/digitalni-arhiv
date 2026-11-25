@@ -1,4 +1,4 @@
-import { Bell, FileText, LayoutDashboard, LogOut, Settings, UserCog } from 'lucide-react';
+import { Bell, FileText, LayoutDashboard, LogOut, Settings, TriangleAlert, UserCog } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { api } from '../api.js';
@@ -75,12 +75,20 @@ export function Shell() {
   );
 }
 
+// Z drugega naslova strežnik zahteve zavrne, zato to povemo vnaprej.
+function WrongAddress() {
+  const { config } = useApp();
+  if (config.baseUrl === location.origin) return null;
+  return <div className="notice notice-warning" role="alert"><Icon of={TriangleAlert} /><div>{t('Na tem naslovu prijava ne deluje. Aplikacijo odprite na')} <a className="link" href={config.baseUrl}>{config.baseUrl}</a>. {t('Če ste skrbnik, preverite nastavitev BASE_URL.')}</div></div>;
+}
+
 export function AuthShell({ title, text, signOut = false, children }: { title: string; text: string; signOut?: boolean } & Children) {
   return (
     <div className="auth-page">
       <header className="appbar"><Brand /><div className="appbar-actions"><LanguageMenu /><ThemeMenu />{signOut && <SignOutButton />}</div></header>
       <main className="auth"><div className="auth-box">
         <div className="auth-head"><Logo large /><h1>{title}</h1><p className="muted">{text}</p></div>
+          <WrongAddress />
         {children}
       </div></main>
     </div>

@@ -53,20 +53,11 @@ docker compose up -d --build
 
 Vse nastavitve so opisane v [.env.example](.env.example).
 
-### Prevzem slike iz zasebnega registra
+### Pripravljena slika
 
-Dokler je paket na GitHubu zaseben, se na strežniku enkrat prijavite z osebnim žetonom (classic) s pravico `read:packages`:
+Slika je javna, zato gradnja ni potrebna: namesto `--build` uporabite `docker compose pull` in `docker compose up -d --no-build`. Slika: `ghcr.io/winston113/digitalni-arhiv:1.6.0`.
 
-```sh
-docker login ghcr.io -u <uporabnik-github>
-docker compose pull
-```
-
-Na Unraidu se prijava shrani v pomnilnik in po ponovnem zagonu izgine. Namesto prevzema lahko sliko zgradite iz izvorne kode (`docker compose up -d --build`) ali jo prenesete z drugega računalnika:
-
-```sh
-docker save ghcr.io/winston113/digitalni-arhiv:1.5.0 | ssh strežnik docker load
-```
+Na Unraidu jo lahko dodate neposredno na strani Add Container, glejte [docs/unraid.md](docs/unraid.md).
 
 ### Prvi skrbnik
 
