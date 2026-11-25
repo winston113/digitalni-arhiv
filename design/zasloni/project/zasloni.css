@@ -112,10 +112,7 @@
  .screen .cols{grid-template-columns:minmax(0,1fr)}
  .screen .search-form{grid-template-columns:minmax(0,1fr)}
  .screen .filters{grid-template-columns:minmax(0,1fr)}
- .screen .counts{grid-template-columns:repeat(2,minmax(0,1fr))}
- .screen .count{padding:var(--space-3) var(--space-4)}
- .screen .count:nth-child(odd){border-left:0}
- .screen .count:nth-child(n+3){border-top:1px solid var(--line)}
+ .screen .count{flex-basis:calc(50% - 1px);padding:var(--space-3) var(--space-4)}
  .screen .panel-head,.screen .panel-body,.screen .recent li{padding-left:var(--space-4);padding-right:var(--space-4)}
  .screen .actions .btn,.screen .form-actions .btn,.screen .dialog-actions .btn{flex:1 1 100%}
  .screen .auth{padding:var(--space-5) var(--space-4)}

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { actionDate, contractInput, fieldErrors, sortByDeadline, status, toView, type Contract } from '../src/shared/contracts.js';
 import { addDays, daysBetween, isIsoDate, parseDate, pluralDays } from '../src/shared/dates.js';
 
-const base = { endDate: '2027-03-31', noticeDays: 30, warnDays: 30, terminatedAt: null };
+const base = { startDate: '2026-01-01', endDate: '2027-03-31', noticeDays: 30, warnDays: 30, terminatedAt: null };
 const full: Contract = {
-  id: '1', title: 'A', party: 'B', category: 'Najem', number: null, startDate: '2026-01-01', valueCents: null,
+  id: '1', title: 'A', party: 'B', category: 'Najem', number: null, valueCents: null,
   valuePeriod: 'enkratno', notes: null, fileName: 'a.pdf', fileSize: 1, createdAt: '', ...base,
 };
 
@@ -19,6 +19,16 @@ describe('rok za ukrepanje in status', () => {
     expect(status(base, '2027-04-01')).toBe('potekla');
   });
   it('nedoločen čas je vedno aktiven', () => expect(status({ ...base, endDate: null }, '2099-01-01')).toBe('aktivna'));
+  it('pred začetkom še ni v veljavi, opozorilo in prekinitev pa imata prednost', () => {
+    const future = { ...base, startDate: '2142-01-01', endDate: '2144-01-01' };
+    expect(status(future, '2026-11-25')).toBe('prihodnja');
+    expect(status(future, '2141-12-31')).toBe('prihodnja');
+    expect(status(future, '2142-01-01')).toBe('aktivna');
+    expect(status({ ...future, endDate: null }, '2026-11-25')).toBe('prihodnja');
+    expect(status({ ...future, terminatedAt: 'x' }, '2026-11-25')).toBe('prekinjena');
+    expect(status({ ...future, noticeDays: 3650 }, '2140-01-01')).toBe('kmalu');
+    expect(toView({ ...full, ...future }, '2026-11-25')).toMatchObject({ actionDate: '2143-12-02', status: 'prihodnja' });
+  });
   it('prekinitev ima prednost', () => expect(status({ ...base, terminatedAt: 'x' }, '2099-01-01')).toBe('prekinjena'));
   it('razvrsti po roku, brez roka in prekinjene na koncu', () => {
     const v = (id: string, o: Partial<Contract>) => toView({ ...full, id, ...o }, '2026-11-23');

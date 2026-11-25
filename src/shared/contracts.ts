@@ -8,7 +8,7 @@ export const CATEGORIES = [
 ] as const;
 
 export const VALUE_PERIODS = ['enkratno', 'mesecno', 'letno'] as const;
-export const STATUSES = ['aktivna', 'kmalu', 'potekla', 'prekinjena'] as const;
+export const STATUSES = ['aktivna', 'kmalu', 'potekla', 'prihodnja', 'prekinjena'] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 export type ValuePeriod = (typeof VALUE_PERIODS)[number];
@@ -62,7 +62,7 @@ export interface ContractDetails extends ContractView { attachments: Attachment[
 
 export const MAX_ATTACHMENTS = 30;
 
-export const STATUS_LABELS: Record<Status, Key> = { aktivna: 'Aktivna', kmalu: 'Kmalu poteče', potekla: 'Potekla', prekinjena: 'Prekinjena' };
+export const STATUS_LABELS: Record<Status, Key> = { aktivna: 'Aktivna', kmalu: 'Kmalu poteče', potekla: 'Potekla', prihodnja: 'Še ni v veljavi', prekinjena: 'Prekinjena' };
 export const VALUE_PERIOD_LABELS: Record<ValuePeriod, Key> = { enkratno: 'Enkratno', mesecno: 'Mesečno', letno: 'Letno' };
 
 export function fieldErrors(error: z.ZodError): Record<string, string> {
@@ -80,14 +80,16 @@ export function actionDate(c: Pick<Contract, 'endDate' | 'noticeDays'>): string 
 }
 
 export function status(
-  c: Pick<Contract, 'endDate' | 'noticeDays' | 'warnDays' | 'terminatedAt'>,
+  c: Pick<Contract, 'startDate' | 'endDate' | 'noticeDays' | 'warnDays' | 'terminatedAt'>,
   now: string,
 ): Status {
   if (c.terminatedAt) return 'prekinjena';
   const action = actionDate(c);
-  if (c.endDate === null || action === null) return 'aktivna';
+  const running: Status = now < c.startDate ? 'prihodnja' : 'aktivna';
+  if (c.endDate === null || action === null) return running;
   if (now > c.endDate) return 'potekla';
-  return now >= addDays(action, -c.warnDays) ? 'kmalu' : 'aktivna';
+  // Rok za ukrepanje se lahko približa še pred začetkom; opozorilo je takrat pomembnejše.
+  return now >= addDays(action, -c.warnDays) ? 'kmalu' : running;
 }
 
 export function toView(c: Contract, now: string): ContractView {

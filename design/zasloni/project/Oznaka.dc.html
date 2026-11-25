@@ -16,13 +16,14 @@
 <span class="{{ razred }}">
 <svg class="icon icon-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="{{ crta }}"></path></svg>{{ napis }}</span>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"status":{"editor":"enum","options":["aktivna","kmalu","potekla","prekinjena"],"default":"aktivna"},"$preview":{"width":200,"height":60}}'>
+<script type="text/x-dc" data-dc-script data-props='{"status":{"editor":"enum","options":["aktivna","kmalu","potekla","prihodnja","prekinjena"],"default":"aktivna"},"$preview":{"width":200,"height":60}}'>
 class Component extends DCLogic {
   renderVals() {
     const vse = {
       aktivna: ['badge badge-active', 'Aktivna', 'm9 12 2 2 4-4'],
       kmalu: ['badge badge-soon', 'Kmalu poteče', 'M12 6v6l4 2'],
       potekla: ['badge badge-expired', 'Potekla', 'm15 9-6 6m0-6 6 6'],
+      prihodnja: ['badge badge-future', 'Še ni v veljavi', 'M17 12h.01M12 12h.01M7 12h.01'],
       prekinjena: ['badge badge-ended', 'Prekinjena', 'm4.9 4.9 14.2 14.2']
     };
     const o = vse[this.props.status] ?? vse.aktivna;

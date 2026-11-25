@@ -8,7 +8,7 @@ Pogodbe na enem mestu, roki pod nadzorom. Digitalni arhiv pogodb je poslovno oro
 - Napaka pove vzrok in rešitev: »Datoteka je prevelika. Izberite manjšo datoteko PDF.«
 - Samo prva beseda naslova ima veliko začetnico.
 - Datum: `15. 1. 2027` z nedeljivimi presledki. Znesek: `1.250,00 €`. Število se sklanja: 1 dan, 2 dneva, 3 dni, 23 dni.
-- Statusi so samo štirje: Aktivna, Kmalu poteče, Potekla, Prekinjena.
+- Statusov je pet: Aktivna, Kmalu poteče, Potekla, Še ni v veljavi, Prekinjena.
 
 ## Barve
 

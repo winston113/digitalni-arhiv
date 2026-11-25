@@ -67,6 +67,7 @@ textarea.input{min-height:96px;resize:vertical}
 .badge-active{background:var(--primary-tint);color:var(--primary)}
 .badge-soon{background:var(--warning-tint);color:var(--warning)}
 .badge-expired{background:var(--danger-tint);color:var(--danger)}
+.badge-future{background:var(--surface);color:var(--ink-muted);box-shadow:inset 0 0 0 1px var(--line-strong)}
 .badge-ended{background:var(--neutral-tint);color:var(--ink-muted)}
 
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
@@ -79,9 +80,8 @@ textarea.input{min-height:96px;resize:vertical}
 .page-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-3)}
 .page-head h1{font:600 24px/32px var(--font-sans);text-wrap:balance}
 
-.counts{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
-.count{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);padding:var(--space-4) var(--space-5);color:inherit;text-decoration:none}
-.count+.count{border-left:1px solid var(--line)}
+.counts{display:flex;flex-wrap:wrap;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden}
+.count{flex:1 1 176px;display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);padding:var(--space-4) var(--space-5);background:var(--surface);color:inherit;text-decoration:none}
 .count:hover{background:var(--canvas)}
 .count-value{font:600 28px/36px var(--font-sans);font-variant-numeric:tabular-nums}
 
@@ -157,10 +157,7 @@ textarea.input{min-height:96px;resize:vertical}
 
 @media (max-width:640px){
  .filters{grid-template-columns:1fr}
- .counts{grid-template-columns:repeat(2,1fr)}
- .count{padding:var(--space-3) var(--space-4)}
- .count:nth-child(odd){border-left:0}
- .count:nth-child(n+3){border-top:1px solid var(--line)}
+ .count{flex-basis:calc(50% - 1px);padding:var(--space-3) var(--space-4)}
  .appbar{padding-left:var(--space-4);padding-right:var(--space-4)}
  .appbar-user{display:none}
  .appbar .brand{font-size:16px;line-height:20px}

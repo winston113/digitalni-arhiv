@@ -1,4 +1,4 @@
-import { Ban, CircleAlert, CircleCheck, CircleX, Clock, FileText, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { Ban, CircleAlert, CircleCheck, CircleEllipsis, CircleX, Clock, FileText, LoaderCircle, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState, type ButtonHTMLAttributes, type FormEvent, type ReactNode } from 'react';
 import type { Status } from '../../shared/contracts.js';
 import type { Key } from '../../shared/i18n.js';
@@ -13,6 +13,7 @@ const BADGES: Record<Status, [string, Key, LucideIcon]> = {
   aktivna: ['badge-active', 'Aktivna', CircleCheck],
   kmalu: ['badge-soon', 'Kmalu poteče', Clock],
   potekla: ['badge-expired', 'Potekla', CircleX],
+  prihodnja: ['badge-future', 'Še ni v veljavi', CircleEllipsis],
   prekinjena: ['badge-ended', 'Prekinjena', Ban],
 };
 export const statusName = (s: Status) => t(BADGES[s][1]);

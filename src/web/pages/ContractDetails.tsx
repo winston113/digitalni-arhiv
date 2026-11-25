@@ -1,4 +1,4 @@
-import { ArrowLeft, Ban, CalendarPlus, Clock, CircleX, Download, FileText, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Ban, CalendarPlus, CircleEllipsis, Clock, CircleX, Download, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { Attachment, ContractDetails as Contract } from '../../shared/contracts.js';
@@ -62,6 +62,7 @@ function Details({ c, onChange, onAttachments, onTexts }: { c: Contract; onChang
     <>
       <Link className="back" to="/pogodbe"><Icon of={ArrowLeft} />{t('Nazaj na pogodbe')}</Link>
       <div className="page-head"><div className="head-title"><h1>{c.title}</h1><Badge status={c.status} /></div></div>
+      {c.status === 'prihodnja' && <div className="notice"><Icon of={CircleEllipsis} /><div>{t('Pogodba začne veljati {date}.', { date: formatDate(c.startDate) })}</div></div>}
       {c.status === 'kmalu' && <div className="notice notice-warning"><Icon of={Clock} /><div>{(c.daysLeft ?? 0) < 0 ? t('Rok za ukrepanje je minil {date}, pogodba poteče {end}.', { date, end: formatDate(c.endDate!) }) : t('Rok za ukrepanje je {date}, {note}.', { date, note })} {t('Pogodbo podaljšajte ali prekinite.')}</div></div>}
       {c.status === 'potekla' && <div className="notice notice-error"><Icon of={CircleX} /><div>{t('Pogodba je potekla {end}. Podaljšajte jo ali prekinite.', { end: formatDate(c.endDate!) })}</div></div>}
       {(may.edit || may.remove) && <div className="actions">

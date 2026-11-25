@@ -9,8 +9,9 @@ function toUtc(iso: string): number {
   return Date.UTC(y, m - 1, d);
 }
 
+// Letnice od 1900 do 2999; pogodbe so lahko sklenjene tudi za več kot sto let.
 export function isIsoDate(value: string): boolean {
-  if (!/^(19|20)\d{2}-\d{2}-\d{2}$/.test(value)) return false;
+  if (!/^(19|2\d)\d{2}-\d{2}-\d{2}$/.test(value)) return false;
   return new Date(toUtc(value)).toISOString().slice(0, 10) === value;
 }
 

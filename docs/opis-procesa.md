@@ -52,7 +52,8 @@ Status se izračuna iz datumov, zato je vedno točen:
 
 | Status | Pogoj |
 |---|---|
-| Aktivna | opozorilo še ni nastopilo ali je pogodba sklenjena za nedoločen čas |
+| Aktivna | pogodba že velja, opozorilo še ni nastopilo ali je sklenjena za nedoločen čas |
+| Še ni v veljavi | datum začetka je v prihodnosti in opozorilo še ni nastopilo |
 | Kmalu poteče | opozorilo je nastopilo, datum poteka še ni minil |
 | Potekla | datum poteka je minil |
 | Prekinjena | uporabnik je pogodbo ročno prekinil; ta status ima prednost pred ostalimi |

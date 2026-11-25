@@ -585,6 +585,8 @@ export const EN = {
   'Razdeli datoteko': 'Split the file',
   'Shrani in nadaljuj': 'Save and continue',
   'Preskoči pogodbo': 'Skip contract',
+  'Še ni v veljavi': 'Not started',
+  'Pogodba začne veljati {date}.': 'The contract takes effect on {date}.',
 } as const;
 
 export type Key = keyof typeof EN;
