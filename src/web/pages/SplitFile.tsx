@@ -11,8 +11,7 @@ import { PageImage, usePdf } from '../components/pdf.js';
 import { Dialog, ErrorNotice, Icon, Skeleton, Submit } from '../components/ui.js';
 import { t } from '../i18n.js';
 import { useApp, usePageTitle } from '../state.js';
-
-export interface QueueItem { upload: Upload; attachments: Upload[] }
+import { ReadAll, type QueueItem, type QueueOptions } from './queue.js';
 
 interface Part { page: number; name: string; role: 'contract' | 'annex' | 'skip'; to: number | null }
 
@@ -26,7 +25,7 @@ function contractFor(parts: Part[], part: Part): Part | null {
 }
 
 // Razdelitev ene datoteke z več dokumenti. Uporabnik označi začetke; umetna inteligenca jih lahko predlaga.
-export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file: File; ensureUpload: (onProgress: (percent: number) => void) => Promise<Upload>; onBack: () => void; onDone: (items: QueueItem[]) => void }) {
+export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file: File; ensureUpload: (onProgress: (percent: number) => void) => Promise<Upload>; onBack: () => void; onDone: (items: QueueItem[], options: QueueOptions) => void }) {
   usePageTitle(t('Razdelitev datoteke'));
   const { user, setUser } = useApp();
   const { pages, total, failed } = usePdf(file);
@@ -36,6 +35,7 @@ export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file
   const [error, setError] = useState('');
   const [found, setFound] = useState<number | null>(null);
   const [shown, setShown] = useState<number | null>(null);
+  const [auto, setAuto] = useState(Boolean(user?.ai));
   const heading = useRef<HTMLHeadingElement>(null);
   const abort = useRef<AbortController | null>(null);
   useEffect(() => { scrollTo(0, 0); heading.current?.focus(); return () => abort.current?.abort(); }, []);
@@ -84,7 +84,7 @@ export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file
       onDone(contracts.map((c) => ({
         upload: byPage.get(c.page)!,
         attachments: parts.filter((p) => p.role === 'annex' && contractFor(parts, p) === c).map((p) => byPage.get(p.page)!),
-      })));
+      })), { auto: auto && Boolean(user?.ai), defaults: {} });
       return;
     } catch (err) { fail(err); }
     setPercent(null);
@@ -141,6 +141,7 @@ export default function SplitFile({ file, ensureUpload, onBack, onDone }: { file
             </section>
           ))}
           {pages.length > 0 && pages.length < total && <p className="muted" role="status">{t('Nalaganje strani')}</p>}
+          <ReadAll value={auto} onChange={setAuto} count={contracts.length} />
           <div className="form-actions split-actions">
             <Submit type="button" busy={busy === 'split'} busyLabel={loading ?? t('Razdeljevanje')} onClick={busy || pages.length < total || total === 0 ? undefined : next}>{t('Nadaljuj na obrazce ({n})', { n: contracts.length })}</Submit>
             <button type="button" className="btn btn-secondary" onClick={onBack}>{t('Prekliči')}</button>

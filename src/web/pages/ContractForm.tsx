@@ -14,7 +14,8 @@ import { formatDate, formatSize, pluralDays } from '../format.js';
 import { useApp, useLoad, usePageTitle } from '../state.js';
 import { useUpload } from './NewContract.js';
 import { NotFound } from './NotFound.js';
-import type { QueueItem } from './SplitFile.js';
+import type { Reader } from '../reader.js';
+import type { QueueItem } from './queue.js';
 import { getLang, msg, t, tr } from '../i18n.js';
 
 const WIDE = '(min-width: 1100px)';
@@ -38,7 +39,7 @@ const toForm = (c: ContractView | null) => ({
 });
 const days = (text: string, empty: number) => (text.trim() === '' ? empty : /^\d+$/.test(text.trim()) ? Number(text) : NaN);
 
-type FormValues = ReturnType<typeof toForm>;
+export type FormValues = ReturnType<typeof toForm>;
 
 // Predlog, prepisan v polja obrazca.
 const asValues: { [K in keyof Suggestions]-?: (value: NonNullable<Suggestions[K]>['value']) => Partial<FormValues> } = {
@@ -98,18 +99,22 @@ interface FormProps {
   initialFile?: File | null;
   // Pogodba iz razdeljene datoteke: datoteka in priloge so že na strežniku.
   item?: QueueItem;
+  // Branje v ozadju; kadar je podano, se obrazec izpolni sam.
+  reader?: Reader | null;
+  defaults?: Partial<FormValues>;
   step?: { n: number; total: number };
+  onMany?: (files: File[]) => void;
   onSplit?: (file: File) => void;
   onSaved?: () => void;
   onSkip?: () => void;
 }
 
-export function Form({ contract, uploads, initialFile = null, item, step, onSplit, onSaved, onSkip }: FormProps) {
+export function Form({ contract, uploads, initialFile = null, item, reader = null, defaults, step, onMany, onSplit, onSaved, onSkip }: FormProps) {
   const heading = contract ? t('Urejanje pogodbe') : t('Nova pogodba');
   usePageTitle(heading);
   const { toast, user, config, setUser } = useApp();
   const navigate = useNavigate();
-  const [f, setF] = useState(() => toForm(contract));
+  const [f, setF] = useState(() => ({ ...toForm(contract), ...defaults }));
   const [file, setFile] = useState<File | null>(initialFile);
   const [percent, setPercent] = useState<number | null>(null);
   const [replacing, setReplacing] = useState(!contract && !item);
@@ -154,26 +159,29 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
   // Izbrana datoteka se naloži ob prvi potrebi: za branje ali za shranjevanje.
   const uploaded = async (chosen: File) => { try { return await uploads.ensure(chosen, setPercent); } finally { setPercent(null); } };
   const suggest = async () => {
-    if (!shown) return;
+    if (!shown && !item) return;
     const controller = new AbortController();
     setReading(controller);
     setRead(null);
     setReadError('');
     setTarget(null);
     try {
-      const result = await api.suggest(file ? { upload: (await uploaded(file)).id } : item ? { upload: item.upload.id } : { contract: contract!.id }, controller.signal);
+      const result = item && reader ? await reader.read(item.upload.id) : await api.suggest(file ? { upload: (await uploaded(file)).id } : item ? { upload: item.upload.id } : { contract: contract!.id }, controller.signal);
       if (controller.signal.aborted) return;
       const { values, filled, differ } = fillEmpty(latest.current, result.suggestions);
       setF(values);
       setRead({ ...result, filled, differ });
     } catch (err) {
       if (controller.signal.aborted) return;
-      const { message, status } = err as ApiError;
+      const { message, status, name } = err as ApiError;
       if (status === 401) return setUser(null);
-      setReadError(message);
+      if (name !== 'AbortError') setReadError(message);
     }
     setReading(null);
   };
+  // V vrsti z branjem v ozadju obrazec sam počaka na rezultat.
+  const started = useRef(false);
+  useEffect(() => { if (item && reader && !started.current) { started.current = true; void suggest(); } });
   const apply = (changes: Partial<FormValues>) => setF({ ...f, ...changes });
   const note = (id: keyof Suggestions, shown: (value: never) => string = String) => <Note id={id} f={f} paged={shownKind === 'pdf'} suggestions={read?.suggestions} shown={shown} apply={apply} show={() => { if (point(id) && !wide) setOpened(true); }} />;
 
@@ -207,7 +215,8 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
     setFields(problem ? { ...rest, file: problem } : rest);
     setFile(problem ? null : chosen);
   };
-  const drop = (e: DragEvent) => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files[0]); };
+  const pickFiles = (list: FileList | null) => { if (list && list.length > 1 && onMany) onMany([...list]); else choose(list?.[0]); };
+  const drop = (e: DragEvent) => { e.preventDefault(); setDragging(false); pickFiles(e.dataTransfer.files); };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -248,13 +257,13 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
     <>
       <Link className="back" to={back}><Icon of={ArrowLeft} />{contract ? t('Nazaj na pogodbo') : t('Nazaj na pogodbe')}</Link>
       <div className="page-head"><h1>{heading}</h1>{step && <span className="muted num">{t('Pogodba {n} od {total}', step)}</span>}</div>
-      {step && step.total > step.n && <p className="muted">{t('Če stran zapustite, preostale pogodbe iz te datoteke ne bodo dodane.')}</p>}
+      {step && step.total > step.n && <p className="muted">{t('Če stran zapustite, preostale pogodbe ne bodo dodane.')}</p>}
       {error && <ErrorNotice message={error} />}
       <div className={side ? 'with-preview' : undefined}>
       <form className="form" ref={form} onSubmit={submit} onFocus={follow} noValidate>
         <div className="field full" role="group" aria-labelledby="file-label">
           <span className="field-label" id="file-label">{t('Datoteka pogodbe')}</span>
-          <input ref={picker} type="file" accept={ACCEPT} hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
+          <input ref={picker} type="file" accept={ACCEPT} multiple={Boolean(onMany)} hidden onChange={(e) => { pickFiles(e.target.files); e.target.value = ''; }} />
           {shownFile ? (
             <div className="file"><Icon of={FileText} /><div className="file-body"><div className="file-name">{shownFile.name}</div><div className="file-meta num">{formatSize(shownFile.size)}</div></div>
               {!item && <button type="button" className="btn btn-icon" aria-label={file ? t('Odstrani datoteko') : t('Zamenjaj datoteko')} onClick={() => { forget(); uploads.discard(); if (file) setFile(null); else setReplacing(true); }}><Icon of={X} /></button>}</div>
@@ -265,7 +274,7 @@ export function Form({ contract, uploads, initialFile = null, item, step, onSpli
                 <button type="button" className="btn btn-secondary" aria-describedby="file-hint" onClick={() => picker.current?.click()}>{t('Izberi datoteko')}</button>
                 {contract && <button type="button" className="btn btn-text" onClick={() => { setReplacing(false); const { file: _, ...rest } = fields; setFields(rest); }}>{t('Obdrži sedanjo')}</button>}
               </div>
-              <p className="field-hint" id="file-hint">{t('Datoteka PDF do {n} MB ali DOCX do {docx} MB.', { n: config.maxFileMb, docx: Math.min(30, config.maxFileMb) })}</p>
+              <p className="field-hint" id="file-hint">{t('Datoteka PDF do {n} MB ali DOCX do {docx} MB.', { n: config.maxFileMb, docx: Math.min(30, config.maxFileMb) })}{onMany && ` ${t('Izberete lahko tudi več datotek hkrati.')}`}</p>
             </div>
           )}
           {item?.attachments.map((a) => <div key={a.id} className="file"><Icon of={Paperclip} /><div className="file-body"><div className="file-name">{a.name}</div><div className="file-meta num">{t('Priloga')}, {formatSize(a.size)}</div></div></div>)}

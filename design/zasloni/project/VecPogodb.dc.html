@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<title>Več pogodb</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="zasloni.css">
+<link rel="stylesheet" href="ds/digitalniarhivpogodb/components/bundle.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="screen" data-theme="{{ dataTheme }}">
+<div class="layout">
+<dc-import name="Navigacija" vrsta="stranska" aktivna="pogodbe" hint-size="232px,100%"></dc-import>
+<div class="main">
+<dc-import name="Glava" prijavljen="{{ da }}" tema="{{ tema }}" on-tema="{{ setTema }}" hint-size="100%,60px"></dc-import>
+<main class="content">
+<a class="back" href="NovaPogodba.dc.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7M19 12H5"></path></svg>Nazaj na obrazec</a>
+<div class="page-head"><h1>Več pogodb</h1></div>
+<p class="muted">Vsaka pogodba bo dobila svoj obrazec, ki ga preverite in shranite. Priloge se dodajo k izbrani pogodbi.</p>
+<section class="panel"><div class="panel-head"><h2>Datoteke <span class="muted num">4</span></h2><button class="btn btn-secondary" type="button">Dodaj datoteke</button></div><ul class="panel-body file-list"><li class="batch-row"><div class="file"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><div class="file-body"><div class="file-name">zaposlitev-zagar.pdf</div><div class="file-meta num">214 kB</div></div><button class="btn btn-icon" type="button" aria-label="Odstrani zaposlitev-zagar.pdf"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><span class="select"><select class="input" aria-label="Vrsta: zaposlitev-zagar.pdf"><option>Pogodba</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></li><li class="batch-row"><div class="file"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><div class="file-body"><div class="file-name">soglasje-zagar.pdf</div><div class="file-meta num">96 kB</div></div><button class="btn btn-icon" type="button" aria-label="Odstrani soglasje-zagar.pdf"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><span class="select"><select class="input" aria-label="Vrsta: soglasje-zagar.pdf"><option>Priloga k: zaposlitev-zagar.pdf</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></li><li class="batch-row"><div class="file"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><div class="file-body"><div class="file-name">zaposlitev-cuk.docx</div><div class="file-meta num">41 kB</div></div><button class="btn btn-icon" type="button" aria-label="Odstrani zaposlitev-cuk.docx"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><span class="select"><select class="input" aria-label="Vrsta: zaposlitev-cuk.docx"><option>Pogodba</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></li><li class="batch-row"><div class="file"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"></path></svg><div class="file-body"><div class="file-name">zaposlitev-sustar.pdf</div><div class="file-meta num">198 kB</div></div><button class="btn btn-icon" type="button" aria-label="Odstrani zaposlitev-sustar.pdf"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><span class="select"><select class="input" aria-label="Vrsta: zaposlitev-sustar.pdf"><option>Pogodba</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></li></ul></section>
+<section class="panel"><div class="panel-head"><h2>Skupni podatki <span class="muted">(neobvezno)</span></h2></div><div class="panel-body stack"><p class="muted">Vpišejo se v vse obrazce. Pri posamezni pogodbi jih lahko spremenite.</p><div class="form"><div class="field"><label class="field-label" for="v-kat">Kategorija</label><span class="select"><select class="input" id="v-kat"><option>Zaposlitev</option></select><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></span></div><div class="field"><label class="field-label" for="v-od">Datum začetka</label><input class="input num" id="v-od" defaultValue="1. 2. 2027"></div><div class="field"><label class="field-label" for="v-odp">Odpovedni rok</label><input class="input num" id="v-odp" defaultValue="30"><span class="field-hint">Število dni pred potekom.</span></div><div class="field"><label class="field-label" for="v-opo">Opozorilo</label><input class="input num" id="v-opo" defaultValue="30"><span class="field-hint">Število dni pred rokom za ukrepanje.</span></div></div></div></section>
+<div class="field"><label class="check" for="v-ai"><input type="checkbox" id="v-ai" defaultChecked="{{ da }}">Samodejno izpolni obrazce iz datotek</label><span class="field-hint">Besedilo vseh pogodb se pošlje na ollama.primer.si, kjer ga prebere umetna inteligenca. Porabljenih branj: 3.</span></div>
+<div class="form-actions"><a class="btn btn-primary" href="NovaPogodba.dc.html">Nadaljuj na obrazce (3)</a><a class="btn btn-secondary" href="NovaPogodba.dc.html">Prekliči</a></div>
+</main>
+</div>
+</div>
+<div class="bottom"><dc-import name="Navigacija" vrsta="spodnja" aktivna="pogodbe" hint-size="100%,64px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tema":{"editor":"enum","options":["system","light","dark"],"default":"system"},"$preview":{"width":1280,"height":1240}}'>
+class Component extends DCLogic {
+  state = {};
+  renderVals() {
+    const tema = this.state.tema ?? this.props.tema ?? 'system';
+    return { tema, dataTheme: tema === 'dark' ? 'dark' : 'light', setTema: (t) => this.setState({ tema: t }), da: true };
+  }
+}
+</script>
+</body>
+</html>

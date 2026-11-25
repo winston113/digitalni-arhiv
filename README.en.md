@@ -85,6 +85,8 @@ Files can be up to 100 MB by default (`MAX_FILE_MB`). A file is written straight
 
 Contracts and annexes can also be Word files (DOCX, up to 30 MB). The original is stored without conversion. Its text is available for search and AI reading, and the browser draws the highlighted preview in an isolated frame without scripts or external content; the layout may differ from Word. The older DOC format, files with macros and password-protected files are not supported. Splitting is for PDF only.
 
+On the New contract page you can also choose or drop several files at once (up to 20). Mark each as a contract or an annex to one of them and, if you like, enter shared details such as the category and start date. Every contract then gets its own form. With the AI permission the contracts are read in the background, so the next forms are usually already filled in.
+
 If one PDF holds several contracts or annexes, choose "Split the file" on the New contract page. Mark on the thumbnails where each new document starts and choose whether it is a contract, an annex to one of them, or left out. Every contract then gets its own form, and its annexes are attached when you save it. With the AI permission, "Suggest a split" proposes the starts; the beginning and end of each page's text are sent to the provider.
 
 ### Content search and OCR

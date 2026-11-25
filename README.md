@@ -142,6 +142,8 @@ Največja velikost datoteke je privzeto 100 MB (`MAX_FILE_MB`). Datoteka se zapi
 
 Pogodbe in priloge so lahko tudi datoteke Word (DOCX, do 30 MB). Shrani se izvirnik, brez pretvorbe. Besedilo je na voljo za iskanje in branje z umetno inteligenco, predogled z oznakami pa nariše brskalnik v ločenem okvirju brez skript in brez nalaganja zunanje vsebine; postavitev se lahko razlikuje od Worda. Starejši zapis DOC, datoteke z makri in zaščitene z geslom niso podprte. Razdelitev je na voljo samo za PDF.
 
+Na strani Nova pogodba lahko izberete ali povlečete tudi več datotek hkrati (do 20). Za vsako določite, ali je pogodba ali priloga k eni od njih, in po želji vpišete skupne podatke, na primer kategorijo in datum začetka. Vsaka pogodba nato dobi svoj obrazec. Z dovoljenjem za umetno inteligenco se pogodbe berejo v ozadju, zato so naslednji obrazci običajno že izpolnjeni.
+
 Če je v enem PDF več pogodb ali aneksov, na strani Nova pogodba izberite »Razdeli datoteko«. Na sličicah označite, kje se začne nov dokument, in za vsakega izberite, ali je pogodba, priloga k eni od pogodb ali ga izpustite. Vsaka pogodba nato dobi svoj obrazec, priloge se ji dodajo ob shranjevanju. Z dovoljenjem za umetno inteligenco začetke predlaga gumb »Predlagaj razdelitev«; ponudniku se pošljeta začetek in konec besedila vsake strani.
 
 ### Iskanje po vsebini in OCR

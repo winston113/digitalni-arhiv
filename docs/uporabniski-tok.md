@@ -8,6 +8,9 @@ flowchart TD
     B[Prijava] --> C
     C --> D[Nova pogodba]
     D --> E[Nalaganje PDF in vnos podatkov]
+    E --> V{Izbranih je več datotek?}
+    V -- da --> X[Več pogodb]
+    X --> E
     E --> R{Je v datoteki več dokumentov?}
     R -- da --> S[Razdelitev datoteke]
     S --> E
@@ -45,6 +48,7 @@ Na računalniku stranska vrstica, na telefonu spodnja vrstica z enakimi postavka
 | Nadzorna plošča | število pogodb po statusih, najbližji roki, nazadnje dodane | Nova pogodba | V arhivu še ni pogodb. Dodajte prvo pogodbo. |
 | Pogodbe | seznam, iskanje, filtri po kategoriji in statusu | Nova pogodba, Izvozi vse | Nobena pogodba ne ustreza iskanju. Počistite filtre. |
 | Nova pogodba in urejanje | nalaganje PDF ali DOCX, obrazec, predogled datoteke ob obrazcu; z dovoljenjem tudi predlogi podatkov z navedkom, stranjo in oznako v predogledu | Shrani pogodbo, Izpolni iz datoteke | Napake ob posameznih poljih; napačna vrsta ali velikost datoteke; strežnik umetne inteligence ni dosegljiv; predogleda ni mogoče prikazati |
+| Več pogodb | datoteke z vrsto (pogodba ali priloga), skupni podatki; z dovoljenjem samodejno izpolnjevanje | Nadaljuj na obrazce | Datoteka ni v obliki PDF ali DOCX; največ 20 datotek |
 | Razdelitev datoteke | sličice strani po dokumentih, vrsta in ime vsakega dokumenta; z dovoljenjem predlog razdelitve | Nadaljuj na obrazce, Predlagaj razdelitev | Vsaj en dokument mora biti pogodba; datoteke ni mogoče razdeliti |
 | Iskanje po vsebini | ključne besede ali regularni izraz, odlomki z označenimi zadetki in stranjo | Išči | Ni zadetkov; neveljaven izraz; dokumenti, ki še čakajo na obdelavo |
 | Podrobnosti pogodbe | podatki, status, predogled in prenos PDF, priloge in aneksi | Podaljšaj, Prekini, Uredi, Izbriši | Datoteke ni mogoče prikazati; pogodba ne obstaja |

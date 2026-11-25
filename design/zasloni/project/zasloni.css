@@ -85,6 +85,8 @@
 .screen .doc-mark{padding:2px 3px;border-radius:var(--radius-sm);background:color-mix(in srgb,var(--primary) 20%,transparent)}
 .screen .doc-mark.is-active{background:color-mix(in srgb,var(--primary) 30%,transparent);box-shadow:0 0 0 2px var(--primary)}
 .screen .split-hint{display:flex;flex-wrap:wrap;align-items:center;gap:0 var(--space-2)}
+.screen .file-list{display:flex;flex-direction:column;gap:var(--space-2)}
+.screen .batch-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,320px);gap:var(--space-2) var(--space-3);align-items:center}
 .screen .split-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:var(--space-4) var(--space-5)}
 .screen .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:var(--space-4);margin:0;padding:0;list-style:none}
 .screen .thumbs li{display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-1);font:400 14px/20px var(--font-sans);color:var(--ink-muted)}
