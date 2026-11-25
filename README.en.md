@@ -44,7 +44,7 @@ export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
 
 ### Prebuilt image
 
-The image is public, so building is optional: instead of `--build` use `docker compose pull` and `docker compose up -d --no-build`. Image: `ghcr.io/winston113/digitalni-arhiv:1.6.0`.
+The image is public, so building is optional: instead of `--build` use `docker compose pull` and `docker compose up -d --no-build`. Image: `ghcr.io/winston113/digitalni-arhiv:1.7.0`.
 
 On Unraid you can add it directly on the Add Container page, see [docs/unraid.en.md](docs/unraid.en.md).
 

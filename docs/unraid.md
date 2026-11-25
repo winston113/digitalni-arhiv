@@ -20,13 +20,13 @@ V to mapo kopirajte `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.exa
 
 ## 2. Slika vsebnika
 
-Slika `ghcr.io/winston113/digitalni-arhiv:1.6.0` je javna in se prenese sama.
+Slika `ghcr.io/winston113/digitalni-arhiv:1.7.0` je javna in se prenese sama.
 
 Brez Compose: na strani **Add Container** (Advanced View) vnesite:
 
 | Polje | Vrednost |
 |---|---|
-| Repository | `ghcr.io/winston113/digitalni-arhiv:1.6.0` |
+| Repository | `ghcr.io/winston113/digitalni-arhiv:1.7.0` |
 | Network Type | Bridge |
 | Extra Parameters | `--user 99:100 --read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges --pids-limit 200 --restart unless-stopped` |
 | Port | `3000` (TCP) |

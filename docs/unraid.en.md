@@ -20,13 +20,13 @@ Copy `docker-compose.yaml`, `docker-compose.demo.yaml`, `.env.example` (as `.env
 
 ## 2. Get the image
 
-The image `ghcr.io/winston113/digitalni-arhiv:1.6.0` is public and is pulled automatically.
+The image `ghcr.io/winston113/digitalni-arhiv:1.7.0` is public and is pulled automatically.
 
 Without Compose, on the **Add Container** page (Advanced View) enter:
 
 | Field | Value |
 |---|---|
-| Repository | `ghcr.io/winston113/digitalni-arhiv:1.6.0` |
+| Repository | `ghcr.io/winston113/digitalni-arhiv:1.7.0` |
 | Network Type | Bridge |
 | Extra Parameters | `--user 99:100 --read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges --pids-limit 200 --restart unless-stopped` |
 | Port | `3000` (TCP) |

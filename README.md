@@ -55,7 +55,7 @@ Vse nastavitve so opisane v [.env.example](.env.example).
 
 ### Pripravljena slika
 
-Slika je javna, zato gradnja ni potrebna: namesto `--build` uporabite `docker compose pull` in `docker compose up -d --no-build`. Slika: `ghcr.io/winston113/digitalni-arhiv:1.6.0`.
+Slika je javna, zato gradnja ni potrebna: namesto `--build` uporabite `docker compose pull` in `docker compose up -d --no-build`. Slika: `ghcr.io/winston113/digitalni-arhiv:1.7.0`.
 
 Na Unraidu jo lahko dodate neposredno na strani Add Container, glejte [docs/unraid.md](docs/unraid.md).
 
