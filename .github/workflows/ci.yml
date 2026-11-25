@@ -27,6 +27,7 @@ jobs:
     needs: test
     # Zapisi o gradnji vsebujejo podatke dogodka GitHub, tudi e-poštni naslov, zato jih ne objavljamo.
     env:
+      BUILDX_METADATA_PROVENANCE: disabled
       DOCKER_BUILD_SUMMARY: 'false'
       DOCKER_BUILD_RECORD_UPLOAD: 'false'
     if: github.event_name == 'push'
